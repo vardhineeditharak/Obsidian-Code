@@ -194,12 +194,24 @@ export const api = {
   },
 
   // Sandbox Code Execution
-  async executeCode(code: string, language: string): Promise<ExecutionResult> {
+  async executeCode(code: string, language: string, fileName?: string): Promise<ExecutionResult> {
     const res = await fetch(`${BASE_URL}/execute`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ code, language }),
+      body: JSON.stringify({ code, language, fileName }),
     });
     return handleResponse<ExecutionResult>(res);
+  },
+
+  async getRuntimes(): Promise<{ runtimes: { language: string; available: boolean; version?: string; hint?: string }[] }> {
+    const res = await fetch(`${BASE_URL}/execute/runtimes`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<{ runtimes: { language: string; available: boolean; version?: string; hint?: string }[] }>(res);
+  },
+
+  async getOAuthProviders(): Promise<{ github: boolean }> {
+    const res = await fetch(`${BASE_URL}/auth/oauth/providers`);
+    return handleResponse<{ github: boolean }>(res);
   },
 };

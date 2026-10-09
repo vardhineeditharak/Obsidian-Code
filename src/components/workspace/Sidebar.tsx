@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ProjectFile, ProjectRole } from '../../lib/types';
 import { notify } from '../../lib/notifications';
+import { useResizable } from '../../lib/useResizable';
 
 interface SidebarProps {
   files: ProjectFile[];
@@ -42,6 +43,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+
+  const { size, dragHandleProps } = useResizable({
+    key: 'sidebar',
+    initial: 256,
+    min: 180,
+    max: 480,
+    axis: 'x',
+  });
 
   const canEdit = userRole === 'owner' || userRole === 'editor';
 
@@ -97,7 +106,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-64 border-r border-white/10 bg-[#0A0F1D]/80 flex flex-col select-none h-full">
+    <aside
+      style={{ width: `${size}px` }}
+      className="relative border-r border-white/10 bg-[#0A0F1D]/80 flex flex-col select-none h-full flex-shrink-0"
+    >
+      {/* 4px Right-Edge Drag Handle */}
+      <div
+        {...dragHandleProps}
+        title="Drag to resize sidebar (double-click to reset)"
+        className="absolute -right-1 top-0 w-2 h-full cursor-col-resize hover:bg-blue-500/60 transition z-30 group"
+      />
+
       {/* Explorer Header */}
       <div className="p-3 border-b border-white/5 flex items-center justify-between">
         <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">

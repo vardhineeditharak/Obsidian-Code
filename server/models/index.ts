@@ -3,17 +3,19 @@ import mongoose, { Schema, Document } from 'mongoose';
 // User Schema
 export interface IUser extends Document {
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
   name: string;
   avatar?: string;
+  githubId?: string;
   createdAt: Date;
 }
 
 const UserSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: false },
   name: { type: String, required: true, trim: true },
   avatar: { type: String },
+  githubId: { type: String, sparse: true, unique: true, index: true },
   createdAt: { type: Date, default: Date.now },
 });
 

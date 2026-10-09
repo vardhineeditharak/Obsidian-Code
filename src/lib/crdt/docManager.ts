@@ -4,7 +4,7 @@ import { WebrtcProvider } from 'y-webrtc';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { MonacoBinding } from 'y-monaco';
 import type * as Monaco from 'monaco-editor';
-import { CollaboratorPresence, TransportMode } from '../types';
+import { CollaboratorPresence, TransportMode, ProjectRole } from '../types';
 
 export interface DocSession {
   doc: Y.Doc;
@@ -12,10 +12,12 @@ export interface DocSession {
   lineAuthors: Y.Map<any>;
   wsProvider: WebsocketProvider | null;
   webrtcProvider: WebrtcProvider | null;
+  awareness: any;
   idbPersistence: IndexeddbPersistence;
   binding: MonacoBinding | null;
   synced: boolean;
   cleanups: (() => void)[];
+  unsubscribeAwareness?: () => void;
 }
 
 class YjsDocManager {
@@ -28,6 +30,11 @@ class YjsDocManager {
 
   public getTransportMode(): TransportMode {
     return this.activeTransport;
+  }
+
+  public getSession(projectId: string, fileId: string): DocSession | undefined {
+    const roomKey = `obsidian-project-${projectId}-file-${fileId}`;
+    return this.sessions.get(roomKey);
   }
 
   /**
@@ -103,6 +110,7 @@ class YjsDocManager {
       if (allowP2P) {
         try {
           webrtcProvider = new WebrtcProvider(roomKey, doc, {
+            awareness: wsProvider ? wsProvider.awareness : undefined,
             signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com'],
           });
         } catch (err) {
@@ -113,12 +121,15 @@ class YjsDocManager {
       }
     }
 
+    const awareness = wsProvider?.awareness || webrtcProvider?.awareness || null;
+
     const session: DocSession = {
       doc,
       ytext,
       lineAuthors,
       wsProvider,
       webrtcProvider,
+      awareness,
       idbPersistence,
       binding: null,
       synced,
@@ -130,6 +141,74 @@ class YjsDocManager {
   }
 
   /**
+   * Sets local user awareness state
+   */
+  public setLocalAwareness(
+    projectId: string,
+    fileId: string,
+    user: { id: string; name: string; color: string; role: ProjectRole; avatar?: string }
+  ) {
+    const session = this.getSession(projectId, fileId);
+    if (!session || !session.awareness) return;
+
+    const current = session.awareness.getLocalState()?.user || {};
+    session.awareness.setLocalStateField('user', {
+      ...current,
+      id: user.id,
+      name: user.name,
+      color: user.color,
+      avatar: user.avatar,
+      role: user.role,
+      fileId,
+    });
+  }
+
+  /**
+   * Subscribes to real awareness updates for a file room
+   */
+  public subscribeAwareness(
+    projectId: string,
+    fileId: string,
+    onChange: (collaborators: CollaboratorPresence[]) => void
+  ): () => void {
+    const session = this.getSession(projectId, fileId);
+    if (!session || !session.awareness) return () => {};
+
+    const awareness = session.awareness;
+    const updateCollaborators = () => {
+      const states = awareness.getStates();
+      const list: CollaboratorPresence[] = [];
+      states.forEach((state: any) => {
+        if (state?.user?.id) {
+          list.push({
+            id: state.user.id,
+            name: state.user.name || 'Anonymous',
+            color: state.user.color || '#3B82F6',
+            avatar: state.user.avatar,
+            role: state.user.role || 'viewer',
+            fileId: state.user.fileId,
+            cursor: state.user.cursor,
+            selection: state.user.selection,
+          });
+        }
+      });
+      onChange(list);
+    };
+
+    awareness.on('change', updateCollaborators);
+    // Initial emit
+    updateCollaborators();
+
+    const unsubscribe = () => {
+      awareness.off('change', updateCollaborators);
+    };
+
+    session.cleanups.push(unsubscribe);
+    session.unsubscribeAwareness = unsubscribe;
+    return unsubscribe;
+  }
+
+  /**
    * Binds Monaco editor instance to Yjs text and awareness
    */
   public bindMonaco(
@@ -138,8 +217,7 @@ class YjsDocManager {
     editor: Monaco.editor.IStandaloneCodeEditor,
     awarenessPayload: CollaboratorPresence
   ): MonacoBinding | null {
-    const roomKey = `obsidian-project-${projectId}-file-${fileId}`;
-    const session = this.sessions.get(roomKey);
+    const session = this.getSession(projectId, fileId);
     if (!session) return null;
 
     // Dispose old binding if it exists
@@ -151,11 +229,12 @@ class YjsDocManager {
     const model = editor.getModel();
     if (!model) return null;
 
-    // Use wsProvider awareness if available, else webrtcProvider awareness
-    const awareness = session.wsProvider?.awareness || session.webrtcProvider?.awareness;
+    const awareness = session.awareness;
 
     if (awareness) {
+      const current = awareness.getLocalState()?.user || {};
       awareness.setLocalStateField('user', {
+        ...current,
         id: awarenessPayload.id,
         name: awarenessPayload.name,
         color: awarenessPayload.color,
@@ -188,20 +267,16 @@ class YjsDocManager {
     cursor: { line: number; column: number },
     selection?: { startLine: number; startColumn: number; endLine: number; endColumn: number }
   ) {
-    const roomKey = `obsidian-project-${projectId}-file-${fileId}`;
-    const session = this.sessions.get(roomKey);
-    if (!session) return;
+    const session = this.getSession(projectId, fileId);
+    if (!session || !session.awareness) return;
 
-    const awareness = session.wsProvider?.awareness || session.webrtcProvider?.awareness;
-    if (awareness) {
-      const current = awareness.getLocalState()?.user || {};
-      awareness.setLocalStateField('user', {
-        ...current,
-        fileId,
-        cursor,
-        selection,
-      });
-    }
+    const current = session.awareness.getLocalState()?.user || {};
+    session.awareness.setLocalStateField('user', {
+      ...current,
+      fileId,
+      cursor,
+      selection,
+    });
   }
 
   /**
@@ -213,8 +288,7 @@ class YjsDocManager {
     lineNumber: number,
     author: { id: string; name: string; color: string }
   ) {
-    const roomKey = `obsidian-project-${projectId}-file-${fileId}`;
-    const session = this.sessions.get(roomKey);
+    const session = this.getSession(projectId, fileId);
     if (!session) return;
 
     session.doc.transact(() => {
@@ -235,6 +309,9 @@ class YjsDocManager {
     const session = this.sessions.get(roomKey);
     if (!session) return;
 
+    if (session.awareness) {
+      session.awareness.setLocalState(null);
+    }
     session.cleanups.forEach((fn) => fn());
     if (session.binding) {
       session.binding.destroy();

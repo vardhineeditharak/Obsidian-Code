@@ -45,6 +45,66 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
   const [splitMode, setSplitMode] = useState<'single' | 'vertical' | 'horizontal'>('single');
+  const [splitRatio, setSplitRatio] = useState<number>(() => {
+    if (typeof window === 'undefined') return 50;
+    try {
+      const stored = localStorage.getItem('obsidian.layout.splitRatio');
+      if (stored !== null) {
+        const parsed = Number(stored);
+        if (!isNaN(parsed) && parsed >= 20 && parsed <= 80) return parsed;
+      }
+    } catch {}
+    return 50;
+  });
+
+  const isDraggingSplitRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rAFSplitRef = useRef<number | null>(null);
+
+  const handleSplitPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    isDraggingSplitRef.current = true;
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleSplitPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingSplitRef.current || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    let newRatio = splitRatio;
+    if (splitMode === 'vertical') {
+      const x = e.clientX - rect.left;
+      newRatio = (x / rect.width) * 100;
+    } else if (splitMode === 'horizontal') {
+      const y = e.clientY - rect.top;
+      newRatio = (y / rect.height) * 100;
+    }
+    const clamped = Math.max(20, Math.min(80, Math.round(newRatio)));
+
+    if (rAFSplitRef.current) cancelAnimationFrame(rAFSplitRef.current);
+    rAFSplitRef.current = requestAnimationFrame(() => {
+      setSplitRatio(clamped);
+    });
+  };
+
+  const handleSplitPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingSplitRef.current) return;
+    isDraggingSplitRef.current = false;
+    document.body.style.userSelect = '';
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+    try {
+      localStorage.setItem('obsidian.layout.splitRatio', String(splitRatio));
+    } catch {}
+  };
+
+  const handleSplitDoubleClick = () => {
+    setSplitRatio(50);
+    try {
+      localStorage.setItem('obsidian.layout.splitRatio', '50');
+    } catch {}
+  };
+
   const [isViewer, setIsViewer] = useState(userRole === 'viewer');
 
   useEffect(() => {
@@ -224,7 +284,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
 
       {/* Main Monaco Container */}
       <div
-        className={`flex-1 relative ${
+        ref={containerRef}
+        className={`flex-1 relative overflow-hidden ${
           splitMode === 'vertical'
             ? 'flex flex-row'
             : splitMode === 'horizontal'
@@ -234,7 +295,16 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       >
         {activeFile ? (
           <>
-            <div className="flex-1 relative h-full">
+            <div
+              style={
+                splitMode !== 'single'
+                  ? splitMode === 'vertical'
+                    ? { flexBasis: `${splitRatio}%`, width: `${splitRatio}%` }
+                    : { flexBasis: `${splitRatio}%`, height: `${splitRatio}%` }
+                  : undefined
+              }
+              className={`${splitMode === 'single' ? 'flex-1' : ''} relative h-full overflow-hidden`}
+            >
               <Editor
                 height="100%"
                 language={activeFile.language || 'javascript'}
@@ -259,9 +329,33 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               />
             </div>
 
+            {/* Draggable Divider Between Split Panes */}
+            {splitMode !== 'single' && (
+              <div
+                onPointerDown={handleSplitPointerDown}
+                onPointerMove={handleSplitPointerMove}
+                onPointerUp={handleSplitPointerUp}
+                onPointerCancel={handleSplitPointerUp}
+                onDoubleClick={handleSplitDoubleClick}
+                title="Drag to adjust split ratio (double-click to reset 50/50)"
+                className={`${
+                  splitMode === 'vertical'
+                    ? 'w-1 h-full cursor-col-resize hover:bg-blue-500/70 border-x border-white/5'
+                    : 'h-1 w-full cursor-row-resize hover:bg-blue-500/70 border-y border-white/5'
+                } bg-slate-900 transition flex-shrink-0 z-20 group relative`}
+              />
+            )}
+
             {/* Split Pane Mirror */}
             {splitMode !== 'single' && (
-              <div className="flex-1 relative h-full border-l border-white/10">
+              <div
+                style={
+                  splitMode === 'vertical'
+                    ? { flexBasis: `${100 - splitRatio}%`, width: `${100 - splitRatio}%` }
+                    : { flexBasis: `${100 - splitRatio}%`, height: `${100 - splitRatio}%` }
+                }
+                className="relative h-full overflow-hidden"
+              >
                 <Editor
                   height="100%"
                   language={activeFile.language || 'javascript'}
@@ -273,6 +367,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     fontFamily: 'JetBrains Mono, Fira Code, monospace',
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
+                    automaticLayout: true,
                   }}
                 />
               </div>

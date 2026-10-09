@@ -12,9 +12,10 @@ import { config } from './config';
 interface MemUser {
   _id: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
   name: string;
   avatar?: string;
+  githubId?: string;
   createdAt: Date;
 }
 
@@ -124,6 +125,58 @@ export const dbStore = {
     };
     mem.users.set(user._id, user);
     return user;
+  },
+
+  async findUserByGithubId(githubId: string) {
+    if (isMongoOnline()) {
+      return User.findOne({ githubId });
+    }
+    for (const u of mem.users.values()) {
+      if (u.githubId === githubId) return u;
+    }
+    return null;
+  },
+
+  async upsertGithubUser(data: { githubId: string; email: string; name: string; avatar?: string }) {
+    // 1. Existing user with this githubId
+    let user = await this.findUserByGithubId(data.githubId);
+    if (user) {
+      return user;
+    }
+
+    // 2. Existing user with matching email: link githubId
+    user = await this.findUserByEmail(data.email);
+    if (user) {
+      if (isMongoOnline()) {
+        return User.findByIdAndUpdate(user._id, { githubId: data.githubId }, { new: true });
+      }
+      const memUser = mem.users.get(user._id);
+      if (memUser) {
+        memUser.githubId = data.githubId;
+      }
+      return user;
+    }
+
+    // 3. Brand new OAuth user
+    if (isMongoOnline()) {
+      return User.create({
+        email: data.email.toLowerCase(),
+        name: data.name,
+        avatar: data.avatar,
+        githubId: data.githubId,
+      });
+    }
+
+    const newUser: MemUser = {
+      _id: genId(),
+      email: data.email.toLowerCase(),
+      name: data.name,
+      avatar: data.avatar,
+      githubId: data.githubId,
+      createdAt: new Date(),
+    };
+    mem.users.set(newUser._id, newUser);
+    return newUser;
   },
 
   // Projects

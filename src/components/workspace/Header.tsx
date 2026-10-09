@@ -11,6 +11,7 @@ import {
   Play,
   RotateCw,
   FolderOpen,
+  RotateCcw,
 } from 'lucide-react';
 import { Project, ProjectRole, TransportMode, CollaboratorPresence, User } from '../../lib/types';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
@@ -34,7 +35,6 @@ interface HeaderProps {
   onOpenHistory: () => void;
   onOpenSearch: () => void;
   onExportZip: () => void;
-  onRoleSwitchSimulated: (role: ProjectRole) => void;
   onRunCode: () => void;
   isRunningCode: boolean;
   onLogout: () => void;
@@ -58,7 +58,6 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHistory,
   onOpenSearch,
   onExportZip,
-  onRoleSwitchSimulated,
   onRunCode,
   isRunningCode,
   onLogout,
@@ -67,7 +66,6 @@ export const Header: React.FC<HeaderProps> = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [projectName, setProjectName] = useState(project.name);
   const [showTransportMenu, setShowTransportMenu] = useState(false);
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleNameSubmit = () => {
@@ -238,38 +236,9 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Dev Role Switcher Simulation */}
-        <div className="relative">
-          <button
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-            title="Dev Role Switcher (Simulate Owner / Editor / Viewer)"
-            className="px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[10px] font-mono hover:bg-amber-500/20 transition flex items-center gap-1"
-          >
-            <span>Role: {userRole}</span>
-            <ChevronDown className="w-2.5 h-2.5" />
-          </button>
-
-          {showRoleMenu && (
-            <div className="absolute right-0 top-full mt-1 w-40 rounded-lg bg-slate-900 border border-white/10 shadow-xl py-1 z-50 text-xs">
-              <div className="px-3 py-1 text-[10px] text-slate-500 font-semibold uppercase">
-                Dev Role Simulator
-              </div>
-              {(['owner', 'editor', 'viewer'] as ProjectRole[]).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => {
-                    onRoleSwitchSimulated(r);
-                    setShowRoleMenu(false);
-                  }}
-                  className={`w-full text-left px-3 py-1.5 hover:bg-white/5 transition ${
-                    userRole === r ? 'text-amber-400 font-semibold' : 'text-slate-300'
-                  }`}
-                >
-                  {r.charAt(0).toUpperCase() + r.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
+        {/* User Role Badge */}
+        <div className="px-2 py-0.5 rounded border border-white/10 bg-slate-800/60 text-slate-300 text-[10px] font-mono capitalize select-none">
+          {userRole}
         </div>
 
         {/* Audio Mute/Unmute */}
@@ -322,6 +291,23 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
                 <span>Projects Dashboard</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowUserMenu(false);
+                  try {
+                    Object.keys(localStorage).forEach((key) => {
+                      if (key.startsWith('obsidian.layout.')) {
+                        localStorage.removeItem(key);
+                      }
+                    });
+                  } catch {}
+                  window.location.reload();
+                }}
+                className="w-full text-left px-3 py-2 text-slate-300 hover:bg-white/5 flex items-center gap-2 border-b border-white/5"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <span>Reset Layout</span>
               </button>
               <button
                 onClick={() => {

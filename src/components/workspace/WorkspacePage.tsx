@@ -24,6 +24,7 @@ import { analyzeCode } from '../../lib/diagnostics/codeDiagnostics';
 import { exportWorkspaceAsZip } from '../../lib/exportWorkspace';
 import { sound } from '../../lib/audio/soundEngine';
 import { notify } from '../../lib/notifications';
+import { detectLanguage } from '../../lib/language';
 
 interface WorkspacePageProps {
   projectId: string;
@@ -129,28 +130,68 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         setActiveContent(firstFile.content || '');
       }
 
-      // Simulate simulated collaborators for multiplayer experience
-      const simulatedCollabs: CollaboratorPresence[] = [
-        {
-          id: 'collab-1',
-          name: 'Sarah Chen',
-          color: COLLAB_COLORS[0],
-          role: 'editor',
-          cursor: { line: 4, column: 12 },
-        },
-        {
-          id: 'collab-2',
-          name: 'Alex Rivera',
-          color: COLLAB_COLORS[1],
-          role: 'viewer',
-          cursor: { line: 8, column: 2 },
-        },
-      ];
-      setCollaborators(simulatedCollabs);
+
     } catch (err: any) {
       notify.error('Failed to load workspace', err.message);
     }
   };
+
+  // Subscribe to real Yjs awareness presence for the active file
+  useEffect(() => {
+    if (!activeFileId || !projectId) {
+      setCollaborators([]);
+      return;
+    }
+
+    let unsubscribe: (() => void) | undefined;
+    let isCancelled = false;
+
+    const initAwareness = async () => {
+      try {
+        const file = files.find((f) => f._id === activeFileId);
+        await docManager.getOrCreateSession(
+          projectId,
+          activeFileId,
+          file?.content || '',
+          undefined,
+          project?.isPublic ?? false
+        );
+
+        if (isCancelled) return;
+
+        let hash = 0;
+        const uid = currentUser._id;
+        for (let i = 0; i < uid.length; i++) {
+          hash = (hash << 5) - hash + uid.charCodeAt(i);
+          hash |= 0;
+        }
+        const userColor = COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];
+
+        docManager.setLocalAwareness(projectId, activeFileId, {
+          id: currentUser._id,
+          name: currentUser.name,
+          color: userColor,
+          role: userRole,
+          avatar: currentUser.avatar,
+        });
+
+        unsubscribe = docManager.subscribeAwareness(projectId, activeFileId, (collabs) => {
+          if (!isCancelled) {
+            setCollaborators(collabs);
+          }
+        });
+      } catch (err) {
+        console.warn('Real awareness initialization notice:', err);
+      }
+    };
+
+    initAwareness();
+
+    return () => {
+      isCancelled = true;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [activeFileId, projectId, currentUser._id, currentUser.name, userRole, project?.isPublic]);
 
   // Run diagnostics when active content or active file changes
   useEffect(() => {
@@ -246,6 +287,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   // Follow Mode Toggle
   const handleToggleFollow = (userId: string) => {
+    if (userId === currentUser._id) return;
     if (followingUserId === userId) {
       setFollowingUserId(null);
       notify.followMode(false);
@@ -265,16 +307,17 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     notify.info(isMuted ? 'Audio muted' : 'Audio unmuted');
   };
 
-  // Execute Code Sandbox
+  // Execute Code Sandbox (Multi-language)
   const handleRunCode = async () => {
     if (!activeFileId) return;
     const file = files.find((f) => f._id === activeFileId);
     if (!file) return;
 
+    const lang = detectLanguage(file.name);
     setIsRunningCode(true);
     notify.executionStarted();
     try {
-      const result = await api.executeCode(activeContent, file.language || 'javascript');
+      const result = await api.executeCode(activeContent, lang, file.name);
       setExecutionResult(result);
       setIsBottomOpen(true);
       setBottomTab('OUTPUT');
@@ -294,16 +337,50 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     }
   };
 
-  // Terminal Command Execution
-  const handleRunTerminalCommand = async (command: string) => {
-    try {
-      const result = await api.executeCode(command, 'javascript');
-      setExecutionResult(result);
-      if (result.error) sound.executionFailed();
-      else sound.executionSuccess();
-    } catch (err: any) {
-      notify.error('Command Execution Failed', err.message);
+  // Terminal Command Execution (Multi-language Command Console)
+  const handleRunTerminalCommand = async (command: string): Promise<ExecutionResult | null> => {
+    const parts = command.trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase();
+    const arg = parts.slice(1).join(' ').trim();
+
+    let targetFile: ProjectFile | undefined;
+    let targetLang = 'javascript';
+
+    if (cmd === 'run') {
+      if (arg) {
+        targetFile = files.find((f) => f.name.toLowerCase() === arg.toLowerCase() || f.path.toLowerCase() === arg.toLowerCase());
+        if (!targetFile) {
+          throw new Error(`File '${arg}' not found in workspace.`);
+        }
+      } else {
+        targetFile = files.find((f) => f._id === activeFileId);
+        if (!targetFile) {
+          throw new Error('No active file to run.');
+        }
+      }
+      targetLang = detectLanguage(targetFile.name);
+    } else {
+      // <lang> <file>
+      targetLang = cmd === 'node' || cmd === 'js' ? 'javascript' : (cmd === 'py' ? 'python' : cmd);
+      if (arg) {
+        targetFile = files.find((f) => f.name.toLowerCase() === arg.toLowerCase() || f.path.toLowerCase() === arg.toLowerCase());
+        if (!targetFile) {
+          throw new Error(`File '${arg}' not found in workspace.`);
+        }
+      } else {
+        targetFile = files.find((f) => f._id === activeFileId);
+        if (!targetFile) {
+          throw new Error('No file specified.');
+        }
+      }
     }
+
+    const codeToRun = targetFile._id === activeFileId ? activeContent : (targetFile.content || '');
+    const result = await api.executeCode(codeToRun, targetLang, targetFile.name);
+    setExecutionResult(result);
+    if (result.error) sound.executionFailed();
+    else sound.executionSuccess();
+    return result;
   };
 
   // Checkpoint Creation (Ctrl+S or Manual)
@@ -413,11 +490,6 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenSearch={() => setIsSearchOpen(true)}
         onExportZip={handleExportZip}
-        onRoleSwitchSimulated={(simRole) => {
-          setUserRole(simRole);
-          notify.roleChanged(simRole);
-          sound.roleChanged();
-        }}
         onRunCode={handleRunCode}
         isRunningCode={isRunningCode}
         onLogout={onLogout}
@@ -452,6 +524,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
             onCursorChange={(line, col) => {
               setCursorLine(line);
               setCursorColumn(col);
+              if (activeFileId) {
+                docManager.updateCursorAwareness(projectId, activeFileId, { line, column: col });
+              }
             }}
             onContentChange={setActiveContent}
             onCreateCheckpoint={handleCreateNamedCheckpoint}
@@ -476,6 +551,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
               notify.info('Refreshed sandboxed preview');
             }}
             onRunTerminalCommand={handleRunTerminalCommand}
+            activeLanguage={activeFile ? detectLanguage(activeFile.name) : 'javascript'}
+            activeFileName={activeFile?.name}
           />
         </div>
       </div>

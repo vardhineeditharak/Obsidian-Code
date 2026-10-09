@@ -102,6 +102,9 @@ export interface ExecutionResult {
   stdout: string[];
   stderr: string[];
   error?: string;
+  exitCode: number | null;
+  language: string;
+  command?: string;
   executionTimeMs: number;
   timestamp: string;
 }

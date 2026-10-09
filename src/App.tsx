@@ -20,8 +20,15 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // Check initial authentication
-    const savedToken = localStorage.getItem('obsidian_token');
+    // Check initial authentication or OAuth callback redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryToken = urlParams.get('token');
+    if (queryToken) {
+      localStorage.setItem('obsidian_token', queryToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    const savedToken = queryToken || localStorage.getItem('obsidian_token');
     if (savedToken) {
       setToken(savedToken);
       api
