@@ -3,6 +3,10 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { dbStore } from '../dbStore';
 
+export function param(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
+}
+
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
@@ -36,7 +40,7 @@ export function requireProjectRole(allowedRoles: ('owner' | 'editor' | 'viewer')
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const projectId = req.params.projectId || req.body.projectId;
+    const projectId = param(req.params.projectId) || (typeof req.body?.projectId === 'string' ? req.body.projectId : '');
     if (!projectId) {
       return res.status(400).json({ message: 'Missing projectId' });
     }

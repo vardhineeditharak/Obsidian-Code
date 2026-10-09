@@ -55,6 +55,7 @@ interface MemInvitation {
   token: string;
   role: 'owner' | 'editor' | 'viewer';
   expiresAt: Date;
+  consumedAt?: Date;
   createdBy: string;
   createdAt: Date;
 }
@@ -217,16 +218,28 @@ export const dbStore = {
   },
 
   async addMember(projectId: string, userId: string, role: 'owner' | 'editor' | 'viewer') {
+    const roleRanks: Record<'owner' | 'editor' | 'viewer', number> = {
+      owner: 3,
+      editor: 2,
+      viewer: 1,
+    };
     if (isMongoOnline()) {
+      const existing = await ProjectMember.findOne({ projectId, userId });
+      let finalRole = role;
+      if (existing && roleRanks[existing.role as 'owner' | 'editor' | 'viewer'] > roleRanks[role]) {
+        finalRole = existing.role as 'owner' | 'editor' | 'viewer';
+      }
       return ProjectMember.findOneAndUpdate(
         { projectId, userId },
-        { role },
+        { role: finalRole },
         { upsert: true, new: true }
       );
     }
     for (const m of mem.members.values()) {
       if (m.projectId === projectId && m.userId === userId) {
-        m.role = role;
+        if (roleRanks[m.role] < roleRanks[role]) {
+          m.role = role;
+        }
         return m;
       }
     }
@@ -283,6 +296,13 @@ export const dbStore = {
       if (a.isFolder === b.isFolder) return a.name.localeCompare(b.name);
       return a.isFolder ? -1 : 1;
     });
+  },
+
+  async getFileById(id: string) {
+    if (isMongoOnline()) {
+      return ProjectFile.findById(id);
+    }
+    return mem.files.get(id) || null;
   },
 
   async createFile(data: {
@@ -357,6 +377,17 @@ export const dbStore = {
     return mem.invitations.get(token) || null;
   },
 
+  async consumeInvitation(token: string) {
+    if (isMongoOnline()) {
+      return Invitation.findOneAndUpdate({ token }, { consumedAt: new Date() }, { new: true });
+    }
+    const inv = mem.invitations.get(token);
+    if (inv) {
+      inv.consumedAt = new Date();
+    }
+    return inv || null;
+  },
+
   // Versions / Checkpoints
   async getVersions(projectId: string) {
     if (isMongoOnline()) {
@@ -391,5 +422,24 @@ export const dbStore = {
       return Version.findById(id);
     }
     return mem.versions.get(id) || null;
+  },
+
+  async saveDocSnapshot(projectId: string, fileId: string, yjsState: Buffer) {
+    if (isMongoOnline()) {
+      return DocSnapshot.findOneAndUpdate(
+        { projectId, fileId },
+        { yjsState, updatedAt: new Date() },
+        { upsert: true, new: true }
+      );
+    }
+    mem.snapshots.set(`${projectId}:${fileId}`, yjsState);
+  },
+
+  async getDocSnapshot(projectId: string, fileId: string): Promise<Buffer | null> {
+    if (isMongoOnline()) {
+      const snap = await DocSnapshot.findOne({ projectId, fileId });
+      return snap ? snap.yjsState : null;
+    }
+    return mem.snapshots.get(`${projectId}:${fileId}`) || null;
   },
 };

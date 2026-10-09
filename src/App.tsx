@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AuthPage } from './components/auth/AuthPage';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { WorkspacePage } from './components/workspace/WorkspacePage';
@@ -8,10 +8,16 @@ import { notify } from './lib/notifications';
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const currentUserRef = useRef<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<'auth' | 'dashboard' | 'workspace'>('auth');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const updateUser = (u: User | null) => {
+    currentUserRef.current = u;
+    setCurrentUser(u);
+  };
 
   useEffect(() => {
     // Check initial authentication
@@ -21,7 +27,7 @@ export const App: React.FC = () => {
       api
         .getMe()
         .then((user) => {
-          setCurrentUser(user);
+          updateUser(user);
           // Check URL for project routing: /workspace/:id
           const path = window.location.pathname;
           const match = path.match(/\/workspace\/([a-zA-Z0-9_-]+)/);
@@ -34,6 +40,7 @@ export const App: React.FC = () => {
         })
         .catch(() => {
           localStorage.removeItem('obsidian_token');
+          updateUser(null);
           setCurrentRoute('auth');
         })
         .finally(() => setLoading(false));
@@ -42,14 +49,14 @@ export const App: React.FC = () => {
       setCurrentRoute('auth');
     }
 
-    // Handle browser popstate
+    // Handle browser popstate with ref to avoid stale closure
     const handlePopState = () => {
       const path = window.location.pathname;
       const match = path.match(/\/workspace\/([a-zA-Z0-9_-]+)/);
       if (match) {
         setActiveProjectId(match[1]);
         setCurrentRoute('workspace');
-      } else if (currentUser) {
+      } else if (currentUserRef.current) {
         setCurrentRoute('dashboard');
       }
     };
@@ -58,7 +65,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleAuthSuccess = (user: User, userToken: string) => {
-    setCurrentUser(user);
+    updateUser(user);
     setToken(userToken);
     setCurrentRoute('dashboard');
     window.history.pushState({}, '', '/dashboard');
@@ -78,7 +85,7 @@ export const App: React.FC = () => {
 
   const handleLogout = async () => {
     await api.logout();
-    setCurrentUser(null);
+    updateUser(null);
     setToken(null);
     setActiveProjectId(null);
     setCurrentRoute('auth');

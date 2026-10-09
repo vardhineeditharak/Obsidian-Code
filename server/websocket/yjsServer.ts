@@ -29,6 +29,9 @@ export interface Room {
   doc: Y.Doc;
   awareness: awarenessProtocol.Awareness;
   clients: Set<ClientConnection>;
+  awarenessHandler: (...args: any[]) => void;
+  docUpdateHandler: (...args: any[]) => void;
+  snapshotTimeout: NodeJS.Timeout | null;
 }
 
 export class YjsWebSocketServer {
@@ -58,39 +61,49 @@ export class YjsWebSocketServer {
     try {
       const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
       const token = url.searchParams.get('token') || '';
-      const roomName = url.pathname.replace(/^\/ws\/?/, '') || url.searchParams.get('room') || 'default';
+      const roomName = url.pathname.replace(/^\/ws\/?/, '') || url.searchParams.get('room') || '';
 
       // Parse roomName format: obsidian-project-<projectId>-file-<fileId>
-      const match = roomName.match(/obsidian-project-([^-]+)-file-(.+)/);
-      const projectId = match ? match[1] : '';
-      const fileId = match ? match[2] : '';
+      const match = roomName.match(/^obsidian-project-([^-]+)-file-(.+)$/);
+      if (!match) {
+        socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+        socket.destroy();
+        return;
+      }
 
-      let userId = 'anonymous';
-      let userName = 'Anonymous User';
+      const projectId = match[1];
+      const fileId = match[2];
+
+      if (!token) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      let userId: string;
+      let userName: string;
+      try {
+        const decoded = jwt.verify(token, config.JWT_SECRET) as any;
+        userId = decoded.userId;
+        userName = decoded.name || 'Collaborator';
+      } catch {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
       let role: 'owner' | 'editor' | 'viewer' = 'viewer';
-
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, config.JWT_SECRET) as any;
-          userId = decoded.userId;
-          userName = decoded.name || 'Collaborator';
-          if (projectId) {
-            const memberRole = await dbStore.getMemberRole(projectId, userId);
-            if (memberRole) {
-              role = memberRole;
-            } else {
-              const project = await dbStore.findProjectById(projectId);
-              if (project?.isPublic) {
-                role = 'viewer';
-              } else {
-                socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
-                socket.destroy();
-                return;
-              }
-            }
-          }
-        } catch {
-          // Token invalid
+      const memberRole = await dbStore.getMemberRole(projectId, userId);
+      if (memberRole) {
+        role = memberRole;
+      } else {
+        const project = await dbStore.findProjectById(projectId);
+        if (project?.isPublic) {
+          role = 'viewer';
+        } else {
+          socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+          socket.destroy();
+          return;
         }
       }
 
@@ -110,18 +123,27 @@ export class YjsWebSocketServer {
     }
   }
 
-  private getOrCreateRoom(roomName: string, projectId: string, fileId: string): Room {
+  private async getOrCreateRoom(roomName: string, projectId: string, fileId: string): Promise<Room> {
     let room = this.rooms.get(roomName);
     if (!room) {
       const doc = new Y.Doc();
+
+      // S8: Hydrate room doc from latest persistent snapshot
+      try {
+        const snap = await dbStore.getDocSnapshot(projectId, fileId);
+        if (snap && snap.length > 0) {
+          Y.applyUpdate(doc, new Uint8Array(snap));
+        }
+      } catch (err) {
+        console.warn('Could not hydrate doc snapshot:', err);
+      }
+
       const awareness = new awarenessProtocol.Awareness(doc);
       awareness.setLocalState(null);
 
       const clients = new Set<ClientConnection>();
-      room = { name: roomName, projectId, fileId, doc, awareness, clients };
 
-      // Relay awareness changes to all connected room clients
-      awareness.on('update', ({ added, updated, removed }: any, origin: any) => {
+      const awarenessHandler = ({ added, updated, removed }: any, origin: any) => {
         const changedClients = added.concat(updated, removed);
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, messageAwareness);
@@ -136,16 +158,45 @@ export class YjsWebSocketServer {
             client.ws.send(message);
           }
         }
-      });
+      };
+
+      awareness.on('update', awarenessHandler);
+
+      let snapshotTimeout: NodeJS.Timeout | null = null;
+      const docUpdateHandler = () => {
+        if (snapshotTimeout) clearTimeout(snapshotTimeout);
+        snapshotTimeout = setTimeout(async () => {
+          try {
+            const state = Buffer.from(Y.encodeStateAsUpdate(doc));
+            await dbStore.saveDocSnapshot(projectId, fileId, state);
+          } catch (err) {
+            console.error('Failed to save debounced snapshot:', err);
+          }
+        }, 5000);
+      };
+
+      doc.on('update', docUpdateHandler);
+
+      room = {
+        name: roomName,
+        projectId,
+        fileId,
+        doc,
+        awareness,
+        clients,
+        awarenessHandler,
+        docUpdateHandler,
+        snapshotTimeout,
+      };
 
       this.rooms.set(roomName, room);
     }
     return room;
   }
 
-  private handleConnection(ws: WebSocket, req: IncomingMessage, clientInfo: any) {
+  private async handleConnection(ws: WebSocket, req: IncomingMessage, clientInfo: any) {
     const { userId, userName, role, roomName, projectId, fileId } = clientInfo;
-    const room = this.getOrCreateRoom(roomName, projectId, fileId);
+    const room = await this.getOrCreateRoom(roomName, projectId, fileId);
 
     const client: ClientConnection = {
       ws,
@@ -228,10 +279,26 @@ export class YjsWebSocketServer {
       }
     });
 
-    ws.on('close', () => {
+    ws.on('close', async () => {
       room.clients.delete(client);
+      // S8: Clean up room lifecycle and flush snapshots when empty
       if (room.clients.size === 0) {
-        // Optional: keep room in cache or snapshot
+        if (room.snapshotTimeout) {
+          clearTimeout(room.snapshotTimeout);
+          room.snapshotTimeout = null;
+        }
+        try {
+          const state = Buffer.from(Y.encodeStateAsUpdate(room.doc));
+          await dbStore.saveDocSnapshot(room.projectId, room.fileId, state);
+        } catch (err) {
+          console.error('Failed to save final snapshot on room close:', err);
+        }
+
+        room.awareness.off('update', room.awarenessHandler);
+        room.doc.off('update', room.docUpdateHandler);
+        room.awareness.destroy();
+        room.doc.destroy();
+        this.rooms.delete(roomName);
       }
     });
   }

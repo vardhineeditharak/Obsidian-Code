@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { dbStore } from '../dbStore';
-import { authenticateJWT, requireProjectRole, AuthRequest } from '../middleware/auth';
+import { authenticateJWT, requireProjectRole, AuthRequest, param } from '../middleware/auth';
 
 const router = Router();
 
@@ -21,7 +21,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   const result = createProjectSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({ message: 'Validation failed', errors: result.error.errors });
+    return res.status(400).json({ message: 'Validation failed', errors: result.error.issues });
   }
 
   const { name, description, template } = result.data;
@@ -161,12 +161,12 @@ Start editing files, collaborate in real time, and share your project.
 
 // Get project details + user's role + members
 router.get('/:projectId', authenticateJWT, requireProjectRole(['owner', 'editor', 'viewer']), async (req: AuthRequest, res: Response) => {
-  const project = await dbStore.findProjectById(req.params.projectId);
+  const project = await dbStore.findProjectById(param(req.params.projectId));
   if (!project) {
     return res.status(404).json({ message: 'Project not found' });
   }
 
-  const members = await dbStore.getProjectMembers(req.params.projectId);
+  const members = await dbStore.getProjectMembers(param(req.params.projectId));
 
   return res.json({
     project: {
@@ -180,13 +180,13 @@ router.get('/:projectId', authenticateJWT, requireProjectRole(['owner', 'editor'
 // Update project (Owner only)
 router.patch('/:projectId', authenticateJWT, requireProjectRole(['owner']), async (req: AuthRequest, res: Response) => {
   const { name, description, isPublic } = req.body;
-  const updated = await dbStore.updateProject(req.params.projectId, { name, description, isPublic });
+  const updated = await dbStore.updateProject(param(req.params.projectId), { name, description, isPublic });
   return res.json(updated);
 });
 
 // Delete project (Owner only)
 router.delete('/:projectId', authenticateJWT, requireProjectRole(['owner']), async (req: AuthRequest, res: Response) => {
-  await dbStore.deleteProject(req.params.projectId);
+  await dbStore.deleteProject(param(req.params.projectId));
   return res.json({ message: 'Project deleted successfully' });
 });
 

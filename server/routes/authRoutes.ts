@@ -23,7 +23,7 @@ const loginSchema = z.object({
 router.post('/register', async (req: Request, res: Response) => {
   const result = registerSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({ message: 'Validation failed', errors: result.error.errors });
+    return res.status(400).json({ message: 'Validation failed', errors: result.error.issues });
   }
 
   const { email, password, name } = result.data;
@@ -71,7 +71,7 @@ router.post('/register', async (req: Request, res: Response) => {
 router.post('/login', async (req: Request, res: Response) => {
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({ message: 'Validation failed', errors: result.error.errors });
+    return res.status(400).json({ message: 'Validation failed', errors: result.error.issues });
   }
 
   const { email, password } = result.data;

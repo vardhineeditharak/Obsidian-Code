@@ -17,6 +17,16 @@ export default defineConfig({
   build: {
     outDir: 'dist/client',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('monaco-editor')) {
+            return 'monaco-vendor';
+          }
+        },
+      },
+    },
   },
   server: {
     port: 3000,

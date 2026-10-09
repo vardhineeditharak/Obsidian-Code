@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { dbStore } from '../dbStore';
 import { config } from '../config';
-import { authenticateJWT, requireProjectRole, AuthRequest } from '../middleware/auth';
+import { authenticateJWT, requireProjectRole, AuthRequest, param } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,15 +16,16 @@ router.post('/projects/:projectId/invitations', authenticateJWT, requireProjectR
 
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: 'Validation failed', errors: parsed.error.errors });
+    return res.status(400).json({ message: 'Validation failed', errors: parsed.error.issues });
   }
 
   const { role, expiresInDays } = parsed.data;
   const token = crypto.randomBytes(24).toString('hex');
   const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+  const projectId = param(req.params.projectId);
 
   await dbStore.createInvitation(
-    req.params.projectId,
+    projectId,
     token,
     role,
     req.user!.userId,
@@ -35,18 +36,26 @@ router.post('/projects/:projectId/invitations', authenticateJWT, requireProjectR
   return res.status(201).json({ token, inviteUrl });
 });
 
-// Accept invitation
+// Accept invitation (Single-use & role downgrade safe)
 router.post('/invitations/:token/accept', authenticateJWT, async (req: AuthRequest, res: Response) => {
-  const inv = await dbStore.findInvitationByToken(req.params.token);
+  const token = param(req.params.token);
+  const inv = await dbStore.findInvitationByToken(token);
   if (!inv) {
     return res.status(404).json({ message: 'Invitation not found or invalid' });
+  }
+
+  if (inv.consumedAt) {
+    return res.status(410).json({ message: 'Invitation has already been used' });
   }
 
   if (new Date(inv.expiresAt).getTime() < Date.now()) {
     return res.status(410).json({ message: 'Invitation link has expired' });
   }
 
-  // Add user to project members
+  // Consume invitation
+  await dbStore.consumeInvitation(token);
+
+  // Add user to project members (safe against role downgrade)
   await dbStore.addMember(inv.projectId.toString(), req.user!.userId, inv.role);
 
   return res.json({

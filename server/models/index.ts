@@ -90,6 +90,7 @@ export interface IInvitation extends Document {
   token: string;
   role: 'owner' | 'editor' | 'viewer';
   expiresAt: Date;
+  consumedAt?: Date;
   createdBy: mongoose.Types.ObjectId;
   createdAt: Date;
 }
@@ -99,6 +100,7 @@ const InvitationSchema = new Schema<IInvitation>({
   token: { type: String, required: true, unique: true, index: true },
   role: { type: String, enum: ['owner', 'editor', 'viewer'], default: 'editor' },
   expiresAt: { type: Date, required: true },
+  consumedAt: { type: Date, default: null },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
 });

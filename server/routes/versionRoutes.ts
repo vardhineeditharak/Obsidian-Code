@@ -1,13 +1,13 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { dbStore } from '../dbStore';
-import { authenticateJWT, requireProjectRole, AuthRequest } from '../middleware/auth';
+import { authenticateJWT, requireProjectRole, AuthRequest, param } from '../middleware/auth';
 
 const router = Router();
 
 // List checkpoints
 router.get('/projects/:projectId/versions', authenticateJWT, requireProjectRole(['owner', 'editor', 'viewer']), async (req: AuthRequest, res: Response) => {
-  const versions = await dbStore.getVersions(req.params.projectId);
+  const versions = await dbStore.getVersions(param(req.params.projectId));
   return res.json(versions);
 });
 
@@ -27,15 +27,16 @@ router.post('/projects/:projectId/versions', authenticateJWT, requireProjectRole
 
   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: 'Validation failed', errors: parsed.error.errors });
+    return res.status(400).json({ message: 'Validation failed', errors: parsed.error.issues });
   }
 
   const { name, note, files } = parsed.data;
+  const projectId = param(req.params.projectId);
 
   // If client didn't supply full files map, pull current project files from store
   let snapshotFiles = files;
   if (!snapshotFiles || snapshotFiles.length === 0) {
-    const currentFiles = await dbStore.getProjectFiles(req.params.projectId);
+    const currentFiles = await dbStore.getProjectFiles(projectId);
     snapshotFiles = currentFiles
       .filter((f) => !f.isFolder)
       .map((f) => ({
@@ -46,7 +47,7 @@ router.post('/projects/:projectId/versions', authenticateJWT, requireProjectRole
   }
 
   const version = await dbStore.createVersion(
-    req.params.projectId,
+    projectId,
     name,
     note || '',
     { userId: req.user!.userId, name: req.user!.name },
@@ -56,11 +57,17 @@ router.post('/projects/:projectId/versions', authenticateJWT, requireProjectRole
   return res.status(201).json(version);
 });
 
-// Restore checkpoint
+// Restore checkpoint (S3 IDOR protection: Owner & Editor only)
 router.post('/versions/:versionId/restore', authenticateJWT, async (req: AuthRequest, res: Response) => {
-  const version = await dbStore.findVersionById(req.params.versionId);
+  const versionId = param(req.params.versionId);
+  const version = await dbStore.findVersionById(versionId);
   if (!version) {
     return res.status(404).json({ message: 'Version checkpoint not found' });
+  }
+
+  const role = await dbStore.getMemberRole(version.projectId.toString(), req.user!.userId);
+  if (!role || (role !== 'owner' && role !== 'editor')) {
+    return res.status(403).json({ message: 'Permission denied. Role is not permitted to restore versions.' });
   }
 
   // Restore file contents in store

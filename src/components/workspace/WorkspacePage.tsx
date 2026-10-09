@@ -455,6 +455,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
             }}
             onContentChange={setActiveContent}
             onCreateCheckpoint={handleCreateNamedCheckpoint}
+            isPublic={project.isPublic ?? false}
           />
 
           <BottomPanel

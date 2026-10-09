@@ -22,6 +22,7 @@ interface EditorWorkspaceProps {
   onCursorChange: (line: number, column: number) => void;
   onContentChange: (content: string) => void;
   onCreateCheckpoint: () => void;
+  isPublic?: boolean;
 }
 
 export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
@@ -39,6 +40,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   onCursorChange,
   onContentChange,
   onCreateCheckpoint,
+  isPublic = false,
 }) => {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
@@ -127,7 +129,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       const session = await docManager.getOrCreateSession(
         projectId,
         file._id,
-        file.content || ''
+        file.content || '',
+        undefined,
+        isPublic
       );
 
       const color = '#3B82F6';

@@ -185,12 +185,12 @@ export const api = {
     return handleResponse<{ token: string; inviteUrl: string }>(res);
   },
 
-  async acceptInvitation(token: string): Promise<{ projectId: string; role: ProjectRole }> {
+  async acceptInvitation(token: string): Promise<{ projectId: string; role: ProjectRole; message: string }> {
     const res = await fetch(`${BASE_URL}/invitations/${token}/accept`, {
       method: 'POST',
       headers: getAuthHeaders(),
     });
-    return handleResponse<{ projectId: string; role: ProjectRole }>(res);
+    return handleResponse<{ projectId: string; role: ProjectRole; message: string }>(res);
   },
 
   // Sandbox Code Execution

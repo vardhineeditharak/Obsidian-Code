@@ -37,7 +37,8 @@ class YjsDocManager {
     projectId: string,
     fileId: string,
     initialContent: string = '',
-    onSyncStatusChange?: (synced: boolean) => void
+    onSyncStatusChange?: (synced: boolean) => void,
+    allowP2P: boolean = false
   ): Promise<DocSession> {
     const roomKey = `obsidian-project-${projectId}-file-${fileId}`;
 
@@ -97,14 +98,18 @@ class YjsDocManager {
       }
     }
 
-    // 3. Attach WebRTC P2P Mesh (if Hybrid or P2P Mesh Only)
+    // 3. Attach WebRTC P2P Mesh (if Hybrid or P2P Mesh Only) — only when allowP2P is true (S2)
     if (this.activeTransport === 'Hybrid' || this.activeTransport === 'P2P Mesh Only') {
-      try {
-        webrtcProvider = new WebrtcProvider(roomKey, doc, {
-          signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com'],
-        });
-      } catch (err) {
-        console.warn('WebRTC signaling initialization notice:', err);
+      if (allowP2P) {
+        try {
+          webrtcProvider = new WebrtcProvider(roomKey, doc, {
+            signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com'],
+          });
+        } catch (err) {
+          console.warn('WebRTC signaling initialization notice:', err);
+        }
+      } else {
+        console.warn(`[Security] WebRTC P2P skipped for private room ${roomKey}. P2P is allowed only for public projects.`);
       }
     }
 

@@ -23,11 +23,31 @@ const yjsServer = new YjsWebSocketServer(server);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+const allowedOrigins = new Set<string>();
+if (config.CLIENT_ORIGIN) {
+  try {
+    allowedOrigins.add(new URL(config.CLIENT_ORIGIN).origin);
+  } catch {
+    allowedOrigins.add(config.CLIENT_ORIGIN);
+  }
+}
+if (config.APP_URL) {
+  try {
+    allowedOrigins.add(new URL(config.APP_URL).origin);
+  } catch {
+    allowedOrigins.add(config.APP_URL);
+  }
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow local development and deployment origin
-      callback(null, true);
+      // Allow requests with no origin (like same-origin server requests, curl, or mobile apps)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.has(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS not allowed'));
     },
     credentials: true,
   })

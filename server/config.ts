@@ -3,11 +3,13 @@ import { z } from 'zod';
 
 dotenv.config();
 
+const DEV_JWT_PLACEHOLDER = 'obsidian-code-dev-jwt-super-secret-key-32chars!';
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('5000'),
   MONGODB_URI: z.string().default('mongodb://127.0.0.1:27017/obsidian-code'),
-  JWT_SECRET: z.string().default('obsidian-code-dev-jwt-super-secret-key-32chars!'),
+  JWT_SECRET: z.string().min(32),
   CLIENT_ORIGIN: z.string().default('http://localhost:3000'),
   APP_URL: z.string().default('http://localhost:5000'),
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -20,9 +22,27 @@ const envSchema = z.object({
   WEBRTC_TURN_CREDENTIAL: z.string().optional(),
 });
 
-const parsed = envSchema.safeParse(process.env);
-if (!parsed.success) {
-  console.error('Invalid environment variables:', parsed.error.format());
+const isProd = process.env.NODE_ENV === 'production';
+const rawJwtSecret = process.env.JWT_SECRET || (!isProd ? DEV_JWT_PLACEHOLDER : '');
+
+if (isProd) {
+  if (!rawJwtSecret || rawJwtSecret === DEV_JWT_PLACEHOLDER) {
+    console.error('CRITICAL: JWT_SECRET must be configured with a secure non-default secret in production.');
+    process.exit(1);
+  }
 }
 
-export const config = parsed.success ? parsed.data : envSchema.parse({});
+const envToParse = {
+  ...process.env,
+  JWT_SECRET: rawJwtSecret,
+};
+
+const parsed = envSchema.safeParse(envToParse);
+if (!parsed.success) {
+  console.error('Invalid environment variables:', parsed.error.issues);
+  if (isProd) process.exit(1);
+}
+
+export const config = parsed.success
+  ? parsed.data
+  : envSchema.parse({ JWT_SECRET: DEV_JWT_PLACEHOLDER });
