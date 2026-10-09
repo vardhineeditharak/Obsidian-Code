@@ -1,0 +1,128 @@
+import http from 'http';
+import path from 'path';
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import { config } from './config';
+import { connectDB, getDBStatus } from './db';
+import { authRoutes } from './routes/authRoutes';
+import { projectRoutes } from './routes/projectRoutes';
+import { fileRoutes } from './routes/fileRoutes';
+import { versionRoutes } from './routes/versionRoutes';
+import { invitationRoutes } from './routes/invitationRoutes';
+import { executeRoutes } from './routes/executeRoutes';
+import { YjsWebSocketServer } from './websocket/yjsServer';
+
+const app = express();
+const server = http.createServer(app);
+
+// Initialize Yjs WebSocket Server attached to HTTP server
+const yjsServer = new YjsWebSocketServer(server);
+
+// Middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow local development and deployment origin
+      callback(null, true);
+    },
+    credentials: true,
+  })
+);
+
+// Health Check Endpoint for Render & Uptime Monitors
+app.get('/healthz', (req, res) => {
+  const dbStatus = getDBStatus();
+  return res.json({
+    status: 'ok',
+    service: 'Obsidian Code',
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+  });
+});
+
+// REST API Endpoints
+app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api', fileRoutes);
+app.use('/api', versionRoutes);
+app.use('/api', invitationRoutes);
+app.use('/api/execute', executeRoutes);
+
+// Upgrade WebSocket connections on /ws or rooms
+server.on('upgrade', (request, socket, head) => {
+  const pathname = new URL(request.url || '', `http://${request.headers.host || 'localhost'}`).pathname;
+  if (pathname.startsWith('/ws') || pathname.startsWith('/obsidian-project-')) {
+    yjsServer.authenticateAndUpgrade(request, socket, head);
+  } else {
+    socket.destroy();
+  }
+});
+
+// Serve compiled static assets from Vite (in production)
+const clientDistPath = path.resolve(process.cwd(), 'dist/client');
+app.use(express.static(clientDistPath));
+
+// SPA Fallback: serve index.html for non-API/non-WS requests
+app.use((req, res) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  const indexPath = path.join(clientDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // In dev mode when client isn't built yet
+      res.status(200).send(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>Obsidian Code</title></head>
+          <body style="background:#0F172A;color:#F8FAFC;font-family:sans-serif;padding:40px;text-align:center;">
+            <h1>Obsidian Code Server Running</h1>
+            <p>API and WebSocket server active on port ${config.PORT}.</p>
+            <p>Vite dev client runs on <a href="http://localhost:3000" style="color:#3B82F6;">http://localhost:3000</a></p>
+          </body>
+        </html>
+      `);
+    }
+  });
+});
+
+// Server Initialization
+const PORT = parseInt(process.env.PORT || config.PORT, 10);
+const HOST = '0.0.0.0';
+
+async function start() {
+  await connectDB();
+
+  server.listen(PORT, HOST, () => {
+    console.log(`===============================================`);
+    console.log(`  Obsidian Code Server running on http://${HOST}:${PORT}`);
+    console.log(`  WebSocket Yjs Endpoint on ws://${HOST}:${PORT}/ws`);
+    console.log(`  Health Check: http://${HOST}:${PORT}/healthz`);
+    console.log(`===============================================`);
+  });
+}
+
+// Graceful Shutdown Handling (SIGTERM & SIGINT)
+function handleShutdown(signal: string) {
+  console.log(`Received ${signal}. Shutting down gracefully...`);
+  server.close(() => {
+    console.log('HTTP and WebSocket server closed.');
+    process.exit(0);
+  });
+
+  // Force shutdown after 10s timeout
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+start();
