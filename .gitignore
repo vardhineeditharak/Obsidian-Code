@@ -10,4 +10,3 @@ yarn-error.log*
 .agents
 skills-lock.json
 context.md
-tsc-audit.txt
