@@ -41,8 +41,7 @@ const parsed = envSchema.safeParse(envToParse);
 if (!parsed.success) {
   console.error('Invalid environment variables:', parsed.error.issues);
   if (isProd) process.exit(1);
+  throw new Error('Invalid environment configuration. See issues above.');
 }
 
-export const config = parsed.success
-  ? parsed.data
-  : envSchema.parse({ JWT_SECRET: DEV_JWT_PLACEHOLDER });
+export const config = parsed.data;

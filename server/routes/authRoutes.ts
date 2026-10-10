@@ -241,9 +241,9 @@ router.get('/github/callback', async (req: Request, res: Response) => {
     const tokenData = (await tokenRes.json()) as any;
     const accessToken = tokenData?.access_token;
     if (!accessToken) {
+      console.error('GitHub token exchange failed:', tokenData);
       return res.status(400).json({
         message: 'Failed to retrieve access token from GitHub.',
-        error: tokenData?.error_description || tokenData?.error,
       });
     }
 
@@ -303,9 +303,10 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.redirect(`${config.CLIENT_ORIGIN}?token=${encodeURIComponent(token)}`);
+    return res.redirect(`${config.CLIENT_ORIGIN}/dashboard`);
   } catch (err: any) {
-    return res.status(500).json({ message: 'Internal server error during OAuth callback.', error: err.message });
+    console.error('OAuth callback failed:', err);
+    return res.status(500).json({ message: 'Internal server error during OAuth callback.' });
   }
 });
 

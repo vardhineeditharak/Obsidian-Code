@@ -47,7 +47,7 @@ app.use(
       if (allowedOrigins.has(origin)) {
         return callback(null, true);
       }
-      return callback(new Error('CORS not allowed'));
+      return callback(null, false);
     },
     credentials: true,
   })
@@ -108,6 +108,15 @@ app.use((req, res) => {
         </html>
       `);
     }
+  });
+});
+
+// Global Error Handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Server Error]', err);
+  const status = err.status || err.statusCode || 500;
+  return res.status(status).json({
+    message: status === 500 ? 'Internal server error' : err.message || 'An error occurred',
   });
 });
 

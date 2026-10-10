@@ -7,6 +7,7 @@ import {
   Globe,
   Binary,
   Terminal,
+  AlertCircle,
 } from 'lucide-react';
 import {
   Plus,

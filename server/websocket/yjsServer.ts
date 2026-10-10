@@ -242,8 +242,9 @@ export class YjsWebSocketServer {
           const syncSubtype = decoding.peekVarUint(decoder);
           
           // CRITICAL SECURITY ENFORCEMENT:
-          // Viewer users are NOT permitted to send document updates (syncSubtype 2 or syncStep2 writing updates)
-          if (client.role === 'viewer' && (syncSubtype === 2 || syncSubtype === 1)) {
+          // Viewer users are NOT permitted to send document updates (syncSubtype 2: messageSyncUpdate).
+          // Handshake sync steps (subtype 0 & 1) are permitted so viewers receive the initial document state.
+          if (client.role === 'viewer' && syncSubtype === 2) {
             console.warn(`[Security] Dropped unauthorized Yjs update from Viewer (userId: ${client.userId}, room: ${roomName})`);
             return;
           }
