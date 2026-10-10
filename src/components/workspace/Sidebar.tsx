@@ -105,18 +105,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       style={{ width: `${size}px` }}
-      className="relative border-r border-black/[0.06] dark:border-white/[0.08] bg-slate-50/70 dark:bg-[#0A0F1D]/75 backdrop-blur-xl flex flex-col select-none h-full flex-shrink-0 transition-colors duration-200"
+      className="relative border-r border-stone bg-bone flex flex-col select-none h-full shrink-0 transition-colors duration-150"
     >
       {/* Right-Edge Drag Handle */}
       <div
         {...dragHandleProps}
         title="Drag to resize sidebar (double-click to reset)"
-        className="absolute -right-1 top-0 w-2 h-full cursor-col-resize hover:bg-blue-500/50 transition z-30 group"
+        className="absolute -right-1 top-0 w-2 h-full cursor-col-resize hover:bg-stone transition z-30 group"
       />
 
       {/* Explorer Header */}
-      <div className="px-3.5 py-2.5 border-b border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between">
-        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+      <div className="px-3.5 py-2.5 border-b border-(--border-subtle) flex items-center justify-between">
+        <span className="font-mono text-xs font-normal text-ash uppercase tracking-wider">
           Explorer
         </span>
         {canEdit && (
@@ -127,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setIsCreatingFolder(false);
               }}
               title="New File"
-              className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
+              className="p-1 rounded text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
             >
               <FilePlus size={14} />
             </button>
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setIsCreatingFile(false);
               }}
               title="New Folder"
-              className="p-1 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
+              className="p-1 rounded text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
             >
               <FolderPlus size={14} />
             </button>
@@ -145,23 +145,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* macOS-style Filter / Search Input */}
-      <div className="px-2.5 py-2 border-b border-black/[0.04] dark:border-white/[0.04]">
+      {/* Filter / Search Input */}
+      <div className="px-2.5 py-2 border-b border-(--border-subtle)">
         <div className="relative flex items-center">
-          <Search size={12} className="text-slate-400 absolute left-2.5 pointer-events-none" />
+          <Search size={12} className="text-ash absolute left-2.5 pointer-events-none" />
           <input
             type="text"
             placeholder="Filter files..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.06] rounded-lg pl-7 pr-2 py-1 text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+            className="w-full bg-parchment border border-(--border-subtle) rounded pl-7 pr-2 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink dark:focus:ring-parchment font-mono"
           />
         </div>
       </div>
 
       {/* Inline Create Input */}
       {(isCreatingFile || isCreatingFolder) && (
-        <div className="p-2 border-b border-black/[0.05] dark:border-white/[0.05] bg-black/[0.02] dark:bg-white/[0.03]">
+        <div className="p-2 border-b border-(--border-subtle) bg-linen">
           <input
             type="text"
             placeholder={isCreatingFolder ? 'folder-name' : 'filename.js'}
@@ -176,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             onBlur={() => handleCreateSubmit(isCreatingFolder)}
             autoFocus
-            className="w-full bg-white dark:bg-slate-950 border border-blue-500 rounded-md px-2 py-1 text-xs text-slate-900 dark:text-slate-100 focus:outline-none shadow-xs"
+            className="w-full bg-parchment border border-ink rounded px-2 py-1 text-xs font-mono text-ink focus:outline-none"
           />
         </div>
       )}
@@ -184,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* File Tree List */}
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {filteredFiles.length === 0 && (
-          <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 py-8">
+          <p className="text-center font-mono text-[11px] text-ash py-8">
             {filterQuery ? 'No matching files' : 'No files in workspace'}
           </p>
         )}
@@ -197,10 +197,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           return (
             <div
               key={file._id}
-              className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer ${
+              className={`group flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[13px] font-normal transition cursor-pointer ${
                 isSelected
-                  ? 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium'
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-slate-100'
+                  ? 'bg-linen text-ink border-l-2 border-ink'
+                  : 'text-ink hover:bg-linen'
               }`}
             >
               <div
@@ -212,12 +212,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 {isFolder ? (
                   isOpen ? (
-                    <FolderOpen size={14} className="text-amber-500 shrink-0" />
+                    <FolderOpen size={14} className="text-ash shrink-0" />
                   ) : (
-                    <Folder size={14} className="text-amber-500 shrink-0" />
+                    <Folder size={14} className="text-ash shrink-0" />
                   )
                 ) : (
-                  <FileCode size={14} className={`shrink-0 ${getFileIconColor(file.name)}`} />
+                  <FileCode size={14} className={`shrink-0 ${isSelected ? 'text-ink' : 'text-ash'}`} />
                 )}
 
                 {editingFileId === file._id ? (
@@ -231,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }}
                     onBlur={() => handleRenameSubmit(file._id)}
                     autoFocus
-                    className="bg-white dark:bg-slate-800 border border-blue-500 rounded px-1.5 py-0.5 text-xs text-slate-900 dark:text-white focus:outline-none w-28"
+                    className="bg-parchment border border-ink rounded px-1.5 py-0.5 text-xs font-mono text-ink focus:outline-none w-28"
                   />
                 ) : (
                   <span className="truncate">{file.name}</span>
@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       setEditingName(file.name);
                     }}
                     title="Rename"
-                    className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/[0.06] dark:hover:bg-white/[0.1] transition cursor-pointer"
+                    className="p-1 rounded text-ash hover:text-ink hover:bg-bone transition cursor-pointer"
                   >
                     <Edit size={12} />
                   </button>
@@ -258,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       setFileToDelete({ id: file._id, name: file.name });
                     }}
                     title="Delete"
-                    className="p-1 rounded text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                    className="p-1 rounded text-ash hover:text-crimson hover:bg-bone transition cursor-pointer"
                   >
                     <Trash size={12} />
                   </button>

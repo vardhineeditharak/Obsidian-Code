@@ -157,7 +157,7 @@ export const App: React.FC = () => {
   // Handle SSO Callback route for OAuth
   if (typeof window !== 'undefined' && window.location.pathname === '/sso-callback') {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#0F172A] text-slate-400 text-xs">
+      <div className="h-screen w-screen flex items-center justify-center bg-parchment text-driftwood font-mono text-xs">
         <AuthenticateWithRedirectCallback
           signInUrl="/"
           signUpUrl="/"
@@ -173,7 +173,7 @@ export const App: React.FC = () => {
 
   if (loading || !isClerkLoaded) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#0F172A] text-slate-400 text-xs">
+      <div className="h-screen w-screen flex items-center justify-center bg-parchment text-driftwood font-mono text-xs">
         Initializing Obsidian Code...
       </div>
     );

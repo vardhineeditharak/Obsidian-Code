@@ -100,10 +100,10 @@ app.use((req, res) => {
         <!DOCTYPE html>
         <html>
           <head><title>Obsidian Code</title></head>
-          <body style="background:#0F172A;color:#F8FAFC;font-family:sans-serif;padding:40px;text-align:center;">
+          <body style="background:#f7f7f4;color:#26251e;font-family:sans-serif;padding:40px;text-align:center;">
             <h1>Obsidian Code Server Running</h1>
             <p>API and WebSocket server active on port ${config.PORT}.</p>
-            <p>Vite dev client runs on <a href="http://localhost:3000" style="color:#3B82F6;">http://localhost:3000</a></p>
+            <p>Vite dev client runs on <a href="http://localhost:3000" style="color:#f54e00;">http://localhost:3000</a></p>
           </body>
         </html>
       `);

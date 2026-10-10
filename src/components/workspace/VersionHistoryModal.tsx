@@ -5,6 +5,7 @@ import { VersionCheckpoint, ProjectFile } from '../../lib/types';
 import { api } from '../../lib/api';
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
+import { useTheme } from '../../lib/theme';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   currentContent,
   onRestoreContent,
 }) => {
+  const { isDark } = useTheme();
   const [versions, setVersions] = useState<VersionCheckpoint[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<VersionCheckpoint | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string>(activeFileId || '');
@@ -89,17 +91,17 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-6">
-      <div className="glass-modal w-full max-w-6xl h-[85vh] rounded-xl overflow-hidden border border-white/10 shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(38,37,30,0.35)] dark:bg-[rgba(10,10,8,0.65)] p-6">
+      <div className="w-full max-w-6xl h-[85vh] rounded-lg overflow-hidden border border-stone bg-bone shadow-2xl flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-slate-900/80">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-stone bg-bone">
           <div className="flex items-center space-x-2.5">
-            <History className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-base font-semibold text-slate-100">Version History & Diff Comparison</h2>
+            <History className="w-5 h-5 text-ash" />
+            <h2 className="text-base font-normal text-ink">Version History & Diff Comparison</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -108,17 +110,17 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
         {/* Modal Workspace Grid */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left Checkpoint List Drawer */}
-          <div className="w-80 border-r border-white/10 bg-slate-950/60 flex flex-col">
-            <div className="p-3 border-b border-white/5">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="w-80 border-r border-stone bg-parchment flex flex-col">
+            <div className="p-3 border-b border-stone">
+              <span className="text-xs font-mono text-ash uppercase tracking-wider">
                 Checkpoints ({versions.length})
               </span>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-              {loading && <p className="text-xs text-slate-500 p-4">Loading checkpoints...</p>}
+              {loading && <p className="text-xs font-mono text-mist p-4">Loading checkpoints...</p>}
               {!loading && versions.length === 0 && (
-                <div className="text-center p-6 text-slate-500 text-xs">
+                <div className="text-center p-6 text-mist text-xs font-editorial">
                   No named checkpoints created yet. Press Ctrl+S in the editor or create a checkpoint.
                 </div>
               )}
@@ -128,21 +130,21 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                   <button
                     key={v._id}
                     onClick={() => setSelectedVersion(v)}
-                    className={`w-full text-left p-3 rounded-lg border transition ${
+                    className={`w-full text-left p-3 rounded-md border transition cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-600/15 border-blue-500/40 text-blue-200'
-                        : 'bg-slate-900/40 border-white/5 text-slate-300 hover:bg-slate-800/60'
+                        ? 'bg-bone border-ink text-ink shadow-none'
+                        : 'bg-transparent border-transparent text-driftwood hover:bg-linen/50'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-slate-100">{v.name}</span>
-                      <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                      <span className="font-normal text-sm text-ink">{v.name}</span>
+                      <span className="text-[11px] font-mono text-mist flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    {v.note && <p className="text-xs text-slate-400 line-clamp-1 mb-1">{v.note}</p>}
-                    <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                    {v.note && <p className="text-xs font-editorial text-driftwood line-clamp-1 mb-1">{v.note}</p>}
+                    <div className="flex items-center gap-1 text-[11px] font-mono text-ash">
                       <UserIcon className="w-3 h-3" />
                       <span>{v.createdBy.name}</span>
                     </div>
@@ -153,15 +155,15 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
           </div>
 
           {/* Right Diff Comparison Area */}
-          <div className="flex-1 flex flex-col bg-slate-900/40">
+          <div className="flex-1 flex flex-col bg-parchment">
             {/* Diff Controls Header */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-slate-900/60 text-xs">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-stone bg-bone text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-400">Comparing file:</span>
+                <span className="text-driftwood font-mono text-xs">Comparing:</span>
                 <select
                   value={selectedFileId}
                   onChange={(e) => setSelectedFileId(e.target.value)}
-                  className="bg-slate-800 text-slate-200 border border-white/10 rounded px-2.5 py-1 focus:outline-none"
+                  className="bg-parchment text-ink border border-stone rounded-md px-2.5 py-1 focus:outline-none font-mono text-xs cursor-pointer"
                 >
                   {files
                     .filter((f) => !f.isFolder)
@@ -174,17 +176,17 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-slate-400 text-[11px]">
-                  Original (Checkpoint) ⟷ Modified (Current Workspace)
+                <span className="text-mist font-mono text-[11px]">
+                  Original (Checkpoint) ⟷ Modified (Current)
                 </span>
                 {selectedVersion && historicalFile && (
                   <button
                     onClick={handleRestore}
                     disabled={restoring}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md font-medium transition shadow-sm"
+                    className="btn-forest text-xs px-3 py-1.5 flex items-center gap-1.5"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    {restoring ? 'Restoring...' : 'Restore This Version'}
+                    <span>{restoring ? 'Restoring...' : 'Restore This Version'}</span>
                   </button>
                 )}
               </div>
@@ -196,7 +198,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 original={historicalContent}
                 modified={selectedFileId === activeFileId ? currentContent : (currentFile?.content || '')}
                 language={currentFile?.language || 'javascript'}
-                theme="vs-dark"
+                theme={isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light'}
                 options={{
                   readOnly: true,
                   renderSideBySide: true,

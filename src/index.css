@@ -1,14 +1,6 @@
 @import "tailwindcss";
 
-/* Self-hosted fonts for deterministic metric calculation (Option A / H1 fix) */
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
-}
-
+/* Self-hosted fonts for deterministic metric calculation & Cursor editorial typography */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -23,22 +15,6 @@
   font-weight: 500;
   font-display: swap;
   src: url('/fonts/inter-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
 }
 
 @font-face {
@@ -58,61 +34,151 @@
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
+  font-family: 'EB Garamond';
   font-style: normal;
-  font-weight: 600;
+  font-weight: 400 500;
   font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+  src: url('/fonts/eb-garamond-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-latin.woff2') format('woff2');
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-parchment: var(--color-parchment);
+  --color-bone: var(--color-bone);
+  --color-linen: var(--color-linen);
+  --color-stone: var(--color-stone);
+  --color-mist: var(--color-mist);
+  --color-driftwood: var(--color-driftwood);
+  --color-ash: var(--color-ash);
+  --color-ink: var(--color-ink);
+  --color-ember: var(--color-ember);
+  --color-amber: var(--color-amber);
+  --color-forest: var(--color-forest);
+  --color-verdant: var(--color-verdant);
+  --color-crimson: var(--color-crimson);
+  --color-selection: var(--color-selection);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-brand: 'JetBrains Mono', ui-monospace, monospace;
+  --font-cursorgothic: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-eb-garamond: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-berkeleymono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 1.5px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
 @layer base {
   :root {
-    --bg-primary: #F8FAFC;
-    --surface-primary: #FFFFFF;
-    --surface-secondary: #F1F5F9;
-    --surface-hover: #E2E8F0;
-    --surface-active: #CBD5E1;
-    --accent-blue: #3B82F6;
-    --accent-indigo: #6366F1;
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-muted: #94A3B8;
-    --border-subtle: rgba(0, 0, 0, 0.08);
-    --border-active: rgba(0, 0, 0, 0.16);
+    /* Palette Tokens: Light Mode (Warm Parchment Atelier) */
+    --color-parchment: #f7f7f4;
+    --color-bone: #f2f1ed;
+    --color-linen: #e6e5e0;
+    --color-stone: #cdcdc9;
+    --color-mist: #a1a19f;
+    --color-driftwood: #84847e;
+    --color-ash: #7a7974;
+    --color-ink: #26251e;
+    --color-ember: #f54e00;
+    --color-amber: #c08532;
+    --color-forest: #34785c;
+    --color-verdant: #1f8a65;
+    --color-crimson: #cf2d56;
+    --color-selection: #8BC4F8;
+
+    /* Semantic Mappings */
+    --bg-primary: #f7f7f4;
+    --surface-primary: #f2f1ed;
+    --surface-secondary: #e6e5e0;
+    --surface-hover: #e6e5e0;
+    --surface-active: #cdcdc9;
+    --text-primary: #26251e;
+    --text-secondary: #84847e;
+    --text-muted: #a1a19f;
+    --border-subtle: rgba(38, 37, 30, 0.10);
+    --border-active: rgba(38, 37, 30, 0.28);
+    --accent-primary: #26251e;
+    --accent-secondary: #34785c;
+    --accent-link: #f54e00;
+    --accent-blue: #c08532;
+    --accent-indigo: #34785c;
+
+    /* Font Tokens */
+    --font-cursorgothic: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-eb-garamond: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', ui-serif, Georgia, serif;
+    --font-berkeleymono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-brand: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   .dark {
-    --bg-primary: #0F172A;
-    --surface-primary: #1E293B;
-    --surface-secondary: #0A0F1D;
-    --surface-hover: #283548;
-    --surface-active: #334155;
-    --accent-blue: #3B82F6;
-    --accent-indigo: #6366F1;
-    --text-primary: #F8FAFC;
-    --text-secondary: #94A3B8;
-    --text-muted: #64748B;
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-active: rgba(255, 255, 255, 0.16);
+    /* Palette Tokens: Dark Mode (Night Atelier) */
+    --color-parchment: #1c1b17;
+    --color-bone: #232219;
+    --color-linen: #2e2d25;
+    --color-stone: #3d3c33;
+    --color-mist: #8a897f;
+    --color-driftwood: #a3a296;
+    --color-ash: #b5b4a7;
+    --color-ink: #f2f1ed;
+    --color-ember: #ff6b35;
+    --color-amber: #d4994a;
+    --color-forest: #4a9e7c;
+    --color-verdant: #37a57f;
+    --color-crimson: #e2557a;
+    --color-selection: #8BC4F8;
+
+    /* Semantic Mappings */
+    --bg-primary: #1c1b17;
+    --surface-primary: #232219;
+    --surface-secondary: #2e2d25;
+    --surface-hover: #2e2d25;
+    --surface-active: #3d3c33;
+    --text-primary: #f2f1ed;
+    --text-secondary: #a3a296;
+    --text-muted: #8a897f;
+    --border-subtle: rgba(242, 241, 237, 0.10);
+    --border-active: rgba(242, 241, 237, 0.24);
+    --accent-primary: #f2f1ed;
+    --accent-secondary: #4a9e7c;
+    --accent-link: #ff6b35;
+    --accent-blue: #d4994a;
+    --accent-indigo: #4a9e7c;
   }
 
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-cursorgothic);
+    font-feature-settings: 'ss08' 1, 'ss09' 1, 'tnum' 1;
     user-select: none;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   code, pre, .font-mono {
-    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-family: var(--font-berkeleymono);
+  }
+
+  ::selection {
+    background-color: var(--color-selection);
+    color: #1c1b17;
   }
 }
 
-/* Custom sleek dark scrollbar */
+/* Crisp 4px / Hairline Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -123,69 +189,50 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 9999px;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--color-stone);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--color-ash);
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
-}
-
-/* Glassmorphism helpers - Apple Translucent Materials */
+/* Neutralized Flat Surfaces (No Glassmorphism, No Gradients) */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.dark .glass-panel {
-  background: rgba(30, 41, 59, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
 }
 
 .glass-modal {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.14) 0px 20px 50px -10px, oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
 }
 
 .dark .glass-modal {
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 20px 50px -10px, rgba(242, 241, 237, 0.08) 0px 0px 0px 1px;
 }
 
-/* Subtle glow accents */
-.glow-accent {
-  box-shadow: 0 0 20px -5px rgba(59, 130, 246, 0.4);
+.glow-accent, .glow-purple {
+  box-shadow: none !important;
 }
 
-/* Remote Cursor and Caret Decorations in Monaco */
+/* Remote Cursor and Caret Decorations in Monaco (Warm Palette) */
 .yRemoteSelection {
-  background-color: rgba(59, 130, 246, 0.25);
+  background-color: rgba(192, 133, 50, 0.22);
   border-radius: 2px;
 }
 
 .yRemoteSelectionHead {
   position: absolute;
-  border-left: 2px solid #3B82F6;
-  border-top: 2px solid #3B82F6;
-  border-bottom: 2px solid #3B82F6;
+  border-left: 2px solid var(--color-amber);
+  border-top: 2px solid var(--color-amber);
+  border-bottom: 2px solid var(--color-amber);
   height: 100%;
   box-sizing: border-box;
 }
@@ -193,8 +240,8 @@
 .yRemoteSelectionHead::after {
   position: absolute;
   content: ' ';
-  border: 3px solid #3B82F6;
-  border-radius: 4px;
+  border: 3px solid var(--color-amber);
+  border-radius: 2px;
   left: -4px;
   top: -5px;
 }
@@ -204,6 +251,7 @@
   width: 3px !important;
   height: 100% !important;
   border-radius: 1px;
+  background-color: var(--color-stone);
 }
 
 /* Ensure no ancestor styling skews Monaco caret measurement (H5) */
@@ -212,3 +260,181 @@
   transform: none;
 }
 
+/* Cursor Signature Headline Utilities (Weight 400 + Scale Tracking) */
+.headline-display {
+  font-size: 72px;
+  line-height: 1.1;
+  letter-spacing: -2.16px;
+  font-weight: 400;
+}
+
+.headline-lg {
+  font-size: 36px;
+  line-height: 1.2;
+  letter-spacing: -0.72px;
+  font-weight: 400;
+}
+
+.headline-md {
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.312px;
+  font-weight: 400;
+}
+
+.headline-sm {
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: -0.11px;
+  font-weight: 400;
+}
+
+.text-body-sm {
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0.14px;
+}
+
+.text-eyebrow {
+  font-family: var(--font-berkeleymono);
+  font-size: 12px;
+  line-height: 1.63;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ash);
+}
+
+.font-brand {
+  font-family: var(--font-brand);
+}
+
+.font-editorial {
+  font-family: var(--font-eb-garamond);
+}
+
+/* Cursor Button & Component Classes */
+.btn-primary {
+  background-color: var(--color-ink);
+  color: var(--color-parchment);
+  border-radius: 4px;
+  padding: 0.78em 1.35em 0.8em;
+  font-size: 14px;
+  font-weight: 400;
+  border: none;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dark .btn-primary {
+  background-color: var(--color-ink);
+  color: var(--color-parchment);
+}
+
+.btn-secondary {
+  background-color: var(--color-linen);
+  color: var(--color-ink);
+  border-radius: 4px;
+  padding: 0.78em 1.35em 0.8em;
+  font-size: 14px;
+  font-weight: 400;
+  border: none;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  border: none;
+  cursor: pointer;
+  transition: color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-ghost:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+
+.btn-amber {
+  background-color: var(--color-amber);
+  color: #f7f7f4;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-amber:hover {
+  opacity: 0.9;
+}
+
+.btn-forest {
+  background-color: var(--color-forest);
+  color: #f7f7f4;
+  border: 1px solid var(--color-forest);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-forest:hover {
+  opacity: 0.9;
+}
+
+.input-atelier {
+  background-color: var(--color-parchment);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink);
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.input-atelier::placeholder {
+  color: var(--color-mist);
+}
+
+.input-atelier:focus {
+  outline: none;
+  border-color: var(--border-active);
+  box-shadow: 0 0 0 2px var(--color-ink);
+}
+
+.dark .input-atelier:focus {
+  box-shadow: 0 0 0 2px var(--color-parchment);
+}
+
+.card-atelier {
+  background-color: var(--color-bone);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 24px;
+}

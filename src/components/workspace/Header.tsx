@@ -79,23 +79,25 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-11 border-b border-black/[0.06] dark:border-white/[0.08] bg-white/75 dark:bg-slate-900/80 backdrop-blur-xl px-3 flex items-center justify-between select-none z-30 transition-colors duration-200">
+    <header className="h-13 border-b border-stone bg-parchment px-3 flex items-center justify-between select-none z-30 transition-colors duration-150">
       {/* Left: Brand, Project Name & Sync Pill */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         <button
           onClick={onBackToDashboard}
           title="Back to Dashboard"
-          className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 active:scale-95 transition-all group"
+          className="flex items-center gap-2 px-2 py-1 rounded hover:bg-linen text-ink transition group cursor-pointer"
         >
-          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xs">
-            <span className="text-white font-bold text-[11px] leading-none">O</span>
-          </div>
-          <span className="text-xs font-semibold tracking-tight text-slate-800 dark:text-slate-200 group-hover:text-black dark:group-hover:text-white">
+          <img
+            src="/logo.svg"
+            alt="Obsidian Code"
+            className="w-6 h-6 object-contain dark:invert"
+          />
+          <span className="font-brand text-lg font-medium tracking-tight text-ink">
             Obsidian
           </span>
         </button>
 
-        <span className="text-slate-300 dark:text-slate-700 text-xs font-light">/</span>
+        <span className="text-stone text-xs font-light">/</span>
 
         {/* Inline editable project name */}
         {isEditingName ? (
@@ -106,31 +108,31 @@ export const Header: React.FC<HeaderProps> = ({
             onBlur={handleNameSubmit}
             onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
             autoFocus
-            className="bg-black/[0.04] dark:bg-white/[0.06] text-slate-900 dark:text-slate-100 text-xs px-2 py-0.5 rounded-md border border-blue-500 focus:outline-none"
+            className="input-atelier text-xs px-2 py-0.5 rounded"
           />
         ) : (
           <button
             onClick={() => userRole === 'owner' && setIsEditingName(true)}
             title={userRole === 'owner' ? 'Click to rename' : undefined}
-            className={`text-xs font-medium text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition flex items-center gap-1.5 ${
+            className={`text-xs font-medium text-ink px-2 py-0.5 rounded hover:bg-linen transition flex items-center gap-1.5 ${
               userRole === 'owner' ? 'cursor-pointer' : 'cursor-default'
             }`}
           >
             <span>{project.name}</span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+            <span className="font-mono text-[10px] text-ash">
               {userRole === 'owner' ? '(Owner)' : `(${userRole})`}
             </span>
           </button>
         )}
 
-        {/* Sync Pill Indicator */}
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.04] dark:border-white/[0.06] text-[11px]">
+        {/* Sync Indicator */}
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-bone border border-(--border-subtle) text-[11px] font-mono">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
-              isOnline ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse' : 'bg-amber-500 dark:bg-amber-400'
+              isOnline ? 'bg-verdant' : 'bg-amber'
             }`}
           />
-          <span className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">
+          <span className={isOnline ? 'text-verdant text-[10px]' : 'text-amber text-[10px]'}>
             {isOnline ? 'Synced' : 'Offline'}
           </span>
         </div>
@@ -142,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onRunCode}
           disabled={isRunningCode || userRole === 'viewer'}
           title={userRole === 'viewer' ? 'Viewers cannot execute code' : 'Execute Code (Sandbox)'}
-          className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-40 text-white rounded-full text-xs font-medium transition shadow-xs cursor-pointer mr-1"
+          className="btn-amber text-xs py-1 px-3 rounded font-medium disabled:opacity-40"
         >
           {isRunningCode ? (
             <RotateCw className="w-3.5 h-3.5 animate-spin" />
@@ -155,7 +157,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenSearch}
           title="Search in Project (Ctrl+Shift+F)"
-          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
+          className="btn-ghost p-1.5 rounded text-ash hover:text-ink"
         >
           <Search size={15} />
         </button>
@@ -163,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenHistory}
           title="Version History & Diff"
-          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
+          className="btn-ghost p-1.5 rounded text-ash hover:text-ink"
         >
           <History size={15} />
         </button>
@@ -171,7 +173,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onExportZip}
           title="Export Workspace as ZIP"
-          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
+          className="btn-ghost p-1.5 rounded text-ash hover:text-ink"
         >
           <Download size={15} />
         </button>
@@ -180,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Right: Presence, Transport, Audio, Theme Toggle, Share, Profile */}
       <div className="flex items-center gap-2">
         {/* Collaborator Avatars & Follow Mode */}
-        <div className="flex items-center -space-x-1.5 mr-0.5">
+        <div className="flex items-center -space-x-1 mr-0.5">
           {collaborators.map((c) => {
             const isFollowed = followingUserId === c.id;
             return (
@@ -188,12 +190,12 @@ export const Header: React.FC<HeaderProps> = ({
                 key={c.id}
                 onClick={() => onToggleFollow(c.id)}
                 title={`Collaborator: ${c.name} (${c.role})${isFollowed ? ' - Currently Following' : ' - Click to Follow'}`}
-                className={`relative w-6 h-6 rounded-full border-2 transition transform hover:scale-110 ${
-                  isFollowed ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-white dark:border-slate-800'
+                className={`relative w-5 h-5 rounded border transition transform hover:scale-105 ${
+                  isFollowed ? 'border-amber ring-2 ring-amber/40' : 'border-parchment'
                 }`}
                 style={{ backgroundColor: c.color }}
               >
-                <span className="text-[10px] font-bold text-white flex items-center justify-center h-full">
+                <span className="text-[10px] font-mono font-medium text-white flex items-center justify-center h-full">
                   {c.name.charAt(0).toUpperCase()}
                 </span>
               </button>
@@ -205,19 +207,19 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowTransportMenu(!showTransportMenu)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-bone hover:bg-linen border border-(--border-subtle) text-[11px] font-mono text-driftwood transition cursor-pointer"
           >
             {isOnline ? (
-              <Wifi size={13} color="#0284C7" strokeWidth={2} />
+              <Wifi size={13} color="var(--color-verdant)" strokeWidth={2} />
             ) : (
-              <WifiOff size={13} color="#D97706" strokeWidth={2} />
+              <WifiOff size={13} color="var(--color-amber)" strokeWidth={2} />
             )}
-            <span className="font-medium text-[10px]">{transportMode}</span>
-            <ChevronDown size={11} className="text-slate-400" />
+            <span className="font-mono text-[10px]">{transportMode}</span>
+            <ChevronDown size={11} className="text-ash" />
           </button>
 
           {showTransportMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-slate-900 border border-black/[0.08] dark:border-white/[0.1] shadow-xl py-1 z-50 text-xs backdrop-blur-xl">
+            <div className="absolute right-0 top-full mt-1.5 w-44 rounded bg-bone border border-(--border-subtle) shadow-xl py-1 z-50 text-xs">
               {(['Hybrid', 'WebSocket Only', 'P2P Mesh Only'] as TransportMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -225,11 +227,11 @@ export const Header: React.FC<HeaderProps> = ({
                     onTransportChange(mode);
                     setShowTransportMenu(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition ${
-                    transportMode === mode ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
+                  className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-linen transition ${
+                    transportMode === mode ? 'text-ink font-medium' : 'text-driftwood'
                   }`}
                 >
-                  <span>{mode}</span>
+                  <span className="font-mono text-xs">{mode}</span>
                   {transportMode === mode && <Check size={13} />}
                 </button>
               ))}
@@ -238,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* User Role Badge */}
-        <div className="px-2 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 text-[10px] font-mono capitalize select-none">
+        <div className="px-2 py-0.5 rounded border border-(--border-subtle) bg-bone text-ash text-[10px] font-mono capitalize select-none">
           {userRole}
         </div>
 
@@ -246,7 +248,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onToggleAudio}
           title={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
-          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
+          className="btn-ghost p-1.5 rounded text-ash hover:text-ink"
         >
           {isAudioMuted ? (
             <VolumeMute size={15} strokeWidth={2} />
@@ -255,13 +257,13 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
-        {/* Apple-style Light / Dark Mode Toggle using Morphicons */}
+        {/* Light / Dark Mode Toggle using Morphicons */}
         <ThemeToggle size={16} />
 
-        {/* Share Button (Apple System Blue pill) */}
+        {/* Share Button */}
         <button
           onClick={onOpenShare}
-          className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white rounded-full text-xs font-medium transition shadow-xs cursor-pointer"
+          className="btn-primary text-xs py-1 px-3 rounded font-normal"
         >
           <Share size={13} color="currentColor" strokeWidth={2} />
           <span>Share</span>
@@ -271,7 +273,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-7 h-7 rounded-full overflow-hidden border border-black/[0.1] dark:border-white/[0.2] focus:outline-none hover:ring-2 hover:ring-blue-500/30 transition cursor-pointer"
+            className="w-6 h-6 rounded overflow-hidden border border-(--border-subtle) focus:outline-none hover:border-(--border-active) transition cursor-pointer"
           >
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.name}`}
@@ -281,19 +283,19 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white dark:bg-slate-900 border border-black/[0.08] dark:border-white/[0.1] shadow-xl py-1 z-50 text-xs backdrop-blur-xl">
-              <div className="px-3 py-2 border-b border-black/[0.06] dark:border-white/[0.06]">
-                <p className="font-semibold text-slate-900 dark:text-slate-100">{user.name}</p>
-                <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+            <div className="absolute right-0 top-full mt-1.5 w-48 rounded bg-bone border border-(--border-subtle) shadow-xl py-1 z-50 text-xs">
+              <div className="px-3 py-2 border-b border-(--border-subtle)">
+                <p className="font-medium text-ink">{user.name}</p>
+                <p className="font-mono text-[11px] text-ash truncate">{user.email}</p>
               </div>
               <button
                 onClick={() => {
                   setShowUserMenu(false);
                   onBackToDashboard();
                 }}
-                className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-2 transition"
+                className="w-full text-left px-3 py-2 text-driftwood hover:text-ink hover:bg-linen flex items-center gap-2 transition"
               >
-                <FolderOpen size={14} className="text-slate-400" />
+                <FolderOpen size={14} className="text-ash" />
                 <span>Projects Dashboard</span>
               </button>
               <button
@@ -308,9 +310,9 @@ export const Header: React.FC<HeaderProps> = ({
                   } catch {}
                   window.location.reload();
                 }}
-                className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-2 border-b border-black/[0.06] dark:border-white/[0.06] transition"
+                className="w-full text-left px-3 py-2 text-driftwood hover:text-ink hover:bg-linen flex items-center gap-2 border-b border-(--border-subtle) transition"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-ash" />
                 <span>Reset Layout</span>
               </button>
               <button
@@ -318,7 +320,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowUserMenu(false);
                   onLogout();
                 }}
-                className="w-full text-left px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition"
+                className="w-full text-left px-3 py-2 text-crimson hover:bg-linen flex items-center gap-2 transition"
               >
                 <LogOut size={14} />
                 <span>Log out</span>

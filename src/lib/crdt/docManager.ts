@@ -183,7 +183,7 @@ class YjsDocManager {
           list.push({
             id: state.user.id,
             name: state.user.name || 'Anonymous',
-            color: state.user.color || '#3B82F6',
+            color: state.user.color || '#c08532',
             avatar: state.user.avatar,
             role: state.user.role || 'viewer',
             fileId: state.user.fileId,

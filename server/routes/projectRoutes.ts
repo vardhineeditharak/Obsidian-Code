@@ -58,8 +58,8 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       language: 'css',
       content: `body {
   font-family: sans-serif;
-  background: #0f172a;
-  color: #f8fafc;
+  background: #f7f7f4;
+  color: #26251e;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -69,19 +69,18 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 }
 
 button {
-  background: #3b82f6;
-  color: white;
+  background: #26251e;
+  color: #f7f7f4;
   border: none;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.1s ease;
+  font-size: 14px;
+  transition: opacity 0.15s ease;
 }
 
 button:hover {
-  background: #2563eb;
-  transform: scale(1.05);
+  opacity: 0.9;
 }`,
     });
 

@@ -161,35 +161,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 flex flex-col select-none transition-colors duration-200">
+    <div className="min-h-screen bg-parchment text-ink flex flex-col select-none transition-colors duration-150">
       {/* Top Navbar */}
-      <nav className="h-14 border-b border-black/[0.06] dark:border-white/[0.08] bg-white/75 dark:bg-slate-900/80 backdrop-blur-xl px-6 flex items-center justify-between">
+      <nav className="h-13 border-b border-(--border-subtle) px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-xs">
-            <Code size={18} color="white" />
-          </div>
-          <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white">Obsidian Code</span>
+          <img
+            src="/logo.svg"
+            alt="Obsidian Code"
+            className="w-8 h-8 object-contain dark:invert"
+          />
+          <span className="font-brand text-2xl font-medium tracking-tight text-ink">
+            Obsidian Code
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Apple-style Light / Dark Mode Toggle */}
-          <ThemeToggle size={18} />
+          <ThemeToggle size={16} />
 
-          <div className="flex items-center gap-2 pl-2 border-l border-black/[0.06] dark:border-white/[0.08]">
+          <div className="flex items-center gap-2 pl-3 border-l border-(--border-subtle)">
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.name}`}
               alt={user.name}
-              className="w-7 h-7 rounded-full border border-black/[0.08] dark:border-white/[0.1]"
+              className="w-6 h-6 rounded border border-(--border-subtle)"
             />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{user.name}</span>
+            <span className="font-mono text-xs text-driftwood">{user.name}</span>
           </div>
 
           <button
             onClick={onLogout}
             title="Sign out"
-            className="p-1.5 rounded-full text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
+            className="btn-ghost text-xs p-1.5"
           >
-            <LogOut size={16} />
+            <LogOut size={15} className="text-ash hover:text-ink" />
           </button>
         </div>
       </nav>
@@ -197,28 +200,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-8 flex flex-col">
         {/* Welcome & Action Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-start justify-between mb-8 pb-4 border-b border-(--border-subtle)">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Your Workspaces</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Collaborate in real time with peers or jump into your personal code playgrounds
+            <div className="text-eyebrow mb-1">Workspaces</div>
+            <h1 className="headline-md font-normal text-ink">Your Projects</h1>
+            <p className="font-editorial text-[17px] text-driftwood mt-1">
+              Collaborate in real time with peers or jump into your personal code ateliers.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setShowJoinModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full text-xs font-semibold transition border border-black/[0.08] dark:border-white/[0.08] shadow-2xs active:scale-95 cursor-pointer"
+              className="btn-secondary text-xs"
             >
               <LinkIcon className="w-3.5 h-3.5" />
-              <span>Join Workspace</span>
+              <span>Join with invite →</span>
             </button>
 
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full text-xs font-semibold transition shadow-xs active:scale-95 cursor-pointer"
+              className="btn-primary text-xs"
             >
-              <Plus size={15} color="white" />
+              <Plus size={14} />
               <span>New Project</span>
             </button>
           </div>
@@ -226,44 +230,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Project Grid */}
         {loading ? (
-          <div className="flex-1 flex items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+          <div className="flex-1 flex items-center justify-center font-mono text-xs text-ash">
             Loading workspaces...
           </div>
         ) : projects.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 glass-panel rounded-2xl text-center">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 dark:text-blue-400 mb-4">
-              <Sparkles className="w-6 h-6" />
+          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-(--border-subtle) rounded text-center">
+            <div className="w-10 h-10 rounded bg-linen flex items-center justify-center text-ash mb-3">
+              <Sparkles className="w-5 h-5" />
             </div>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">No Projects Found</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6">
+            <h2 className="headline-sm font-normal text-ink mb-1">No Projects Found</h2>
+            <p className="font-editorial text-[17px] text-driftwood max-w-sm mb-6">
               Create a new collaborative project or join an existing workspace with an invitation link.
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold transition shadow-xs cursor-pointer"
+              className="btn-primary text-xs"
             >
               Create Your First Project
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((p) => (
               <div
                 key={p._id}
                 onClick={() => onOpenProject(p._id)}
-                className="glass-panel p-5 rounded-2xl hover:border-blue-500/40 hover:shadow-md transition-all group cursor-pointer flex flex-col justify-between"
+                className="bg-bone p-5 rounded border border-(--border-subtle) hover:border-(--border-active) transition group cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-blue-500/10 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-black/[0.04] dark:border-white/[0.06] group-hover:scale-105 transition">
-                        <FolderOpen size={16} />
+                      <div className="w-8 h-8 rounded bg-linen border border-(--border-subtle) flex items-center justify-center text-ash group-hover:text-ink transition">
+                        <FolderOpen size={15} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        <h3 className="text-sm font-medium text-ink transition">
                           {p.name}
                         </h3>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                        <span className="font-mono text-[11px] text-ash flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {new Date(p.updatedAt).toLocaleDateString()}
                         </span>
@@ -276,23 +280,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         handleDeleteProject(p._id, p.name);
                       }}
                       title="Delete Project"
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-ash hover:text-crimson transition cursor-pointer"
                     >
                       <Trash size={14} />
                     </button>
                   </div>
 
                   {p.description && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">{p.description}</p>
+                    <p className="font-editorial text-sm text-driftwood line-clamp-2 mb-4">
+                      {p.description}
+                    </p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] text-slate-400 dark:text-slate-500">
+                <div className="flex items-center justify-between pt-3 border-t border-(--border-subtle) text-[11px] font-mono text-ash">
                   <span className="flex items-center gap-1">
-                    <Users size={13} className="text-slate-400 dark:text-slate-500" />
+                    <Users size={12} className="text-ash" />
                     Collaborative Workspace
                   </span>
-                  <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition flex items-center gap-1 font-medium">
+                  <span className="text-ink group-hover:text-ember transition flex items-center gap-1 font-sans text-xs">
                     Open <ArrowRight className="w-3 h-3" />
                   </span>
                 </div>
@@ -304,107 +310,107 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* New Project Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="glass-modal w-full max-w-lg rounded-2xl p-6">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Create Collaborative Project</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-bone w-full max-w-lg rounded-lg border border-(--border-subtle) shadow-2xl p-6">
+            <h2 className="headline-sm font-normal text-ink mb-1">Create Collaborative Project</h2>
+            <p className="font-editorial text-[15px] text-driftwood mb-5">
               Choose a template to scaffold your shared project environment.
             </p>
 
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Project Name</label>
+                <label className="text-xs font-normal text-driftwood block mb-1">Project Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. NextGen Web App"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
-                  className="w-full bg-slate-100/80 dark:bg-slate-950/80 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  className="input-atelier w-full"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Description (Optional)</label>
+                <label className="text-xs font-normal text-driftwood block mb-1">Description (Optional)</label>
                 <input
                   type="text"
                   placeholder="Short workspace description..."
                   value={newProjectDesc}
                   onChange={(e) => setNewProjectDesc(e.target.value)}
-                  className="w-full bg-slate-100/80 dark:bg-slate-950/80 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  className="input-atelier w-full"
                 />
               </div>
 
               {/* Starter Templates */}
               <div>
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-2">Starter Template</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <label className="text-xs font-normal text-driftwood block mb-2">Starter Template</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div
                     onClick={() => setSelectedTemplate('web')}
-                    className={`p-3 rounded-xl border cursor-pointer transition text-left ${
+                    className={`p-3 rounded border cursor-pointer transition text-left ${
                       selectedTemplate === 'web'
-                        ? 'border-blue-500 bg-blue-500/10 text-slate-900 dark:text-white'
-                        : 'border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-black/[0.04] dark:hover:bg-slate-800'
+                        ? 'border-ink bg-linen text-ink'
+                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
                     }`}
                   >
-                    <Globe className="w-5 h-5 text-blue-500 mb-1.5" />
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Web App</p>
-                    <p className="text-[10px] text-slate-500">HTML, CSS, JS</p>
+                    <Globe className="w-4 h-4 text-ash mb-1.5" />
+                    <p className="text-xs font-medium text-ink">Web App</p>
+                    <p className="font-mono text-[10px] text-ash">HTML, CSS, JS</p>
                   </div>
 
                   <div
                     onClick={() => setSelectedTemplate('node')}
-                    className={`p-3 rounded-xl border cursor-pointer transition text-left ${
+                    className={`p-3 rounded border cursor-pointer transition text-left ${
                       selectedTemplate === 'node'
-                        ? 'border-blue-500 bg-blue-500/10 text-slate-900 dark:text-white'
-                        : 'border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-black/[0.04] dark:hover:bg-slate-800'
+                        ? 'border-ink bg-linen text-ink'
+                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
                     }`}
                   >
-                    <Terminal className="w-5 h-5 text-emerald-500 mb-1.5" />
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Node.js</p>
-                    <p className="text-[10px] text-slate-500">Package & script</p>
+                    <Terminal className="w-4 h-4 text-ash mb-1.5" />
+                    <p className="text-xs font-medium text-ink">Node.js</p>
+                    <p className="font-mono text-[10px] text-ash">Package & script</p>
                   </div>
 
                   <div
                     onClick={() => setSelectedTemplate('algorithms')}
-                    className={`p-3 rounded-xl border cursor-pointer transition text-left ${
+                    className={`p-3 rounded border cursor-pointer transition text-left ${
                       selectedTemplate === 'algorithms'
-                        ? 'border-blue-500 bg-blue-500/10 text-slate-900 dark:text-white'
-                        : 'border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-black/[0.04] dark:hover:bg-slate-800'
+                        ? 'border-ink bg-linen text-ink'
+                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
                     }`}
                   >
-                    <Binary className="w-5 h-5 text-indigo-500 mb-1.5" />
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Algorithms</p>
-                    <p className="text-[10px] text-slate-500">Data structures</p>
+                    <Binary className="w-4 h-4 text-ash mb-1.5" />
+                    <p className="text-xs font-medium text-ink">Algorithms</p>
+                    <p className="font-mono text-[10px] text-ash">Data structures</p>
                   </div>
 
                   <div
                     onClick={() => setSelectedTemplate('blank')}
-                    className={`p-3 rounded-xl border cursor-pointer transition text-left ${
+                    className={`p-3 rounded border cursor-pointer transition text-left ${
                       selectedTemplate === 'blank'
-                        ? 'border-blue-500 bg-blue-500/10 text-slate-900 dark:text-white'
-                        : 'border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-black/[0.04] dark:hover:bg-slate-800'
+                        ? 'border-ink bg-linen text-ink'
+                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
                     }`}
                   >
-                    <Sparkles className="w-5 h-5 text-amber-500 mb-1.5" />
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Blank</p>
-                    <p className="text-[10px] text-slate-500">Clean slate</p>
+                    <Sparkles className="w-4 h-4 text-amber mb-1.5" />
+                    <p className="text-xs font-medium text-ink">Blank</p>
+                    <p className="font-mono text-[10px] text-ash">Clean slate</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/[0.06] dark:border-white/[0.1]">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-(--border-subtle)">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-full text-xs bg-black/[0.05] dark:bg-slate-800 hover:bg-black/[0.08] dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+                  className="btn-ghost text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-4 py-2 rounded-full text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold transition shadow-xs cursor-pointer"
+                  className="btn-primary text-xs"
                 >
                   {creating ? 'Creating...' : 'Create Project'}
                 </button>
@@ -416,22 +422,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Join Project Modal */}
       {showJoinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="glass-modal w-full max-w-md rounded-2xl p-6">
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white mb-1">Join Workspace</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-bone w-full max-w-md rounded-lg border border-(--border-subtle) shadow-2xl p-6">
+            <h2 className="headline-sm font-normal text-ink mb-1">Join Workspace</h2>
+            <p className="font-editorial text-[15px] text-driftwood mb-5">
               Paste your invitation token or share link to join a team's code workspace.
             </p>
 
             {joinError && (
-              <div className="mb-4 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
-                {joinError}
+              <div className="mb-4 text-[13px] text-crimson flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
+                <span>{joinError}</span>
               </div>
             )}
 
             <form onSubmit={handleJoinProject} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Invitation Link or Token</label>
+                <label className="text-xs font-normal text-driftwood block mb-1">Invitation Link or Token</label>
                 <input
                   type="text"
                   required
@@ -441,22 +448,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     setInviteToken(e.target.value);
                     if (joinError) setJoinError(null);
                   }}
-                  className="w-full bg-slate-100/80 dark:bg-slate-950/80 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                  className="input-atelier w-full font-mono text-xs"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-black/[0.06] dark:border-white/[0.1]">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-(--border-subtle)">
                 <button
                   type="button"
                   onClick={() => setShowJoinModal(false)}
-                  className="px-4 py-2 rounded-full text-xs bg-black/[0.05] dark:bg-slate-800 hover:bg-black/[0.08] dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+                  className="btn-ghost text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={joining}
-                  className="px-4 py-2 rounded-full text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold transition shadow-xs cursor-pointer"
+                  className="btn-primary text-xs disabled:opacity-50"
                 >
                   {joining ? 'Joining...' : 'Join Workspace'}
                 </button>

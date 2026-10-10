@@ -34,7 +34,7 @@ interface WorkspacePageProps {
   onBackToDashboard: () => void;
 }
 
-const COLLAB_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
+const COLLAB_COLORS = ['#c08532', '#34785c', '#d4994a', '#1f8a65', '#84847e', '#4a9e7c'];
 
 export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   projectId,
@@ -530,7 +530,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     const jsContent = jsFile?._id === activeFileId ? activeContent : (jsFile?.content || '');
 
     if (!htmlContent && !cssContent && !jsContent) {
-      return `<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:40px;color:#64748b;"><h3>No HTML/CSS/JS files found in workspace</h3></body></html>`;
+      return `<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:40px;background:#f7f7f4;color:#84847e;"><h3>No HTML/CSS/JS files found in workspace</h3></body></html>`;
     }
 
     // Embed CSS and JS into HTML
@@ -546,7 +546,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   if (!project) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#0F172A] text-slate-400 text-xs">
+      <div className="h-screen w-screen flex items-center justify-center bg-parchment text-driftwood font-mono text-xs">
         Loading collaborative workspace...
       </div>
     );
@@ -557,7 +557,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const warnCount = diagnostics.filter((d) => d.severity === 'warning').length;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
+    <div className="h-screen w-screen flex flex-col bg-parchment text-ink overflow-hidden transition-colors duration-200">
       {/* Workspace Header */}
       <Header
         project={project}
@@ -761,7 +761,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
             placeholder="Search file by name..."
             value={quickOpenFilter}
             onChange={(e) => setQuickOpenFilter(e.target.value)}
-            className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs font-mono text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink"
           />
           <div className="max-h-60 overflow-y-auto space-y-1">
             {files
@@ -774,14 +774,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
                     setShowQuickOpen(false);
                     setQuickOpenFilter('');
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-blue-600/15 text-xs text-slate-300 hover:text-white transition cursor-pointer"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-left hover:bg-linen/60 text-xs font-mono text-driftwood hover:text-ink transition cursor-pointer"
                 >
-                  <span className="font-medium text-slate-200">{file.name}</span>
-                  <span className="text-[10px] text-slate-500 font-mono">{file.path}</span>
+                  <span className="font-normal text-ink">{file.name}</span>
+                  <span className="text-[10px] text-mist font-mono">{file.path}</span>
                 </button>
               ))}
             {files.filter((f) => !f.isFolder && f.name.toLowerCase().includes(quickOpenFilter.toLowerCase())).length === 0 && (
-              <p className="text-center text-xs text-slate-500 py-4">No matching files</p>
+              <p className="text-center text-xs font-editorial text-mist py-4">No matching files</p>
             )}
           </div>
         </div>

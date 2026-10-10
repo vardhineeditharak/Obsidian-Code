@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
+import { ThemeToggle } from '../ui/AnimatedIcon';
 
 interface AuthPageProps {
   onAuthSuccess?: (user: any, token: string) => void;
@@ -207,30 +208,38 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
   };
 
   return (
-    <div className="h-dvh w-full overflow-y-auto bg-gradient-to-br from-[#0A0F1D] via-[#0F172A] to-[#1E293B] p-4 flex select-none">
-      <div className="m-auto w-full max-w-md glass-modal rounded-2xl p-6 sm:p-8 border border-white/10 shadow-2xl relative overflow-hidden">
-        {/* Top-edge highlight */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+    <div className="h-dvh w-full overflow-y-auto bg-parchment p-4 flex select-none relative transition-colors duration-150">
+      {/* Top right theme toggle */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle size={16} />
+      </div>
 
+      <div className="m-auto w-full max-w-md bg-bone rounded-lg p-6 sm:p-8 border border-(--border-subtle) shadow-xl relative">
         {/* Brand Header */}
-        <div className="text-center mb-6 relative">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg mb-3">
-            <Code2 className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Obsidian Code</h1>
-          <p className="text-xs text-slate-400 mt-1">Your team's shared workspace for code</p>
+        <div className="text-center mb-6">
+          <img
+            src="/logo.svg"
+            alt="Obsidian Code"
+            className="w-12 h-12 object-contain dark:invert mb-3"
+          />
+          <h1 className="font-brand text-4xl font-medium tracking-tight text-ink">
+            Obsidian Code
+          </h1>
+          <p className="font-editorial text-[17px] text-driftwood mt-1 italic">
+            Your team's shared workspace for code
+          </p>
         </div>
 
         {/* Verification View */}
         {verifying ? (
           <form onSubmit={handleVerifyCode} className="space-y-4">
             <div className="text-center mb-4">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 mb-2">
-                <KeyRound className="w-5 h-5" />
+              <div className="inline-flex items-center justify-center w-8 h-8 rounded bg-linen text-amber mb-2">
+                <KeyRound className="w-4 h-4" />
               </div>
-              <h2 className="text-base font-semibold text-white">Verify Your Email</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Enter the 6-digit code sent to <span className="text-slate-200 font-medium">{email}</span>
+              <h2 className="headline-sm text-base font-normal text-ink">Verify Your Email</h2>
+              <p className="font-editorial text-[15px] text-driftwood mt-1">
+                Enter the 6-digit code sent to <span className="font-mono text-xs text-ink font-normal">{email}</span>
               </p>
             </div>
 
@@ -238,15 +247,15 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               <div
                 role="alert"
                 id="auth-error-message"
-                className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs"
+                className="text-[13px] text-crimson flex items-center gap-1.5"
               >
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
                 <span>{error}</span>
               </div>
             )}
 
             <div>
-              <label htmlFor="verification-code" className="text-xs font-medium text-slate-300 block mb-1.5">
+              <label htmlFor="verification-code" className="text-xs font-normal text-driftwood block mb-1.5">
                 Verification Code
               </label>
               <input
@@ -258,14 +267,14 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 placeholder="123456"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
-                className="w-full bg-slate-950/70 border border-white/10 rounded-xl px-4 py-2.5 text-center text-lg font-mono tracking-widest text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                className="w-full bg-parchment border border-(--border-subtle) rounded px-4 py-2 text-center text-lg font-mono tracking-widest text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || verificationCode.trim().length === 0}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              className="btn-primary w-full py-2.5 text-sm disabled:opacity-50"
             >
               <span>{loading ? 'Verifying...' : 'Verify & Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -275,7 +284,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               <button
                 type="button"
                 onClick={() => setVerifying(false)}
-                className="text-slate-400 hover:text-slate-200 transition"
+                className="btn-ghost"
               >
                 ← Back to Sign Up
               </button>
@@ -283,7 +292,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 type="button"
                 onClick={handleResendCode}
                 disabled={resending}
-                className="text-blue-400 hover:text-blue-300 transition flex items-center gap-1"
+                className="text-ember hover:underline flex items-center gap-1"
               >
                 <RotateCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
                 <span>{resending ? 'Sending...' : 'Resend Code'}</span>
@@ -293,12 +302,14 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
         ) : (
           <>
             {/* Tab switch */}
-            <div className="flex bg-slate-900/80 p-1 rounded-xl mb-6 border border-white/5">
+            <div className="flex bg-parchment p-1 rounded mb-6 border border-(--border-subtle)">
               <button
                 type="button"
                 onClick={() => switchMode(true)}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
-                  isLogin ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                className={`flex-1 py-1.5 text-xs font-normal rounded transition ${
+                  isLogin
+                    ? 'bg-bone text-ink shadow-xs border border-stone'
+                    : 'text-driftwood hover:text-ink'
                 }`}
               >
                 Sign In
@@ -306,22 +317,24 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               <button
                 type="button"
                 onClick={() => switchMode(false)}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
-                  !isLogin ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                className={`flex-1 py-1.5 text-xs font-normal rounded transition ${
+                  !isLogin
+                    ? 'bg-bone text-ink shadow-xs border border-stone'
+                    : 'text-driftwood hover:text-ink'
                 }`}
               >
                 Create Account
               </button>
             </div>
 
-            {/* Error banner */}
+            {/* Error message */}
             {error && (
               <div
                 role="alert"
                 id="auth-error-message"
-                className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs mb-4"
+                className="text-[13px] text-crimson flex items-center gap-1.5 mb-4"
               >
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
                 <span>{error}</span>
               </div>
             )}
@@ -330,11 +343,11 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
             <form onSubmit={isLogin ? handleSignIn : handleSignUp} className="space-y-4">
               {!isLogin && (
                 <div>
-                  <label htmlFor="auth-name" className="text-xs font-medium text-slate-300 block mb-1.5">
+                  <label htmlFor="auth-name" className="text-xs font-normal text-driftwood block mb-1.5">
                     Full Name
                   </label>
                   <div className="relative">
-                    <UserIcon className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
+                    <UserIcon className="w-4 h-4 text-ash absolute left-3 top-3 pointer-events-none" />
                     <input
                       id="auth-name"
                       type="text"
@@ -345,18 +358,18 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                       onChange={(e) => setName(e.target.value)}
                       aria-invalid={!!error}
                       aria-describedby={error ? 'auth-error-message' : undefined}
-                      className="w-full bg-slate-950/70 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                      className="w-full bg-parchment border border-(--border-subtle) rounded pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label htmlFor="auth-email" className="text-xs font-medium text-slate-300 block mb-1.5">
+                <label htmlFor="auth-email" className="text-xs font-normal text-driftwood block mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-ash absolute left-3 top-3 pointer-events-none" />
                   <input
                     id="auth-email"
                     type="email"
@@ -367,17 +380,17 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'auth-error-message' : undefined}
-                    className="w-full bg-slate-950/70 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                    className="w-full bg-parchment border border-(--border-subtle) rounded pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="auth-password" className="text-xs font-medium text-slate-300 block mb-1.5">
+                <label htmlFor="auth-password" className="text-xs font-normal text-driftwood block mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-ash absolute left-3 top-3 pointer-events-none" />
                   <input
                     id="auth-password"
                     type={showPassword ? 'text' : 'password'}
@@ -388,13 +401,13 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'auth-error-message' : undefined}
-                    className="w-full bg-slate-950/70 border border-white/10 rounded-xl pl-9 pr-10 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                    className="w-full bg-parchment border border-(--border-subtle) rounded pl-9 pr-10 py-2 text-sm text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition"
+                    className="absolute right-3 top-2.5 text-ash hover:text-ink transition"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -404,7 +417,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-semibold transition shadow-md flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                className="btn-primary w-full py-2.5 text-sm mt-2 disabled:opacity-50"
               >
                 <span>{loading ? 'Authenticating...' : isLogin ? 'Sign In' : 'Get Started'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -414,11 +427,11 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
             {/* OAuth Buttons */}
             <div className="mt-5 space-y-2.5">
               <div className="flex items-center gap-3 mb-4" aria-hidden="true">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[11px] text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                <div className="flex-1 h-px bg-stone" />
+                <span className="text-[11px] text-ash uppercase font-mono tracking-wider whitespace-nowrap">
                   or continue with
                 </span>
-                <div className="flex-1 h-px bg-white/10" />
+                <div className="flex-1 h-px bg-stone" />
               </div>
 
               {/* Google OAuth Button */}
@@ -426,7 +439,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 type="button"
                 onClick={() => handleOAuth('oauth_google')}
                 disabled={loading}
-                className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 rounded-xl text-sm font-semibold transition shadow-sm flex items-center justify-center gap-2.5 disabled:opacity-50"
+                className="w-full py-2 bg-parchment hover:bg-linen border border-(--border-subtle) text-ink rounded text-sm font-normal transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -454,9 +467,9 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 type="button"
                 onClick={() => handleOAuth('oauth_github')}
                 disabled={loading}
-                className="w-full py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 rounded-xl text-sm font-semibold transition shadow-sm flex items-center justify-center gap-2.5 disabled:opacity-50"
+                className="w-full py-2 bg-parchment hover:bg-linen border border-(--border-subtle) text-ink rounded text-sm font-normal transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer"
               >
-                <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 fill-current shrink-0 text-ink" viewBox="0 0 24 24">
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                 </svg>
                 <span>Continue with GitHub</span>

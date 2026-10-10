@@ -104,17 +104,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="glass-modal w-full max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(38,37,30,0.35)] dark:bg-[rgba(10,10,8,0.65)] p-4">
+      <div className="w-full max-w-xl rounded-lg overflow-hidden border border-stone bg-bone shadow-2xl flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-900/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone bg-bone">
           <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5 text-blue-400" />
-            <h2 className="text-base font-semibold text-slate-100">Share "{projectName}"</h2>
+            <Users className="w-5 h-5 text-ash" />
+            <h2 className="text-base font-normal text-ink">Share "{projectName}"</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-white/5 transition cursor-pointer"
+            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -124,7 +124,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         <div className="p-6 space-y-6">
           {/* Link Generation Section */}
           <div className="space-y-3">
-            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block">
+            <label className="text-xs font-mono text-ash uppercase tracking-wider block">
               Invite Collaborators via Link
             </label>
             <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   readOnly
                   placeholder="Click generate to create an invite link..."
                   value={inviteUrl}
-                  className="w-full bg-slate-950/80 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                  className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs font-mono text-ink focus:outline-none focus:ring-1 focus:ring-ink placeholder-mist"
                 />
               </div>
 
@@ -142,7 +142,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value as any)}
-                  className="bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                  className="bg-bone border border-stone rounded-md px-3 py-2 text-xs text-ink focus:outline-none cursor-pointer"
                 >
                   <option value="editor">Editor (Can edit)</option>
                   <option value="viewer">Viewer (Read-only)</option>
@@ -152,24 +152,24 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               {inviteUrl ? (
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition shadow-sm cursor-pointer"
+                  className="btn-primary text-xs px-3 py-2"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                  {copied ? 'Copied' : 'Copy'}
+                  {copied ? <Check className="w-3.5 h-3.5 text-verdant" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
               ) : (
                 <button
                   onClick={handleGenerateLink}
                   disabled={isLoading || !isOwner}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition shadow-sm cursor-pointer"
+                  className="btn-primary text-xs px-3 py-2 disabled:opacity-50"
                 >
-                  <LinkIcon className="w-4 h-4" />
-                  {isLoading ? 'Creating...' : 'Create Link'}
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <span>{isLoading ? 'Creating...' : 'Create Link'}</span>
                 </button>
               )}
             </div>
             {!isOwner && (
-              <p className="text-xs text-amber-400/80">
+              <p className="text-xs font-editorial text-amber">
                 Only the workspace Owner can create new invitation links.
               </p>
             )}
@@ -178,7 +178,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {/* Members List */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block">
+              <label className="text-xs font-mono text-ash uppercase tracking-wider block">
                 Workspace Members ({members.length})
               </label>
             </div>
@@ -190,24 +190,24 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 return (
                   <div
                     key={member.userId}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900/40 border border-white/5"
+                    className="flex items-center justify-between p-2.5 rounded-md bg-parchment border border-stone"
                   >
                     <div className="flex items-center gap-3">
                       <img
                         src={member.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${member.name}`}
                         alt={member.name}
-                        className="w-8 h-8 rounded-full border border-white/10 bg-slate-800"
+                        className="w-8 h-8 rounded-md border border-stone bg-linen"
                       />
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-medium text-slate-200">{member.name}</p>
+                          <p className="text-sm font-normal text-ink">{member.name}</p>
                           {isSelf && (
-                            <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded font-medium">
+                            <span className="text-[10px] font-mono text-ash bg-linen px-1.5 py-0.5 rounded-xs">
                               You
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500">{member.email}</p>
+                        <p className="text-xs font-mono text-mist">{member.email}</p>
                       </div>
                     </div>
 
@@ -217,7 +217,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           <select
                             value={member.role}
                             onChange={(e) => handleRoleChange(member.userId, e.target.value as ProjectRole)}
-                            className="bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                            className="bg-bone border border-stone rounded-md px-2 py-1 text-xs text-ink focus:outline-none cursor-pointer"
                           >
                             <option value="owner">Owner</option>
                             <option value="editor">Editor</option>
@@ -226,7 +226,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           <button
                             onClick={() => setMemberToRemove({ id: member.userId, name: member.name, isSelf: false })}
                             title="Remove member"
-                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                            className="p-1 rounded-md text-ash hover:text-crimson transition cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -234,20 +234,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       ) : (
                         <div className="flex items-center gap-2">
                           <span
-                            className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                              member.role === 'owner'
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                : member.role === 'editor'
-                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                : 'bg-slate-700/50 text-slate-300 border border-white/10'
-                            }`}
+                            className="text-xs font-mono px-2 py-0.5 rounded-md border border-stone text-ash"
                           >
                             {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                           </span>
                           {isSelf && member.role !== 'owner' && (
                             <button
                               onClick={() => setMemberToRemove({ id: member.userId, name: member.name, isSelf: true })}
-                              className="flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded transition cursor-pointer"
+                              className="flex items-center gap-1 text-[11px] text-crimson hover:opacity-80 px-2 py-1 rounded-md transition cursor-pointer"
                             >
                               <LogOut className="w-3 h-3" />
                               <span>Leave</span>
@@ -264,10 +258,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 border-t border-white/10 bg-slate-900/60 flex justify-end">
+        <div className="px-6 py-3 border-t border-stone bg-bone flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
+            className="btn-secondary text-xs px-4 py-2"
           >
             Done
           </button>

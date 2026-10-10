@@ -23,10 +23,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ClerkProvider>
     <Toaster
       theme="system"
-      richColors
       position="bottom-right"
       toastOptions={{
-        className: 'border border-black/10 dark:border-white/10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-slate-900 dark:text-slate-100 text-sm shadow-xl',
+        className: 'border border-stone bg-bone text-ink text-sm rounded-md shadow-2xl font-sans',
+        descriptionClassName: 'text-driftwood text-xs font-sans',
       }}
     />
   </React.StrictMode>
