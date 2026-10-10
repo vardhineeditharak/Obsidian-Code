@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "step": 1,
+      "description": "Install morphicons via npm",
+      "command": "npm install morphicons"
+    },
+    {
+      "step": 2,
+      "description": "Configure Tailwind for dark mode (if not already)",
+      "details": "Update tailwind.config.js to enable dark mode using class strategy. Example: darkMode: ['class', '.dark']"
+    },
+    {
+      "step": 3,
+      "description": "Update global CSS to support dark mode",
+      "details": "In src/index.css, add Tailwind base styles and define any custom properties for light/dark mode if needed. Ensure Tailwind's dark mode classes are utilized."
+    },
+    {
+      "step": 4,
+      "description": "Redesign Header component to be clean and minimal (Apple style)",
+      "file": "src/components/workspace/Header.tsx",
+      "details": "Use flexbox, appropriate spacing, and Tailwind classes for a clean look. Remove unnecessary borders, shadows, and use subtle colors. Implement a mode toggle button (light/dark) using morphicons."
+    },
+    {
+      "step": 5,
+      "description": "Redesign Sidebar component to be clean and minimal (Apple style)",
+      "file": "src/components/workspace/Sidebar.tsx",
+      "details": "Use a clean layout with ample padding, subtle hover effects, and minimal icons. Replace text labels with icons where appropriate, using morphicons. Ensure it adapts to dark mode."
+    },
+    {
+      "step": 6,
+      "description": "Replace icons in Header and Sidebar with morphicons",
+      "details": "Import morphicons (e.g., import { Moon, Sun } from 'morphicons') and replace existing icon components with morphicon equivalents. Use the appropriate morphicon for each action (e.g., Moon for dark mode, Sun for light mode)."
+    },
+    {
+      "step": 7,
+      "description": "Update other components as needed (Dashboard, EditorWorkspace, etc.)",
+      "files": [
+        "src/components/dashboard/Dashboard.tsx",
+        "src/components/workspace/EditorWorkspace.tsx",
+        "src/components/workspace/BottomPanel.tsx",
+        "src/components/workspace/StatusBar.tsx"
+      ],
+      "details": "Apply the same clean, minimal design principles. Ensure consistent spacing, typography, and color usage. Replace any remaining icons with morphicons."
+    },
+    {
+      "step": 8,
+      "description": "Test light and dark mode switching",
+      "details": "Add a toggle switch in the Header (or another accessible location) that toggles a 'dark' class on the root element (e.g., document.documentElement). Verify that all components adapt correctly to both light and dark modes."
+    }
+  ]
+}
