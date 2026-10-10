@@ -372,6 +372,37 @@ export const dbStore = {
     return member;
   },
 
+  async updateMemberRole(projectId: string, userId: string, role: 'owner' | 'editor' | 'viewer') {
+    if (isMongoOnline()) {
+      return ProjectMember.findOneAndUpdate(
+        { projectId, userId },
+        { role },
+        { new: true }
+      );
+    }
+    for (const m of mem.members.values()) {
+      if (m.projectId === projectId && m.userId === userId) {
+        m.role = role;
+        return m;
+      }
+    }
+    return null;
+  },
+
+  async removeMember(projectId: string, userId: string) {
+    if (isMongoOnline()) {
+      const res = await ProjectMember.findOneAndDelete({ projectId, userId });
+      return !!res;
+    }
+    for (const [k, m] of mem.members.entries()) {
+      if (m.projectId === projectId && m.userId === userId) {
+        mem.members.delete(k);
+        return true;
+      }
+    }
+    return false;
+  },
+
   async getProjectMembers(projectId: string) {
     if (isMongoOnline()) {
       const members = await ProjectMember.find({ projectId }).populate('userId', 'name email avatar');

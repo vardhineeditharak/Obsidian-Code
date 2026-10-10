@@ -16,12 +16,28 @@ export const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
   const [currentRoute, setCurrentRoute] = useState<'auth' | 'dashboard' | 'workspace'>('auth');
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const updateUser = (u: User | null) => {
     currentUserRef.current = u;
     setCurrentUser(u);
   };
+
+  // Helper to detect /join/<token> in URL path
+  const getInviteTokenFromPath = () => {
+    if (typeof window === 'undefined') return null;
+    const match = window.location.pathname.match(/\/join\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  };
+
+  useEffect(() => {
+    // Initial check for /join/<token> on mount
+    const initialToken = getInviteTokenFromPath();
+    if (initialToken && typeof window !== 'undefined') {
+      sessionStorage.setItem('pending_invite', initialToken);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isClerkLoaded) return;
@@ -46,6 +62,19 @@ export const App: React.FC = () => {
         .then(({ user, token: userToken }) => {
           updateUser(user);
           setToken(userToken);
+
+          // Check for pending invite token (either from URL or sessionStorage)
+          let inviteToken = getInviteTokenFromPath();
+          if (!inviteToken && typeof window !== 'undefined') {
+            inviteToken = sessionStorage.getItem('pending_invite');
+          }
+
+          if (inviteToken) {
+            setPendingInviteToken(inviteToken);
+            setCurrentRoute('dashboard');
+            return;
+          }
+
           // Check URL for project routing: /workspace/:id
           const path = window.location.pathname;
           const match = path.match(/\/workspace\/([a-zA-Z0-9_-]+)/);
@@ -73,6 +102,19 @@ export const App: React.FC = () => {
     // Handle browser popstate with ref to avoid stale closure
     const handlePopState = () => {
       const path = window.location.pathname;
+
+      const joinMatch = path.match(/\/join\/([a-zA-Z0-9_-]+)/);
+      if (joinMatch) {
+        const inviteTok = joinMatch[1];
+        if (currentUserRef.current) {
+          setPendingInviteToken(inviteTok);
+          setCurrentRoute('dashboard');
+        } else if (typeof window !== 'undefined') {
+          sessionStorage.setItem('pending_invite', inviteTok);
+        }
+        return;
+      }
+
       const match = path.match(/\/workspace\/([a-zA-Z0-9_-]+)/);
       if (match) {
         setActiveProjectId(match[1]);
@@ -157,6 +199,8 @@ export const App: React.FC = () => {
       user={currentUser}
       onOpenProject={handleOpenProject}
       onLogout={handleLogout}
+      initialInviteToken={pendingInviteToken}
+      onClearInviteToken={() => setPendingInviteToken(null)}
     />
   );
 };

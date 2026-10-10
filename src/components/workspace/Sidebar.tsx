@@ -11,6 +11,7 @@ import {
   Edit,
   Trash,
 } from '../ui/AnimatedIcon';
+import { ConfirmDialog } from '../ui/Dialog';
 
 interface SidebarProps {
   files: ProjectFile[];
@@ -31,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDeleteFile,
   userRole,
 }) => {
+  const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -253,9 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`Delete ${file.name}?`)) {
-                        onDeleteFile(file._id);
-                      }
+                      setFileToDelete({ id: file._id, name: file.name });
                     }}
                     title="Delete"
                     className="p-1 rounded text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
@@ -268,6 +268,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </div>
+
+      <ConfirmDialog
+        isOpen={!!fileToDelete}
+        title={`Delete ${fileToDelete?.name}?`}
+        message="Are you sure you want to delete this file? This action cannot be undone."
+        confirmText="Delete"
+        isDestructive
+        onConfirm={() => {
+          if (fileToDelete) {
+            onDeleteFile(fileToDelete.id);
+          }
+        }}
+        onCancel={() => setFileToDelete(null)}
+      />
     </aside>
   );
 };

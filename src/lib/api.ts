@@ -207,6 +207,23 @@ export const api = {
     return handleResponse<{ projectId: string; role: ProjectRole; message: string }>(res);
   },
 
+  async updateMemberRole(projectId: string, userId: string, role: ProjectRole): Promise<{ message: string; member: any }> {
+    const res = await fetch(`${BASE_URL}/projects/${projectId}/members/${userId}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ role }),
+    });
+    return handleResponse<{ message: string; member: any }>(res);
+  },
+
+  async removeMember(projectId: string, userId: string): Promise<{ message: string }> {
+    const res = await fetch(`${BASE_URL}/projects/${projectId}/members/${userId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<{ message: string }>(res);
+  },
+
   // Sandbox Code Execution
   async executeCode(code: string, language: string, fileName?: string): Promise<ExecutionResult> {
     const res = await fetch(`${BASE_URL}/execute`, {

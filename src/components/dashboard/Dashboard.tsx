@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Globe,
   Binary,
+  Terminal,
 } from 'lucide-react';
 import {
   Plus,
@@ -16,6 +17,7 @@ import {
   LogOut,
   ThemeToggle,
 } from '../ui/AnimatedIcon';
+import { ConfirmDialog } from '../ui/Dialog';
 import { Project, User } from '../../lib/types';
 import { api } from '../../lib/api';
 import { notify } from '../../lib/notifications';
@@ -25,22 +27,55 @@ interface DashboardProps {
   user: User;
   onOpenProject: (projectId: string) => void;
   onLogout: () => void;
+  initialInviteToken?: string | null;
+  onClearInviteToken?: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLogout }) => {
+export const Dashboard: React.FC<DashboardProps> = ({
+  user,
+  onOpenProject,
+  onLogout,
+  initialInviteToken,
+  onClearInviteToken,
+}) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<'blank' | 'web' | 'algorithms'>('web');
+  const [selectedTemplate, setSelectedTemplate] = useState<'blank' | 'web' | 'node' | 'algorithms'>('web');
   const [inviteToken, setInviteToken] = useState('');
   const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Prefill invite token and open join modal if initialInviteToken provided (D3/B2)
+  useEffect(() => {
+    if (initialInviteToken) {
+      setInviteToken(initialInviteToken);
+      setShowJoinModal(true);
+      executeJoin(initialInviteToken);
+    }
+  }, [initialInviteToken]);
+
+  // ESC keydown listener for Dashboard modals
+  useEffect(() => {
+    if (!showCreateModal && !showJoinModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowCreateModal(false);
+        setShowJoinModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showCreateModal, showJoinModal]);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -75,34 +110,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
     }
   };
 
-  const handleJoinProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteToken.trim()) return;
+  const executeJoin = async (rawToken: string) => {
+    const token = rawToken.includes('/join/') ? rawToken.split('/join/').pop()! : rawToken.trim();
+    if (!token) return;
 
+    setJoining(true);
+    setJoinError(null);
     try {
-      const token = inviteToken.includes('/join/') ? inviteToken.split('/join/').pop()! : inviteToken.trim();
       const res = await api.acceptInvitation(token);
       notify.success('Joined Workspace', res.message);
       sound.checkpointSaved();
       setShowJoinModal(false);
       setInviteToken('');
+      window.history.replaceState({}, '', '/dashboard');
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('pending_invite');
+      }
+      onClearInviteToken?.();
       loadProjects();
       onOpenProject(res.projectId);
     } catch (err: any) {
+      setJoinError(err.message || 'Failed to join workspace');
       notify.error('Failed to join workspace', err.message);
+    } finally {
+      setJoining(false);
     }
   };
 
-  const handleDeleteProject = async (projectId: string, projectName: string) => {
-    if (!confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleJoinProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteToken.trim()) return;
+    await executeJoin(inviteToken);
+  };
+
+  const handleDeleteProject = (projectId: string, projectName: string) => {
+    setProjectToDelete({ id: projectId, name: projectName });
+  };
+
+  const handleConfirmDeleteProject = async () => {
+    if (!projectToDelete) return;
     try {
-      await api.deleteProject(projectId);
-      notify.info(`Project "${projectName}" deleted`);
+      await api.deleteProject(projectToDelete.id);
+      notify.info(`Project "${projectToDelete.name}" deleted`);
       loadProjects();
     } catch (err: any) {
       notify.error('Failed to delete project', err.message);
+    } finally {
+      setProjectToDelete(null);
     }
   };
 
@@ -284,7 +338,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
               {/* Starter Templates */}
               <div>
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-2">Starter Template</label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div
                     onClick={() => setSelectedTemplate('web')}
                     className={`p-3 rounded-xl border cursor-pointer transition text-left ${
@@ -296,6 +350,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
                     <Globe className="w-5 h-5 text-blue-500 mb-1.5" />
                     <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Web App</p>
                     <p className="text-[10px] text-slate-500">HTML, CSS, JS</p>
+                  </div>
+
+                  <div
+                    onClick={() => setSelectedTemplate('node')}
+                    className={`p-3 rounded-xl border cursor-pointer transition text-left ${
+                      selectedTemplate === 'node'
+                        ? 'border-blue-500 bg-blue-500/10 text-slate-900 dark:text-white'
+                        : 'border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-black/[0.04] dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <Terminal className="w-5 h-5 text-emerald-500 mb-1.5" />
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Node.js</p>
+                    <p className="text-[10px] text-slate-500">Package & script</p>
                   </div>
 
                   <div
@@ -319,7 +386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
                         : 'border-black/[0.06] dark:border-white/[0.06] bg-black/[0.02] dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-black/[0.04] dark:hover:bg-slate-800'
                     }`}
                   >
-                    <Code size={20} className="text-emerald-500 mb-1.5" />
+                    <Sparkles className="w-5 h-5 text-amber-500 mb-1.5" />
                     <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Blank</p>
                     <p className="text-[10px] text-slate-500">Clean slate</p>
                   </div>
@@ -356,6 +423,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
               Paste your invitation token or share link to join a team's code workspace.
             </p>
 
+            {joinError && (
+              <div className="mb-4 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+                {joinError}
+              </div>
+            )}
+
             <form onSubmit={handleJoinProject} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Invitation Link or Token</label>
@@ -364,7 +437,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
                   required
                   placeholder="Paste token or link (e.g. 5a9b...)"
                   value={inviteToken}
-                  onChange={(e) => setInviteToken(e.target.value)}
+                  onChange={(e) => {
+                    setInviteToken(e.target.value);
+                    if (joinError) setJoinError(null);
+                  }}
                   className="w-full bg-slate-100/80 dark:bg-slate-950/80 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -379,15 +455,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onOpenProject, onLog
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-full text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold transition shadow-xs cursor-pointer"
+                  disabled={joining}
+                  className="px-4 py-2 rounded-full text-xs bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold transition shadow-xs cursor-pointer"
                 >
-                  Join Workspace
+                  {joining ? 'Joining...' : 'Join Workspace'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Delete Project Confirm Dialog (D1) */}
+      <ConfirmDialog
+        isOpen={!!projectToDelete}
+        title={`Delete "${projectToDelete?.name}"?`}
+        message="Are you sure you want to delete this workspace? This action cannot be undone."
+        confirmText="Delete Workspace"
+        isDestructive
+        onConfirm={handleConfirmDeleteProject}
+        onCancel={() => setProjectToDelete(null)}
+      />
     </div>
   );
 };

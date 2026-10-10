@@ -129,6 +129,43 @@ console.log('Search for 7:', binarySearch(numbers, 7));
 console.log('Search for 12:', binarySearch(numbers, 12));
 `,
     });
+  } else if (template === 'node') {
+    await dbStore.createFile({
+      projectId: project._id.toString(),
+      name: 'index.js',
+      path: 'index.js',
+      isFolder: false,
+      language: 'javascript',
+      content: `// Node.js Application
+console.log('Running on Node.js:', process.version);
+
+function greet(user) {
+  return \`Welcome to \${user}!\`;
+}
+
+console.log(greet('${name}'));
+`,
+    });
+
+    await dbStore.createFile({
+      projectId: project._id.toString(),
+      name: 'package.json',
+      path: 'package.json',
+      isFolder: false,
+      language: 'json',
+      content: JSON.stringify(
+        {
+          name: name.toLowerCase().replace(/[^a-z0-9-_]/g, '-'),
+          version: '1.0.0',
+          main: 'index.js',
+          scripts: {
+            start: 'node index.js',
+          },
+        },
+        null,
+        2
+      ),
+    });
   } else {
     // Blank template
     await dbStore.createFile({
@@ -188,6 +225,67 @@ router.patch('/:projectId', authenticateJWT, requireProjectRole(['owner']), asyn
 router.delete('/:projectId', authenticateJWT, requireProjectRole(['owner']), async (req: AuthRequest, res: Response) => {
   await dbStore.deleteProject(param(req.params.projectId));
   return res.json({ message: 'Project deleted successfully' });
+});
+
+// Update member role (Owner only)
+router.patch('/:projectId/members/:userId', authenticateJWT, requireProjectRole(['owner']), async (req: AuthRequest, res: Response) => {
+  const schema = z.object({
+    role: z.enum(['owner', 'editor', 'viewer']),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Validation failed', errors: parsed.error.issues });
+  }
+
+  const projectId = param(req.params.projectId);
+  const targetUserId = param(req.params.userId);
+  const { role } = parsed.data;
+
+  const members = await dbStore.getProjectMembers(projectId);
+  const targetMember = members.find((m) => String(m.userId) === targetUserId);
+  if (!targetMember) {
+    return res.status(404).json({ message: 'Member not found' });
+  }
+
+  // Guard: cannot demote the last remaining owner
+  if (targetMember.role === 'owner' && role !== 'owner') {
+    const ownerCount = members.filter((m) => m.role === 'owner').length;
+    if (ownerCount <= 1) {
+      return res.status(400).json({ message: 'Cannot demote the last remaining owner' });
+    }
+  }
+
+  const updated = await dbStore.updateMemberRole(projectId, targetUserId, role);
+  return res.json({ message: 'Member role updated successfully', member: updated });
+});
+
+// Remove member (Owner or Self)
+router.delete('/:projectId/members/:userId', authenticateJWT, requireProjectRole(['owner', 'editor', 'viewer']), async (req: AuthRequest, res: Response) => {
+  const projectId = param(req.params.projectId);
+  const targetUserId = param(req.params.userId);
+  const isSelf = targetUserId === req.user!.userId;
+
+  if (!isSelf && req.projectRole !== 'owner') {
+    return res.status(403).json({ message: 'Only owners can remove other members' });
+  }
+
+  const members = await dbStore.getProjectMembers(projectId);
+  const targetMember = members.find((m) => String(m.userId) === targetUserId);
+  if (!targetMember) {
+    return res.status(404).json({ message: 'Member not found' });
+  }
+
+  // Guard: cannot remove the last remaining owner
+  if (targetMember.role === 'owner') {
+    const ownerCount = members.filter((m) => m.role === 'owner').length;
+    if (ownerCount <= 1) {
+      return res.status(400).json({ message: 'Cannot remove the last remaining owner' });
+    }
+  }
+
+  await dbStore.removeMember(projectId, targetUserId);
+  return res.json({ message: 'Member removed successfully' });
 });
 
 export const projectRoutes = router;

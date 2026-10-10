@@ -21,6 +21,7 @@ interface BottomPanelProps {
   diagnostics: DiagnosticsItem[];
   onSelectProblem: (fileId: string, line: number, column: number) => void;
   previewHtml: string;
+  previewNonce?: number;
   onRefreshPreview: () => void;
   onRunTerminalCommand: (command: string) => Promise<ExecutionResult | null> | void;
   activeLanguage?: string;
@@ -37,6 +38,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   diagnostics,
   onSelectProblem,
   previewHtml,
+  previewNonce,
   onRefreshPreview,
   onRunTerminalCommand,
   activeLanguage = 'javascript',
@@ -420,6 +422,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {activeTab === 'PREVIEW' && (
             <div className="h-full w-full bg-white rounded overflow-hidden">
               <iframe
+                key={previewNonce}
                 title="HTML Preview Sandbox"
                 srcDoc={previewHtml}
                 sandbox="allow-scripts allow-modals"

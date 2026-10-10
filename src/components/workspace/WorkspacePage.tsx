@@ -7,6 +7,7 @@ import { StatusBar } from './StatusBar';
 import { ShareModal } from './ShareModal';
 import { VersionHistoryModal } from './VersionHistoryModal';
 import { SearchReplaceModal } from './SearchReplaceModal';
+import { PromptDialog, Modal } from '../ui/Dialog';
 import {
   Project,
   ProjectFile,
@@ -71,6 +72,15 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showCheckpointDialog, setShowCheckpointDialog] = useState(false);
+  const [showQuickOpen, setShowQuickOpen] = useState(false);
+  const [quickOpenFilter, setQuickOpenFilter] = useState('');
+  const [showSidebar, setShowSidebar] = useState(true);
+
+  // Navigation and content sync
+  const [revealTarget, setRevealTarget] = useState<{ fileId: string; line: number; column: number; endColumn?: number; nonce: number } | null>(null);
+  const [replaceModelContent, setReplaceModelContent] = useState<{ fileId: string; content: string; nonce: number } | null>(null);
+  const [previewNonce, setPreviewNonce] = useState(0);
 
   // Audio mute
   const [isAudioMuted, setIsAudioMuted] = useState(sound.getMuted());
@@ -97,11 +107,21 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Global keyboard shortcut: Ctrl+Shift+F for Search
+    // Global keyboard shortcuts: Ctrl+Shift+F (Search), Ctrl+B (Sidebar), Ctrl+` (Terminal), Ctrl+P (Quick Open)
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
         e.preventDefault();
         setIsSearchOpen(true);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        setShowSidebar((prev) => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault();
+        setIsBottomOpen(true);
+        setBottomTab('TERMINAL');
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        setShowQuickOpen(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -383,14 +403,42 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     return result;
   };
 
+  // Live content collector across active file and open CRDT sessions (T1)
+  const getLiveFiles = () => {
+    return files
+      .filter((f) => !f.isFolder)
+      .map((f) => {
+        let content = f.content || '';
+        if (f._id === activeFileId) {
+          content = activeContent;
+        } else {
+          const session = docManager.getSession(projectId, f._id);
+          if (session) {
+            content = session.ytext.toString();
+          }
+        }
+        return {
+          fileId: f._id,
+          fileName: f.name,
+          content,
+        };
+      });
+  };
+
   // Checkpoint Creation (Ctrl+S or Manual)
-  const handleCreateNamedCheckpoint = async () => {
-    const name = prompt('Enter a checkpoint name (e.g. "feat: add user authentication"):');
-    if (!name?.trim()) return;
+  const handleCreateNamedCheckpoint = () => {
+    setShowCheckpointDialog(true);
+  };
+
+  const handleCreateCheckpointSubmit = async (values: Record<string, string>) => {
+    const name = values.name?.trim();
+    if (!name) return;
+    const note = values.note?.trim() || '';
+    setShowCheckpointDialog(false);
 
     try {
-      const note = prompt('Optional checkpoint notes:') || '';
-      const version = await api.createVersion(projectId, name.trim(), note);
+      const liveFiles = getLiveFiles();
+      const version = await api.createVersion(projectId, name, note, liveFiles);
       notify.checkpointCreated(version.name);
       sound.checkpointSaved();
     } catch (err: any) {
@@ -398,14 +446,42 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     }
   };
 
-  // Restore Checkpoint Content
+  // Restore Checkpoint Content (T2)
   const handleRestoreContent = (fileId: string, restoredContent: string) => {
     if (activeFileId === fileId) {
       setActiveContent(restoredContent);
+      setReplaceModelContent({ fileId, content: restoredContent, nonce: Date.now() });
+    }
+    const session = docManager.getSession(projectId, fileId);
+    if (session) {
+      session.doc.transact(() => {
+        session.ytext.delete(0, session.ytext.length);
+        session.ytext.insert(0, restoredContent);
+      });
     }
     setFiles((prev) =>
       prev.map((f) => (f._id === fileId ? { ...f, content: restoredContent } : f))
     );
+  };
+
+  // Adopt live CRDT content when a file is opened (T4)
+  const handleAdoptFileContent = (fileId: string, content: string) => {
+    if (activeFileId === fileId) {
+      setActiveContent(content);
+    }
+    setFiles((prev) =>
+      prev.map((f) => (f._id === fileId ? { ...f, content } : f))
+    );
+  };
+
+  // Refresh files list before workspace search (S3)
+  const handleRefreshFiles = async () => {
+    try {
+      const fresh = await api.getProjectFiles(projectId);
+      setFiles(fresh);
+    } catch (err) {
+      console.warn('Failed to refresh project files:', err);
+    }
   };
 
   // Batch Replace (Ctrl+Shift+F)
@@ -414,6 +490,13 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       await api.updateFile(r.fileId, { content: r.newContent });
       if (activeFileId === r.fileId) {
         setActiveContent(r.newContent);
+      }
+      const session = docManager.getSession(projectId, r.fileId);
+      if (session) {
+        session.doc.transact(() => {
+          session.ytext.delete(0, session.ytext.length);
+          session.ytext.insert(0, r.newContent);
+        });
       }
     }
     setFiles((prev) =>
@@ -424,12 +507,15 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     );
   };
 
-  // Export Workspace ZIP
+  // Export Workspace ZIP with live contents (T1)
   const handleExportZip = async () => {
     if (!project) return;
     await exportWorkspaceAsZip(project.name, files, async (fileId) => {
+      if (fileId === activeFileId) return activeContent;
+      const session = docManager.getSession(projectId, fileId);
+      if (session) return session.ytext.toString();
       const f = files.find((file) => file._id === fileId);
-      return f?._id === activeFileId ? activeContent : (f?.content || '');
+      return f?.content || '';
     });
   };
 
@@ -498,15 +584,17 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
       {/* Main Center Area: Sidebar + EditorWorkspace */}
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          files={files}
-          activeFileId={activeFileId}
-          onSelectFile={handleSelectFile}
-          onCreateFile={handleCreateFile}
-          onRenameFile={handleRenameFile}
-          onDeleteFile={handleDeleteFile}
-          userRole={userRole}
-        />
+        {showSidebar && (
+          <Sidebar
+            files={files}
+            activeFileId={activeFileId}
+            onSelectFile={handleSelectFile}
+            onCreateFile={handleCreateFile}
+            onRenameFile={handleRenameFile}
+            onDeleteFile={handleDeleteFile}
+            userRole={userRole}
+          />
+        )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <EditorWorkspace
@@ -531,6 +619,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
             onContentChange={setActiveContent}
             onCreateCheckpoint={handleCreateNamedCheckpoint}
             isPublic={project.isPublic ?? false}
+            revealTarget={revealTarget}
+            replaceModelContent={replaceModelContent}
+            onAdoptFileContent={handleAdoptFileContent}
           />
 
           <BottomPanel
@@ -545,10 +636,18 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
               handleSelectFile(fileId);
               setCursorLine(line);
               setCursorColumn(col);
+              setRevealTarget({
+                fileId,
+                line,
+                column: col,
+                endColumn: undefined,
+                nonce: Date.now(),
+              });
             }}
             previewHtml={previewHtml}
+            previewNonce={previewNonce}
             onRefreshPreview={() => {
-              notify.info('Refreshed sandboxed preview');
+              setPreviewNonce((prev) => prev + 1);
             }}
             onRunTerminalCommand={handleRunTerminalCommand}
             activeLanguage={activeFile ? detectLanguage(activeFile.name) : 'javascript'}
@@ -577,6 +676,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         projectName={project.name}
         members={project.members || []}
         userRole={userRole}
+        currentUserId={currentUser._id}
+        onMembersChanged={loadWorkspace}
+        onLeaveWorkspace={onBackToDashboard}
       />
 
       {/* Version History & Diff Modal */}
@@ -595,17 +697,95 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         files={files}
+        onBeforeSearch={handleRefreshFiles}
         getFileContent={async (fileId) => {
+          if (fileId === activeFileId) return activeContent;
+          const session = docManager.getSession(projectId, fileId);
+          if (session) return session.ytext.toString();
           const f = files.find((file) => file._id === fileId);
-          return f?._id === activeFileId ? activeContent : (f?.content || '');
+          return f?.content || '';
         }}
-        onSelectResult={(fileId, line, col) => {
+        onSelectResult={(fileId, line, col, matchLength) => {
           handleSelectFile(fileId);
           setCursorLine(line);
           setCursorColumn(col);
+          setRevealTarget({
+            fileId,
+            line,
+            column: col,
+            endColumn: col + (matchLength ?? 0),
+            nonce: Date.now(),
+          });
         }}
         onBatchReplace={handleBatchReplace}
       />
+
+      {/* Checkpoint Creation In-App Dialog (D1) */}
+      <PromptDialog
+        isOpen={showCheckpointDialog}
+        title="Create Named Checkpoint"
+        message="Snapshot live workspace contents into version history."
+        fields={[
+          {
+            id: 'name',
+            label: 'Checkpoint Name',
+            placeholder: 'e.g. feat: add user authentication',
+            required: true,
+          },
+          {
+            id: 'note',
+            label: 'Optional Notes',
+            placeholder: 'Summary of changes...',
+            type: 'textarea',
+          },
+        ]}
+        submitText="Save Checkpoint"
+        onSubmit={handleCreateCheckpointSubmit}
+        onCancel={() => setShowCheckpointDialog(false)}
+      />
+
+      {/* Quick Open File (Ctrl+P - X1) */}
+      <Modal
+        isOpen={showQuickOpen}
+        onClose={() => {
+          setShowQuickOpen(false);
+          setQuickOpenFilter('');
+        }}
+        maxWidth="max-w-md"
+        title="Quick Open File (Ctrl+P)"
+      >
+        <div className="p-4 space-y-3">
+          <input
+            type="text"
+            autoFocus
+            placeholder="Search file by name..."
+            value={quickOpenFilter}
+            onChange={(e) => setQuickOpenFilter(e.target.value)}
+            className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          />
+          <div className="max-h-60 overflow-y-auto space-y-1">
+            {files
+              .filter((f) => !f.isFolder && f.name.toLowerCase().includes(quickOpenFilter.toLowerCase()))
+              .map((file) => (
+                <button
+                  key={file._id}
+                  onClick={() => {
+                    handleSelectFile(file._id);
+                    setShowQuickOpen(false);
+                    setQuickOpenFilter('');
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-blue-600/15 text-xs text-slate-300 hover:text-white transition cursor-pointer"
+                >
+                  <span className="font-medium text-slate-200">{file.name}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">{file.path}</span>
+                </button>
+              ))}
+            {files.filter((f) => !f.isFolder && f.name.toLowerCase().includes(quickOpenFilter.toLowerCase())).length === 0 && (
+              <p className="text-center text-xs text-slate-500 py-4">No matching files</p>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

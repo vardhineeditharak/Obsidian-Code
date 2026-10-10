@@ -47,6 +47,9 @@ interface EditorWorkspaceProps {
   onContentChange: (content: string) => void;
   onCreateCheckpoint: () => void;
   isPublic?: boolean;
+  revealTarget?: { fileId: string; line: number; column: number; endColumn?: number; nonce: number } | null;
+  replaceModelContent?: { fileId: string; content: string; nonce: number } | null;
+  onAdoptFileContent?: (fileId: string, content: string) => void;
 }
 
 export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
@@ -65,11 +68,15 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   onContentChange,
   onCreateCheckpoint,
   isPublic = false,
+  revealTarget,
+  replaceModelContent,
+  onAdoptFileContent,
 }) => {
   const { isDark } = useTheme();
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
+  const revealPendingRef = useRef<{ fileId: string; line: number; column: number; endColumn?: number; nonce: number } | null>(null);
 
   // Remount-safe font measurement: gate editor on font readiness + remeasure on font load events (Task 1.1)
   useEffect(() => {
@@ -211,6 +218,51 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     }
   }, [collaborators, followingUserId, activeFileId]);
 
+  // Reveal Target jumping & selection (Search result + Problems navigation)
+  useEffect(() => {
+    if (revealTarget) {
+      revealPendingRef.current = revealTarget;
+    }
+  }, [revealTarget]);
+
+  useEffect(() => {
+    if (
+      revealPendingRef.current &&
+      revealPendingRef.current.fileId === activeFileId &&
+      editorRef.current
+    ) {
+      const { line, column, endColumn } = revealPendingRef.current;
+      editorRef.current.setSelection({
+        startLineNumber: line,
+        startColumn: column,
+        endLineNumber: line,
+        endColumn: endColumn ?? column,
+      });
+      editorRef.current.revealLineInCenter(line);
+      editorRef.current.focus();
+      revealPendingRef.current = null;
+    }
+  }, [revealTarget, activeFileId]);
+
+  // Model content replacement (Restore checkpoint)
+  useEffect(() => {
+    if (
+      replaceModelContent &&
+      replaceModelContent.fileId === activeFileId &&
+      editorRef.current
+    ) {
+      const model = editorRef.current.getModel();
+      if (model && model.getValue() !== replaceModelContent.content) {
+        editorRef.current.executeEdits('replace-model-content', [
+          {
+            range: model.getFullModelRange(),
+            text: replaceModelContent.content,
+          },
+        ]);
+      }
+    }
+  }, [replaceModelContent, activeFileId]);
+
   const handleEditorMount: OnMount = async (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -264,6 +316,12 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
         isPublic
       );
 
+      // Adopt canonical CRDT text if newer than files[].content (Task T4)
+      const liveText = session.ytext.toString();
+      if (liveText && liveText !== file.content) {
+        onAdoptFileContent?.(file._id, liveText);
+      }
+
       const color = '#3B82F6';
       docManager.bindMonaco(projectId, file._id, editor, {
         id: user.id,
@@ -273,6 +331,20 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
         role: userRole,
         fileId: file._id,
       });
+
+      // If a reveal target is pending for this file, execute it after binding
+      if (revealPendingRef.current && revealPendingRef.current.fileId === file._id) {
+        const { line, column, endColumn } = revealPendingRef.current;
+        editor.setSelection({
+          startLineNumber: line,
+          startColumn: column,
+          endLineNumber: line,
+          endColumn: endColumn ?? column,
+        });
+        editor.revealLineInCenter(line);
+        editor.focus();
+        revealPendingRef.current = null;
+      }
     } catch (err) {
       console.warn('Yjs Monaco binding initialized locally:', err);
     }
