@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { config } from './config';
-import { connectDB, getDBStatus } from './db';
+import { connectDB, getDBStatus, pingDB } from './db';
 import { authRoutes } from './routes/authRoutes';
 import { projectRoutes } from './routes/projectRoutes';
 import { fileRoutes } from './routes/fileRoutes';
@@ -54,10 +54,11 @@ app.use(
 );
 
 // Health Check Endpoint for Render & Uptime Monitors
-app.get('/healthz', (req, res) => {
-  const dbStatus = getDBStatus();
-  return res.json({
-    status: 'ok',
+app.get('/healthz', async (_req, res) => {
+  const dbStatus = await pingDB();
+  const isHealthy = dbStatus.connected || config.NODE_ENV !== 'production';
+  return res.status(isHealthy ? 200 : 503).json({
+    status: dbStatus.connected ? 'ok' : 'degraded',
     service: 'Obsidian Code',
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),

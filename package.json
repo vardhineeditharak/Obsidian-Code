@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "start": "tsx server/index.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:clear": "tsx server/scripts/clearDb.ts"
   },
   "dependencies": {
     "@clerk/react": "^6.17.8",
