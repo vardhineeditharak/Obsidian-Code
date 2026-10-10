@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "tsx": "^4.23.15",
+    "@clerk/react": "^6.17.8",
     "@monaco-editor/react": "^4.7.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -27,6 +27,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "sonner": "^2.0.8",
+    "tsx": "^4.23.15",
     "ws": "^8.22.0",
     "y-indexeddb": "^9.0.12",
     "y-monaco": "^0.1.6",

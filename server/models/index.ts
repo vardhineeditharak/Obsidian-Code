@@ -7,6 +7,7 @@ export interface IUser extends Document {
   name: string;
   avatar?: string;
   githubId?: string;
+  clerkId?: string;
   createdAt: Date;
 }
 
@@ -16,6 +17,7 @@ const UserSchema = new Schema<IUser>({
   name: { type: String, required: true, trim: true },
   avatar: { type: String },
   githubId: { type: String, sparse: true, unique: true, index: true },
+  clerkId: { type: String, sparse: true, unique: true, index: true },
   createdAt: { type: Date, default: Date.now },
 });
 

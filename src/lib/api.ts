@@ -48,6 +48,20 @@ export const api = {
     return data;
   },
 
+  async syncClerkUser(params: { clerkId: string; email: string; name: string; avatar?: string }): Promise<{ user: User; token: string }> {
+    const res = await fetch(`${BASE_URL}/auth/clerk-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    const data = await handleResponse<{ user: User; token: string }>(res);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('obsidian_token', data.token);
+      localStorage.setItem('obsidian_user', JSON.stringify(data.user));
+    }
+    return data;
+  },
+
   async getMe(): Promise<User> {
     const res = await fetch(`${BASE_URL}/auth/me`, {
       headers: getAuthHeaders(),

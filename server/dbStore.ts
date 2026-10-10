@@ -16,6 +16,7 @@ interface MemUser {
   name: string;
   avatar?: string;
   githubId?: string;
+  clerkId?: string;
   createdAt: Date;
 }
 
@@ -173,6 +174,70 @@ export const dbStore = {
       name: data.name,
       avatar: data.avatar,
       githubId: data.githubId,
+      createdAt: new Date(),
+    };
+    mem.users.set(newUser._id, newUser);
+    return newUser;
+  },
+
+  async findUserByClerkId(clerkId: string) {
+    if (isMongoOnline()) {
+      return User.findOne({ clerkId });
+    }
+    for (const u of mem.users.values()) {
+      if (u.clerkId === clerkId) return u;
+    }
+    return null;
+  },
+
+  async upsertClerkUser(data: { clerkId: string; email: string; name: string; avatar?: string }) {
+    // 1. Existing user with this clerkId
+    let user = await this.findUserByClerkId(data.clerkId);
+    if (user) {
+      if ((data.name && user.name !== data.name) || (data.avatar && user.avatar !== data.avatar)) {
+        if (isMongoOnline()) {
+          return User.findByIdAndUpdate(user._id, { name: data.name, avatar: data.avatar }, { new: true });
+        }
+        const memUser = mem.users.get(user._id);
+        if (memUser) {
+          memUser.name = data.name;
+          if (data.avatar) memUser.avatar = data.avatar;
+        }
+      }
+      return user;
+    }
+
+    // 2. Existing user with matching email: link clerkId
+    user = await this.findUserByEmail(data.email);
+    if (user) {
+      if (isMongoOnline()) {
+        return User.findByIdAndUpdate(user._id, { clerkId: data.clerkId, name: data.name || user.name, avatar: data.avatar || user.avatar }, { new: true });
+      }
+      const memUser = mem.users.get(user._id);
+      if (memUser) {
+        memUser.clerkId = data.clerkId;
+        if (data.name) memUser.name = data.name;
+        if (data.avatar) memUser.avatar = data.avatar;
+      }
+      return user;
+    }
+
+    // 3. Brand new Clerk user
+    if (isMongoOnline()) {
+      return User.create({
+        email: data.email.toLowerCase(),
+        name: data.name,
+        avatar: data.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.name)}`,
+        clerkId: data.clerkId,
+      });
+    }
+
+    const newUser: MemUser = {
+      _id: genId(),
+      email: data.email.toLowerCase(),
+      name: data.name,
+      avatar: data.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(data.name)}`,
+      clerkId: data.clerkId,
       createdAt: new Date(),
     };
     mem.users.set(newUser._id, newUser);
