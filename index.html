@@ -12,8 +12,22 @@
     <!-- Preload self-hosted font assets for deterministic font readiness -->
     <link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('obsidian.theme');
+          if (saved === 'light') {
+            document.documentElement.classList.remove('dark');
+          } else if (saved === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else if (window.matchMedia && !window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#0F172A] text-slate-100 antialiased overflow-hidden select-none">
+  <body class="bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 antialiased overflow-hidden select-none transition-colors duration-200">
     <div id="root" class="h-screen w-screen flex flex-col"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

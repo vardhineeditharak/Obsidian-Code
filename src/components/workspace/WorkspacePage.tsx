@@ -471,7 +471,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const warnCount = diagnostics.filter((d) => d.severity === 'warning').length;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0F172A] overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
       {/* Workspace Header */}
       <Header
         project={project}

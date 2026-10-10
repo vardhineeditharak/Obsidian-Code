@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
+import { Project, ProjectRole, TransportMode, CollaboratorPresence, User } from '../../lib/types';
 import {
-  Users,
-  Share2,
-  Download,
-  History,
+  ThemeToggle,
   Search,
+  History,
+  Download,
+  Share,
+  Play,
   Check,
   ChevronDown,
   LogOut,
-  Play,
-  RotateCw,
   FolderOpen,
-  RotateCcw,
-} from 'lucide-react';
-import { Project, ProjectRole, TransportMode, CollaboratorPresence, User } from '../../lib/types';
-import { AnimatedIcon } from '../ui/AnimatedIcon';
-import { sound } from '../../lib/audio/soundEngine';
+  VolumeHigh,
+  VolumeMute,
+  Wifi,
+  WifiOff,
+} from '../ui/AnimatedIcon';
+import { RotateCw, RotateCcw } from 'lucide-react';
 import { notify } from '../../lib/notifications';
 
 interface HeaderProps {
@@ -78,23 +79,23 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-12 border-b border-white/10 bg-slate-900/95 backdrop-blur-md px-3 flex items-center justify-between select-none z-30">
-      {/* Left: Brand & Project Name */}
-      <div className="flex items-center gap-3">
+    <header className="h-11 border-b border-black/[0.06] dark:border-white/[0.08] bg-white/75 dark:bg-slate-900/80 backdrop-blur-xl px-3 flex items-center justify-between select-none z-30 transition-colors duration-200">
+      {/* Left: Brand, Project Name & Sync Pill */}
+      <div className="flex items-center gap-2.5">
         <button
           onClick={onBackToDashboard}
           title="Back to Dashboard"
-          className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/5 text-slate-300 hover:text-white transition group"
+          className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 active:scale-95 transition-all group"
         >
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-xs">O</span>
+          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xs">
+            <span className="text-white font-bold text-[11px] leading-none">O</span>
           </div>
-          <span className="text-xs font-semibold tracking-wide text-slate-200 group-hover:text-white">
+          <span className="text-xs font-semibold tracking-tight text-slate-800 dark:text-slate-200 group-hover:text-black dark:group-hover:text-white">
             Obsidian
           </span>
         </button>
 
-        <span className="text-slate-600">/</span>
+        <span className="text-slate-300 dark:text-slate-700 text-xs font-light">/</span>
 
         {/* Inline editable project name */}
         {isEditingName ? (
@@ -105,48 +106,48 @@ export const Header: React.FC<HeaderProps> = ({
             onBlur={handleNameSubmit}
             onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
             autoFocus
-            className="bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded border border-blue-500 focus:outline-none"
+            className="bg-black/[0.04] dark:bg-white/[0.06] text-slate-900 dark:text-slate-100 text-xs px-2 py-0.5 rounded-md border border-blue-500 focus:outline-none"
           />
         ) : (
           <button
             onClick={() => userRole === 'owner' && setIsEditingName(true)}
             title={userRole === 'owner' ? 'Click to rename' : undefined}
-            className={`text-xs font-medium text-slate-200 px-1.5 py-0.5 rounded hover:bg-white/5 transition flex items-center gap-1.5 ${
+            className={`text-xs font-medium text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition flex items-center gap-1.5 ${
               userRole === 'owner' ? 'cursor-pointer' : 'cursor-default'
             }`}
           >
             <span>{project.name}</span>
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
               {userRole === 'owner' ? '(Owner)' : `(${userRole})`}
             </span>
           </button>
         )}
 
         {/* Sync Pill Indicator */}
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/80 border border-white/5 text-[11px]">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.04] dark:border-white/[0.06] text-[11px]">
           <span
-            className={`w-2 h-2 rounded-full ${
-              isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+            className={`w-1.5 h-1.5 rounded-full ${
+              isOnline ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse' : 'bg-amber-500 dark:bg-amber-400'
             }`}
           />
-          <span className="text-slate-400">
-            {isOnline ? 'Synced' : 'Offline (Local IDB)'}
+          <span className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">
+            {isOnline ? 'Synced' : 'Offline'}
           </span>
         </div>
       </div>
 
-      {/* Center: Action Controls (Run Code, Search, Version Diff) */}
-      <div className="flex items-center gap-2">
+      {/* Center: Action Controls (Run Code, Search, Version Diff, Export) */}
+      <div className="flex items-center gap-1">
         <button
           onClick={onRunCode}
           disabled={isRunningCode || userRole === 'viewer'}
           title={userRole === 'viewer' ? 'Viewers cannot execute code' : 'Execute Code (Sandbox)'}
-          className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600/90 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-md text-xs font-medium transition shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-40 text-white rounded-full text-xs font-medium transition shadow-xs cursor-pointer mr-1"
         >
           {isRunningCode ? (
             <RotateCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Play className="w-3.5 h-3.5 fill-current" />
+            <Play size={13} color="currentColor" strokeWidth={2} />
           )}
           <span>Run</span>
         </button>
@@ -154,32 +155,32 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenSearch}
           title="Search in Project (Ctrl+Shift+F)"
-          className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
         >
-          <Search className="w-4 h-4" />
+          <Search size={15} />
         </button>
 
         <button
           onClick={onOpenHistory}
           title="Version History & Diff"
-          className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
         >
-          <History className="w-4 h-4" />
+          <History size={15} />
         </button>
 
         <button
           onClick={onExportZip}
           title="Export Workspace as ZIP"
-          className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
         >
-          <Download className="w-4 h-4" />
+          <Download size={15} />
         </button>
       </div>
 
-      {/* Right: Presence, Transport, Audio, Role Switcher, Share, Profile */}
-      <div className="flex items-center gap-2.5">
+      {/* Right: Presence, Transport, Audio, Theme Toggle, Share, Profile */}
+      <div className="flex items-center gap-2">
         {/* Collaborator Avatars & Follow Mode */}
-        <div className="flex items-center -space-x-1.5">
+        <div className="flex items-center -space-x-1.5 mr-0.5">
           {collaborators.map((c) => {
             const isFollowed = followingUserId === c.id;
             return (
@@ -188,7 +189,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => onToggleFollow(c.id)}
                 title={`Collaborator: ${c.name} (${c.role})${isFollowed ? ' - Currently Following' : ' - Click to Follow'}`}
                 className={`relative w-6 h-6 rounded-full border-2 transition transform hover:scale-110 ${
-                  isFollowed ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-slate-800'
+                  isFollowed ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-white dark:border-slate-800'
                 }`}
                 style={{ backgroundColor: c.color }}
               >
@@ -204,19 +205,19 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowTransportMenu(!showTransportMenu)}
-            className="flex items-center gap-1 px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-800 border border-white/5 text-[11px] text-slate-300 transition"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-300 transition cursor-pointer"
           >
-            <AnimatedIcon
-              iconKey={isOnline ? 'wifi' : 'wifiOff'}
-              size={13}
-              color={isOnline ? '#38BDF8' : '#FBBF24'}
-            />
-            <span>{transportMode}</span>
-            <ChevronDown className="w-3 h-3 text-slate-500" />
+            {isOnline ? (
+              <Wifi size={13} color="#0284C7" strokeWidth={2} />
+            ) : (
+              <WifiOff size={13} color="#D97706" strokeWidth={2} />
+            )}
+            <span className="font-medium text-[10px]">{transportMode}</span>
+            <ChevronDown size={11} className="text-slate-400" />
           </button>
 
           {showTransportMenu && (
-            <div className="absolute right-0 top-full mt-1 w-44 rounded-lg bg-slate-900 border border-white/10 shadow-xl py-1 z-50 text-xs">
+            <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-slate-900 border border-black/[0.08] dark:border-white/[0.1] shadow-xl py-1 z-50 text-xs backdrop-blur-xl">
               {(['Hybrid', 'WebSocket Only', 'P2P Mesh Only'] as TransportMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -224,12 +225,12 @@ export const Header: React.FC<HeaderProps> = ({
                     onTransportChange(mode);
                     setShowTransportMenu(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-white/5 transition ${
-                    transportMode === mode ? 'text-blue-400 font-medium' : 'text-slate-300'
+                  className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition ${
+                    transportMode === mode ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   <span>{mode}</span>
-                  {transportMode === mode && <Check className="w-3.5 h-3.5" />}
+                  {transportMode === mode && <Check size={13} />}
                 </button>
               ))}
             </div>
@@ -237,7 +238,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* User Role Badge */}
-        <div className="px-2 py-0.5 rounded border border-white/10 bg-slate-800/60 text-slate-300 text-[10px] font-mono capitalize select-none">
+        <div className="px-2 py-0.5 rounded-full border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 text-[10px] font-mono capitalize select-none">
           {userRole}
         </div>
 
@@ -245,21 +246,24 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onToggleAudio}
           title={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
-          className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+          className="p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition cursor-pointer"
         >
-          <AnimatedIcon
-            iconKey={isAudioMuted ? 'volumeMute' : 'volumeHigh'}
-            spring="bouncy"
-            size={16}
-          />
+          {isAudioMuted ? (
+            <VolumeMute size={15} strokeWidth={2} />
+          ) : (
+            <VolumeHigh size={15} strokeWidth={2} />
+          )}
         </button>
 
-        {/* Share Button (Google Docs style) */}
+        {/* Apple-style Light / Dark Mode Toggle using Morphicons */}
+        <ThemeToggle size={16} />
+
+        {/* Share Button (Apple System Blue pill) */}
         <button
           onClick={onOpenShare}
-          className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white rounded-full text-xs font-medium transition shadow-xs cursor-pointer"
         >
-          <Share2 className="w-3.5 h-3.5" />
+          <Share size={13} color="currentColor" strokeWidth={2} />
           <span>Share</span>
         </button>
 
@@ -267,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-7 h-7 rounded-full overflow-hidden border border-white/20 focus:outline-none"
+            className="w-7 h-7 rounded-full overflow-hidden border border-black/[0.1] dark:border-white/[0.2] focus:outline-none hover:ring-2 hover:ring-blue-500/30 transition cursor-pointer"
           >
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.name}`}
@@ -277,9 +281,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-slate-900 border border-white/10 shadow-xl py-1 z-50 text-xs">
-              <div className="px-3 py-2 border-b border-white/5">
-                <p className="font-semibold text-slate-200">{user.name}</p>
+            <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white dark:bg-slate-900 border border-black/[0.08] dark:border-white/[0.1] shadow-xl py-1 z-50 text-xs backdrop-blur-xl">
+              <div className="px-3 py-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{user.name}</p>
                 <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
               </div>
               <button
@@ -287,9 +291,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowUserMenu(false);
                   onBackToDashboard();
                 }}
-                className="w-full text-left px-3 py-2 text-slate-300 hover:bg-white/5 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-2 transition"
               >
-                <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                <FolderOpen size={14} className="text-slate-400" />
                 <span>Projects Dashboard</span>
               </button>
               <button
@@ -304,7 +308,7 @@ export const Header: React.FC<HeaderProps> = ({
                   } catch {}
                   window.location.reload();
                 }}
-                className="w-full text-left px-3 py-2 text-slate-300 hover:bg-white/5 flex items-center gap-2 border-b border-white/5"
+                className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] flex items-center gap-2 border-b border-black/[0.06] dark:border-white/[0.06] transition"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
                 <span>Reset Layout</span>
@@ -314,9 +318,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowUserMenu(false);
                   onLogout();
                 }}
-                className="w-full text-left px-3 py-2 text-rose-400 hover:bg-rose-500/10 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut size={14} />
                 <span>Log out</span>
               </button>
             </div>
