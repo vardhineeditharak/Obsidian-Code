@@ -1,3 +1,21 @@
+/**
+ * Root Cause Diagnosis & Fix (Monaco Caret End-Of-Line Misalignment):
+ * Confirmed Hypothesis: H1 (Cached font metric drift from async webfont loading)
+ * Evidence:
+ * - document.fonts.check('13px "JetBrains Mono"') evaluates to false if Monaco measures
+ *   character widths before webfonts finish loading, causing Monaco to cache fallback font
+ *   metrics (e.g. Consolas ~0.55em vs JetBrains Mono 0.60em at 13px ≈ 0.65px/char drift,
+ *   accumulating to ~1 character offset by end-of-line).
+ * - Calling monaco.editor.remeasureFonts() immediately snaps the painted caret to the true logical column.
+ * - @monaco-editor/react was fetching Monaco from jsdelivr CDN without local loader configuration (H2).
+ * Fix applied:
+ * 1. ensureFontsReady() gates editor mounting on document.fonts.ready with a 3s offline timeout fallback.
+ * 2. Self-hosted Inter and JetBrains Mono woff2 fonts in /fonts with preload in index.html and @font-face rules.
+ * 3. Configured @monaco-editor/react loader to use local pinned monaco-editor 0.57 + web worker.
+ * 4. Wired document.fonts 'loadingdone' listener and post-mount remeasureFonts() calls.
+ * 5. Unified editorOptions across primary and mirror split panes with fontLigatures: false.
+ */
+
 import React, { useRef, useEffect, useState } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
@@ -6,6 +24,11 @@ import { ProjectFile, ProjectRole, CollaboratorPresence, DiagnosticsItem } from 
 import { docManager } from '../../lib/crdt/docManager';
 import { sound } from '../../lib/audio/soundEngine';
 import { notify } from '../../lib/notifications';
+import { ensureFontsReady } from '../../lib/fonts';
+import '../../lib/monacoSetup';
+
+import { editorOptions, baseEditorOptions, mirrorEditorOptions } from './editorOptions';
+export { editorOptions, baseEditorOptions, mirrorEditorOptions };
 
 interface EditorWorkspaceProps {
   projectId: string;
@@ -44,6 +67,41 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
 }) => {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
+  const [fontsReady, setFontsReady] = useState(false);
+
+  // Remount-safe font measurement: gate editor on font readiness + remeasure on font load events (Task 1.1)
+  useEffect(() => {
+    let active = true;
+    ensureFontsReady().finally(() => {
+      if (active) {
+        setFontsReady(true);
+        if (monacoRef.current) {
+          try {
+            monacoRef.current.editor.remeasureFonts();
+          } catch {}
+        }
+      }
+    });
+
+    const handleLoadingDone = () => {
+      if (monacoRef.current) {
+        try {
+          monacoRef.current.editor.remeasureFonts();
+        } catch {}
+      }
+    };
+
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.addEventListener('loadingdone', handleLoadingDone);
+    }
+
+    return () => {
+      active = false;
+      if (typeof document !== 'undefined' && document.fonts) {
+        document.fonts.removeEventListener('loadingdone', handleLoadingDone);
+      }
+    };
+  }, []);
   const [splitMode, setSplitMode] = useState<'single' | 'vertical' | 'horizontal'>('single');
   const [splitRatio, setSplitRatio] = useState<number>(() => {
     if (typeof window === 'undefined') return 50;
@@ -154,6 +212,16 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   const handleEditorMount: OnMount = async (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+
+    // Expose Monaco instance for developer console runtime inspection (Diagnostics 0.1/0.2)
+    if (typeof window !== 'undefined') {
+      (window as unknown as { __monaco: typeof Monaco }).__monaco = monaco;
+    }
+
+    // Remeasure fonts immediately upon mount to ensure caret geometry matches loaded webfont metrics (Task 1.1)
+    try {
+      monaco.editor.remeasureFonts();
+    } catch {}
 
     // Track cursor changes
     editor.onDidChangeCursorPosition((e) => {
@@ -305,28 +373,27 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               }
               className={`${splitMode === 'single' ? 'flex-1' : ''} relative h-full overflow-hidden`}
             >
-              <Editor
-                height="100%"
-                language={activeFile.language || 'javascript'}
-                theme="vs-dark"
-                value={activeFile.content || ''}
-                onMount={handleEditorMount}
-                options={{
-                  readOnly: isViewer,
-                  fontSize: 13,
-                  fontFamily: 'JetBrains Mono, Fira Code, monospace',
-                  lineHeight: 20,
-                  minimap: { enabled: true },
-                  scrollBeyondLastLine: false,
-                  smoothScrolling: true,
-                  cursorBlinking: 'smooth',
-                  cursorSmoothCaretAnimation: 'on',
-                  tabSize: 2,
-                  automaticLayout: true,
-                  renderLineHighlight: 'all',
-                  bracketPairColorization: { enabled: true },
-                }}
-              />
+              {!fontsReady ? (
+                <div className="w-full h-full bg-[#0F172A] flex items-center justify-center text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                    <span className="text-xs text-slate-400">Loading editor fonts...</span>
+                  </div>
+                </div>
+              ) : (
+                <Editor
+                  height="100%"
+                  language={activeFile.language || 'javascript'}
+                  theme="vs-dark"
+                  value={activeFile.content || ''}
+                  onMount={handleEditorMount}
+                  options={{
+                    ...baseEditorOptions,
+                    readOnly: isViewer,
+                    minimap: { enabled: true },
+                  }}
+                />
+              )}
             </div>
 
             {/* Draggable Divider Between Split Panes */}
@@ -356,20 +423,19 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 }
                 className="relative h-full overflow-hidden"
               >
-                <Editor
-                  height="100%"
-                  language={activeFile.language || 'javascript'}
-                  theme="vs-dark"
-                  value={activeFile.content || ''}
-                  options={{
-                    readOnly: true,
-                    fontSize: 13,
-                    fontFamily: 'JetBrains Mono, Fira Code, monospace',
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    automaticLayout: true,
-                  }}
-                />
+                {!fontsReady ? (
+                  <div className="w-full h-full bg-[#0F172A] flex items-center justify-center text-slate-500">
+                    <span className="text-xs text-slate-400">Loading editor...</span>
+                  </div>
+                ) : (
+                  <Editor
+                    height="100%"
+                    language={activeFile.language || 'javascript'}
+                    theme="vs-dark"
+                    value={activeFile.content || ''}
+                    options={mirrorEditorOptions}
+                  />
+                )}
               </div>
             )}
           </>
