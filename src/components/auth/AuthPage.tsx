@@ -15,6 +15,7 @@ import {
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
 import { ThemeToggle } from '../ui/AnimatedIcon';
+import { BrandMark } from '../ui/BrandMark';
 
 interface AuthPageProps {
   onAuthSuccess?: (user: any, token: string) => void;
@@ -217,11 +218,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
       <div className="m-auto w-full max-w-md bg-bone rounded-lg p-6 sm:p-8 border border-(--border-subtle) shadow-xl relative">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <img
-            src="/logo.svg"
-            alt="Obsidian Code"
-            className="w-12 h-12 object-contain dark:invert mb-3"
-          />
+          <BrandMark className="w-12 h-12 text-ink mx-auto mb-3" />
           <h1 className="font-brand text-4xl font-medium tracking-tight text-ink">
             Obsidian Code
           </h1>

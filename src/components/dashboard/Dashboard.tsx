@@ -18,6 +18,7 @@ import {
   ThemeToggle,
 } from '../ui/AnimatedIcon';
 import { ConfirmDialog } from '../ui/Dialog';
+import { BrandMark } from '../ui/BrandMark';
 import { Project, User } from '../../lib/types';
 import { api } from '../../lib/api';
 import { notify } from '../../lib/notifications';
@@ -165,11 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Top Navbar */}
       <nav className="h-13 border-b border-(--border-subtle) px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img
-            src="/logo.svg"
-            alt="Obsidian Code"
-            className="w-8 h-8 object-contain dark:invert"
-          />
+          <BrandMark className="w-8 h-8 text-ink shrink-0" />
           <span className="font-brand text-2xl font-medium tracking-tight text-ink">
             Obsidian Code
           </span>

@@ -18,6 +18,7 @@ import {
 } from '../ui/AnimatedIcon';
 import { RotateCw, RotateCcw } from 'lucide-react';
 import { notify } from '../../lib/notifications';
+import { BrandMark } from '../ui/BrandMark';
 
 interface HeaderProps {
   project: Project;
@@ -87,11 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
           title="Back to Dashboard"
           className="flex items-center gap-2 px-2 py-1 rounded hover:bg-linen text-ink transition group cursor-pointer"
         >
-          <img
-            src="/logo.svg"
-            alt="Obsidian Code"
-            className="w-6 h-6 object-contain dark:invert"
-          />
+          <BrandMark className="w-6 h-6 text-ink shrink-0" />
           <span className="font-brand text-lg font-medium tracking-tight text-ink">
             Obsidian
           </span>
