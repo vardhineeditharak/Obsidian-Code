@@ -132,6 +132,47 @@ router.get('/me', authenticateJWT, async (req: AuthRequest, res: Response) => {
   });
 });
 
+const clerkSyncSchema = z.object({
+  clerkId: z.string().min(1),
+  email: z.string().email(),
+  name: z.string().min(1),
+  avatar: z.string().optional(),
+});
+
+// Clerk user session sync
+router.post('/clerk-sync', async (req: Request, res: Response) => {
+  const result = clerkSyncSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ message: 'Validation failed', errors: result.error.issues });
+  }
+
+  const { clerkId, email, name, avatar } = result.data;
+  const user = await dbStore.upsertClerkUser({ clerkId, email, name, avatar });
+
+  const token = jwt.sign(
+    { userId: user._id.toString(), email: user.email, name: user.name },
+    config.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  res.cookie('obsidian_token', token, {
+    httpOnly: true,
+    secure: config.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  return res.json({
+    user: {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar,
+    },
+    token,
+  });
+});
+
 // OAuth Providers check (S4.2)
 router.get('/oauth/providers', (_req: Request, res: Response) => {
   const github = Boolean(config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET);
