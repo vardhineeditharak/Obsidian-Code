@@ -25,6 +25,7 @@ import { docManager } from '../../lib/crdt/docManager';
 import { sound } from '../../lib/audio/soundEngine';
 import { notify } from '../../lib/notifications';
 import { ensureFontsReady } from '../../lib/fonts';
+import { useTheme } from '../../lib/theme';
 import '../../lib/monacoSetup';
 
 import { editorOptions, baseEditorOptions, mirrorEditorOptions } from './editorOptions';
@@ -65,6 +66,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   onCreateCheckpoint,
   isPublic = false,
 }) => {
+  const { isDark } = useTheme();
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
@@ -283,9 +285,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   }, [activeFileId]);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0F172A] overflow-hidden select-none">
+    <div className="flex-1 flex flex-col bg-slate-100/50 dark:bg-[#0F172A] overflow-hidden select-none transition-colors duration-200">
       {/* Editor Tabs Header Bar */}
-      <div className="h-9 border-b border-white/10 bg-[#0A0F1D]/60 flex items-center justify-between px-2">
+      <div className="h-9 border-b border-black/[0.06] dark:border-white/[0.08] bg-slate-100/80 dark:bg-[#0A0F1D]/60 backdrop-blur-md flex items-center justify-between px-2">
         {/* Open Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto max-w-[80vw]">
           {openFileIds.map((fileId) => {
@@ -297,10 +299,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               <div
                 key={fileId}
                 onClick={() => onSelectFile(fileId)}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-t border-t-2 cursor-pointer transition ${
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-t-md border-t-2 cursor-pointer transition ${
                   isActive
-                    ? 'bg-slate-900 border-blue-500 text-slate-100 font-medium'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+                    ? 'bg-white dark:bg-slate-900 border-blue-500 text-slate-900 dark:text-slate-100 font-medium shadow-2xs'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]'
                 }`}
               >
                 <span>{file.name}</span>
@@ -309,7 +311,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     e.stopPropagation();
                     onCloseTab(fileId);
                   }}
-                  className="p-0.5 rounded-sm hover:bg-white/10 text-slate-500 hover:text-slate-300 transition"
+                  className="p-0.5 rounded-sm hover:bg-black/[0.08] dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -321,18 +323,18 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
         {/* Split Controls & Viewer Warning */}
         <div className="flex items-center gap-2">
           {isViewer && (
-            <span className="flex items-center gap-1 text-[11px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            <span className="flex items-center gap-1 text-[11px] text-amber-500 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
               <ShieldAlert className="w-3 h-3" />
               <span>Read-only</span>
             </span>
           )}
 
-          <div className="flex items-center bg-slate-800/80 rounded p-0.5 border border-white/5">
+          <div className="flex items-center bg-black/[0.04] dark:bg-slate-800/80 rounded-md p-0.5 border border-black/[0.05] dark:border-white/[0.05]">
             <button
               onClick={() => setSplitMode(splitMode === 'vertical' ? 'single' : 'vertical')}
               title="Split Editor Right"
               className={`p-1 rounded ${
-                splitMode === 'vertical' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                splitMode === 'vertical' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Columns2 className="w-3.5 h-3.5" />
@@ -341,7 +343,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               onClick={() => setSplitMode(splitMode === 'horizontal' ? 'single' : 'horizontal')}
               title="Split Editor Down"
               className={`p-1 rounded ${
-                splitMode === 'horizontal' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                splitMode === 'horizontal' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Rows2 className="w-3.5 h-3.5" />
@@ -374,7 +376,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               className={`${splitMode === 'single' ? 'flex-1' : ''} relative h-full overflow-hidden`}
             >
               {!fontsReady ? (
-                <div className="w-full h-full bg-[#0F172A] flex items-center justify-center text-slate-500">
+                <div className="w-full h-full bg-slate-100 dark:bg-[#0F172A] flex items-center justify-center text-slate-500">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                     <span className="text-xs text-slate-400">Loading editor fonts...</span>
@@ -384,7 +386,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 <Editor
                   height="100%"
                   language={activeFile.language || 'javascript'}
-                  theme="vs-dark"
+                  theme={isDark ? 'vs-dark' : 'vs'}
                   value={activeFile.content || ''}
                   onMount={handleEditorMount}
                   options={{
@@ -407,9 +409,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 title="Drag to adjust split ratio (double-click to reset 50/50)"
                 className={`${
                   splitMode === 'vertical'
-                    ? 'w-1 h-full cursor-col-resize hover:bg-blue-500/70 border-x border-white/5'
-                    : 'h-1 w-full cursor-row-resize hover:bg-blue-500/70 border-y border-white/5'
-                } bg-slate-900 transition flex-shrink-0 z-20 group relative`}
+                    ? 'w-1 h-full cursor-col-resize hover:bg-blue-500/70 border-x border-black/[0.06] dark:border-white/[0.08]'
+                    : 'h-1 w-full cursor-row-resize hover:bg-blue-500/70 border-y border-black/[0.06] dark:border-white/[0.08]'
+                } bg-slate-200 dark:bg-slate-900 transition flex-shrink-0 z-20 group relative`}
               />
             )}
 
@@ -424,14 +426,14 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 className="relative h-full overflow-hidden"
               >
                 {!fontsReady ? (
-                  <div className="w-full h-full bg-[#0F172A] flex items-center justify-center text-slate-500">
+                  <div className="w-full h-full bg-slate-100 dark:bg-[#0F172A] flex items-center justify-center text-slate-500">
                     <span className="text-xs text-slate-400">Loading editor...</span>
                   </div>
                 ) : (
                   <Editor
                     height="100%"
                     language={activeFile.language || 'javascript'}
-                    theme="vs-dark"
+                    theme={isDark ? 'vs-dark' : 'vs'}
                     value={activeFile.content || ''}
                     options={mirrorEditorOptions}
                   />
@@ -440,9 +442,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             )}
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 space-y-2">
-            <p className="text-sm">Select or create a file to start editing</p>
-            <p className="text-xs text-slate-600">Press Ctrl+Shift+F to search across project</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 space-y-2">
+            <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">Select or create a file to start editing</p>
+            <p className="text-xs text-slate-400 dark:text-slate-600">Press Ctrl+Shift+F to search across project</p>
           </div>
         )}
       </div>

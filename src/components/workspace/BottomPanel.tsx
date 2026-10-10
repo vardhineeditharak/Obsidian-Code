@@ -1,12 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  ChevronUp,
-  ChevronDown,
-  Trash2,
-  RefreshCw,
-  AlertCircle,
-  AlertTriangle,
-} from 'lucide-react';
+import { RefreshCw, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Trash, ChevronUp, ChevronDown } from '../ui/AnimatedIcon';
 import { BottomTab, DiagnosticsItem, ExecutionResult } from '../../lib/types';
 import { useResizable } from '../../lib/useResizable';
 import { api } from '../../lib/api';
@@ -211,19 +205,19 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
   return (
     <div
       style={isOpen ? { height: `${size}px` } : { height: '32px' }}
-      className="relative border-t border-white/10 bg-[#0A0F1D]/90 backdrop-blur-md flex flex-col select-none flex-shrink-0"
+      className="relative border-t border-black/[0.06] dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#0A0F1D]/80 backdrop-blur-xl flex flex-col select-none flex-shrink-0 transition-colors duration-200"
     >
       {/* Resizable Top Border Drag Handle (when open) */}
       {isOpen && (
         <div
           {...dragHandleProps}
           title="Drag to resize bottom panel (double-click to reset)"
-          className="absolute -top-1 left-0 right-0 h-2 cursor-row-resize hover:bg-blue-500/60 transition z-30 group"
+          className="absolute -top-1 left-0 right-0 h-2 cursor-row-resize hover:bg-blue-500/50 transition z-30 group"
         />
       )}
 
       {/* Panel Header Bar */}
-      <div className="h-8 px-3 flex items-center justify-between border-b border-white/5 bg-slate-900/40">
+      <div className="h-8 px-3 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.04] bg-black/[0.02] dark:bg-slate-900/40">
         <div className="flex items-center gap-1">
           {/* Tabs */}
           {(['OUTPUT', 'TERMINAL', 'PROBLEMS', 'PREVIEW'] as BottomTab[]).map((tab) => {
@@ -235,15 +229,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   onTabChange(tab);
                   if (!isOpen) onToggle();
                 }}
-                className={`px-3 py-1 text-xs font-semibold tracking-wider rounded transition flex items-center gap-1.5 ${
+                className={`px-2.5 py-0.5 text-[11px] font-semibold tracking-wider rounded-md transition flex items-center gap-1.5 cursor-pointer ${
                   isActive
-                    ? 'text-blue-400 bg-white/5'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                    ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-white/10 shadow-2xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.05]'
                 }`}
               >
                 <span>{tab}</span>
                 {tab === 'PROBLEMS' && diagnostics.length > 0 && (
-                  <span className="text-[10px] bg-slate-800 px-1.5 py-0.2 rounded-full font-mono text-slate-300">
+                  <span className="text-[10px] bg-black/[0.06] dark:bg-slate-800 px-1.5 py-0.2 rounded-full font-mono text-slate-700 dark:text-slate-300">
                     {diagnostics.length}
                   </span>
                 )}
@@ -253,14 +247,14 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         </div>
 
         {/* Panel Actions & Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {activeTab === 'OUTPUT' && (
             <button
               onClick={onClearOutput}
               title="Clear Output"
-              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash size={13} />
             </button>
           )}
 
@@ -268,9 +262,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
             <button
               onClick={() => setTerminalLog([])}
               title="Clear Terminal Console"
-              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash size={13} />
             </button>
           )}
 
@@ -278,7 +272,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
             <button
               onClick={onRefreshPreview}
               title="Refresh Preview"
-              className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -287,9 +281,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           <button
             onClick={onToggle}
             title={isOpen ? 'Collapse Panel' : 'Expand Panel'}
-            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-white/5 transition"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
           >
-            {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
         </div>
       </div>
