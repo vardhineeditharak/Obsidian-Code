@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { Toaster } from 'sonner';
 import App from './App';
 import './index.css';
+import './lib/monacoSetup';
 
 // Mount single Toaster at the root with dark theme and richColors as instructed by ask-sonner
 ReactDOM.createRoot(document.getElementById('root')!).render(
