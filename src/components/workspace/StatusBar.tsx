@@ -120,7 +120,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span className="text-stone">|</span>
 
-        <span className="uppercase text-ink font-medium">{currentLanguage}</span>
+        <span className="uppercase text-ink font-medium">{currentLanguage || 'plaintext'}</span>
       </div>
     </footer>
   );

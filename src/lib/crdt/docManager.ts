@@ -22,6 +22,8 @@ export interface DocSession {
 
 class YjsDocManager {
   private sessions = new Map<string, DocSession>();
+  private bindings = new Map<string, MonacoBinding>();
+  private activeBoundFileId: string | null = null;
   private activeTransport: TransportMode = 'Hybrid';
 
   public setTransportMode(mode: TransportMode) {
@@ -209,24 +211,45 @@ class YjsDocManager {
   }
 
   /**
-   * Binds Monaco editor instance to Yjs text and awareness
+   * Binds Monaco editor instance to Yjs text and awareness for a specific per-file model.
    */
   public bindMonaco(
     projectId: string,
     fileId: string,
     editor: Monaco.editor.IStandaloneCodeEditor,
-    awarenessPayload: CollaboratorPresence
+    awarenessPayload: CollaboratorPresence,
+    targetModel?: Monaco.editor.ITextModel | null
   ): MonacoBinding | null {
     const session = this.getSession(projectId, fileId);
     if (!session) return null;
 
-    // Dispose old binding if it exists
-    if (session.binding) {
+    // Dispose old binding for this fileId if one exists
+    const existingBinding = this.bindings.get(fileId);
+    if (existingBinding) {
+      existingBinding.destroy();
+      this.bindings.delete(fileId);
+    }
+    if (session.binding && session.binding !== existingBinding) {
       session.binding.destroy();
       session.binding = null;
     }
 
-    const model = editor.getModel();
+    // Dispose previous active binding on this editor if switching from another file
+    if (this.activeBoundFileId && this.activeBoundFileId !== fileId) {
+      const prevBinding = this.bindings.get(this.activeBoundFileId);
+      if (prevBinding) {
+        prevBinding.destroy();
+        this.bindings.delete(this.activeBoundFileId);
+        const prevRoom = `obsidian-project-${projectId}-file-${this.activeBoundFileId}`;
+        const prevSession = this.sessions.get(prevRoom);
+        if (prevSession) {
+          prevSession.binding = null;
+        }
+      }
+    }
+    this.activeBoundFileId = fileId;
+
+    const model = targetModel || editor.getModel();
     if (!model) return null;
 
     const awareness = session.awareness;
@@ -245,17 +268,42 @@ class YjsDocManager {
     }
 
     try {
-      session.binding = new MonacoBinding(
+      const binding = new MonacoBinding(
         session.ytext,
         model,
         new Set([editor]),
         awareness
       );
+      session.binding = binding;
+      this.bindings.set(fileId, binding);
     } catch (err) {
-      console.warn('MonacoBinding initialized with local text model');
+      console.warn('MonacoBinding initialized with local text model', err);
     }
 
     return session.binding;
+  }
+
+  /**
+   * Cleans up and disposes MonacoBinding for a specific file
+   */
+  public destroyBinding(fileId: string): void {
+    const binding = this.bindings.get(fileId);
+    if (binding) {
+      binding.destroy();
+      this.bindings.delete(fileId);
+    }
+    if (this.activeBoundFileId === fileId) {
+      this.activeBoundFileId = null;
+    }
+    for (const session of this.sessions.values()) {
+      if (session.binding === binding) {
+        session.binding = null;
+      }
+    }
+  }
+
+  public getBinding(fileId: string): MonacoBinding | undefined {
+    return this.bindings.get(fileId);
   }
 
   /**
@@ -305,6 +353,7 @@ class YjsDocManager {
    * Cleans up and disposes a session
    */
   public destroySession(projectId: string, fileId: string) {
+    this.destroyBinding(fileId);
     const roomKey = `obsidian-project-${projectId}-file-${fileId}`;
     const session = this.sessions.get(roomKey);
     if (!session) return;

@@ -340,6 +340,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       }
     }
 
+    if (activeFileId && activeFileId !== fileId) {
+      setExecutionResult(null);
+    }
+
     if (!openFileIds.includes(fileId)) {
       setOpenFileIds((prev) => [...prev, fileId]);
     }
@@ -351,9 +355,11 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   };
 
   const handleCloseTab = (fileId: string) => {
+    docManager.destroyBinding(fileId);
     const nextTabs = openFileIds.filter((id) => id !== fileId);
     setOpenFileIds(nextTabs);
     if (activeFileId === fileId) {
+      setExecutionResult(null);
       setActiveFileId(nextTabs.length > 0 ? nextTabs[nextTabs.length - 1] : null);
     }
   };
@@ -447,7 +453,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     const file = files.find((f) => f._id === activeFileId);
     if (!file) return;
 
-    const lang = detectLanguage(file.name);
+    const lang = detectLanguage(file.name) || file.language || 'plaintext';
     setIsRunningCode(true);
     notify.executionStarted();
     try {
@@ -492,7 +498,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
           throw new Error('No active file to run.');
         }
       }
-      targetLang = detectLanguage(targetFile.name);
+      targetLang = detectLanguage(targetFile.name) || targetFile.language || 'plaintext';
     } else {
       // <lang> <file>
       targetLang = cmd === 'node' || cmd === 'js' ? 'javascript' : (cmd === 'py' ? 'python' : cmd);
@@ -843,7 +849,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
               setPreviewNonce((prev) => prev + 1);
             }}
             onRunTerminalCommand={handleRunTerminalCommand}
-            activeLanguage={activeFile ? detectLanguage(activeFile.name) : 'javascript'}
+            activeLanguage={activeFile ? (detectLanguage(activeFile.name) || activeFile.language || 'javascript') : 'javascript'}
             activeFileName={activeFile?.name}
           />
         </div>
@@ -857,7 +863,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         transportMode={transportMode}
         errorCount={errorCount}
         warnCount={warnCount}
-        currentLanguage={activeFile?.language || 'plaintext'}
+        currentLanguage={activeFile ? (detectLanguage(activeFile.name) || activeFile.language || 'plaintext') : 'plaintext'}
         cursorLine={cursorLine}
         cursorColumn={cursorColumn}
         userRole={userRole}

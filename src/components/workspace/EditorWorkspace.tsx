@@ -26,6 +26,7 @@ import { sound } from '../../lib/audio/soundEngine';
 import { notify } from '../../lib/notifications';
 import { ensureFontsReady } from '../../lib/fonts';
 import { useTheme } from '../../lib/theme';
+import { detectLanguage } from '../../lib/language';
 import '../../lib/monacoSetup';
 
 import { editorOptions, baseEditorOptions, mirrorEditorOptions } from './editorOptions';
@@ -74,9 +75,17 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
 }) => {
   const { isDark } = useTheme();
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+  const mirrorEditorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
+  const prevActiveFileIdRef = useRef<string | null>(null);
+  const activeFileIdRef = useRef<string | null>(activeFileId);
+  const viewStatesRef = useRef<Map<string, Monaco.editor.ICodeEditorViewState>>(new Map());
   const [fontsReady, setFontsReady] = useState(false);
   const revealPendingRef = useRef<{ fileId: string; line: number; column: number; endColumn?: number; nonce: number } | null>(null);
+
+  useEffect(() => {
+    activeFileIdRef.current = activeFileId;
+  }, [activeFileId]);
 
   // Remount-safe font measurement: gate editor on font readiness + remeasure on font load events (Task 1.1)
   useEffect(() => {
@@ -244,21 +253,47 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     }
   }, [revealTarget, activeFileId]);
 
+  // Authoritative Monaco model registry helper
+  const getOrCreateModel = (monaco: typeof Monaco, file: ProjectFile): Monaco.editor.ITextModel => {
+    const uri = monaco.Uri.parse(`file://${file._id}`);
+    let model = monaco.editor.getModel(uri);
+    const lang = detectLanguage(file.name) || file.language || 'plaintext';
+    if (!model) {
+      const session = docManager.getSession(projectId, file._id);
+      const initialText = session && session.ytext.length > 0
+        ? session.ytext.toString()
+        : (file.content || '');
+      model = monaco.editor.createModel(initialText, lang, uri);
+    } else {
+      monaco.editor.setModelLanguage(model, lang);
+    }
+    return model;
+  };
+
   // Model content replacement (Restore checkpoint)
   useEffect(() => {
-    if (
-      replaceModelContent &&
-      replaceModelContent.fileId === activeFileId &&
-      editorRef.current
-    ) {
-      const model = editorRef.current.getModel();
-      if (model && model.getValue() !== replaceModelContent.content) {
+    if (!replaceModelContent || !monacoRef.current) return;
+    const uri = monacoRef.current.Uri.parse(`file://${replaceModelContent.fileId}`);
+    const model = monacoRef.current.editor.getModel(uri);
+    if (model && model.getValue() !== replaceModelContent.content) {
+      if (editorRef.current && replaceModelContent.fileId === activeFileId) {
         editorRef.current.executeEdits('replace-model-content', [
           {
             range: model.getFullModelRange(),
             text: replaceModelContent.content,
           },
         ]);
+      } else {
+        model.pushEditOperations(
+          [],
+          [
+            {
+              range: model.getFullModelRange(),
+              text: replaceModelContent.content,
+            },
+          ],
+          () => null
+        );
       }
     }
   }, [replaceModelContent, activeFileId]);
@@ -341,10 +376,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     // Track cursor changes
     editor.onDidChangeCursorPosition((e) => {
       onCursorChange(e.position.lineNumber, e.position.column);
-      if (activeFileId) {
+      const currentId = activeFileIdRef.current;
+      if (currentId) {
         docManager.updateCursorAwareness(
           projectId,
-          activeFileId,
+          currentId,
           { line: e.position.lineNumber, column: e.position.column }
         );
       }
@@ -361,9 +397,23 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       onCreateCheckpoint();
     });
 
-    // Bind Yjs CRDT doc session
+    // Authoritative model attachment on mount
     if (activeFile) {
-      bindActiveFile(editor, activeFile);
+      const model = getOrCreateModel(monaco, activeFile);
+      const lang = detectLanguage(activeFile.name) || activeFile.language || 'plaintext';
+      monaco.editor.setModelLanguage(model, lang);
+      editor.setModel(model);
+      prevActiveFileIdRef.current = activeFile._id;
+      onContentChange(model.getValue());
+      bindActiveFile(editor, activeFile, model);
+    }
+  };
+
+  const handleMirrorEditorMount: OnMount = (editor, monaco) => {
+    mirrorEditorRef.current = editor;
+    if (activeFile) {
+      const model = getOrCreateModel(monaco, activeFile);
+      editor.setModel(model);
     }
   };
 
@@ -373,7 +423,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     }
   }, [isDark]);
 
-  const bindActiveFile = async (editor: Monaco.editor.IStandaloneCodeEditor, file: ProjectFile) => {
+  const bindActiveFile = async (
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    file: ProjectFile,
+    model: Monaco.editor.ITextModel
+  ) => {
     try {
       const session = await docManager.getOrCreateSession(
         projectId,
@@ -383,6 +437,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
         isPublic
       );
 
+      // Guard against tab switch race while awaiting session
+      if (activeFileIdRef.current !== file._id) {
+        return;
+      }
+
       // Adopt canonical CRDT text if newer than files[].content (Task T4)
       const liveText = session.ytext.toString();
       if (liveText && liveText !== file.content) {
@@ -390,14 +449,20 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       }
 
       const color = '#c08532';
-      docManager.bindMonaco(projectId, file._id, editor, {
-        id: user.id,
-        name: user.name,
-        color,
-        avatar: user.avatar,
-        role: userRole,
-        fileId: file._id,
-      });
+      docManager.bindMonaco(
+        projectId,
+        file._id,
+        editor,
+        {
+          id: user.id,
+          name: user.name,
+          color,
+          avatar: user.avatar,
+          role: userRole,
+          fileId: file._id,
+        },
+        model
+      );
 
       // If a reveal target is pending for this file, execute it after binding
       if (revealPendingRef.current && revealPendingRef.current.fileId === file._id) {
@@ -418,10 +483,82 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   };
 
   useEffect(() => {
-    if (editorRef.current && activeFile) {
-      bindActiveFile(editorRef.current, activeFile);
+    if (!editorRef.current || !monacoRef.current || !activeFile) return;
+
+    // 1. Save view state for previous file
+    if (prevActiveFileIdRef.current && prevActiveFileIdRef.current !== activeFile._id) {
+      const vs = editorRef.current.saveViewState();
+      if (vs) {
+        viewStatesRef.current.set(prevActiveFileIdRef.current, vs);
+      }
     }
+    prevActiveFileIdRef.current = activeFile._id;
+
+    // 2. Authoritative per-file model
+    const model = getOrCreateModel(monacoRef.current, activeFile);
+    const lang = detectLanguage(activeFile.name) || activeFile.language || 'plaintext';
+    monacoRef.current.editor.setModelLanguage(model, lang);
+
+    // 3. Swap model synchronously (prevents empty buffer or duplication)
+    if (editorRef.current.getModel() !== model) {
+      editorRef.current.setModel(model);
+    }
+
+    // 4. Restore saved view state if available
+    const savedVs = viewStatesRef.current.get(activeFile._id);
+    if (savedVs) {
+      editorRef.current.restoreViewState(savedVs);
+    }
+
+    // 5. Update mirror editor
+    if (mirrorEditorRef.current && mirrorEditorRef.current.getModel() !== model) {
+      mirrorEditorRef.current.setModel(model);
+    }
+
+    // 6. Sync activeContent in parent
+    onContentChange(model.getValue());
+
+    // 7. Bind Yjs CRDT session
+    bindActiveFile(editorRef.current, activeFile, model);
   }, [activeFileId]);
+
+  // Synchronize language if file name or language changes
+  useEffect(() => {
+    if (!editorRef.current || !monacoRef.current || !activeFile) return;
+    const model = getOrCreateModel(monacoRef.current, activeFile);
+    const lang = detectLanguage(activeFile.name) || activeFile.language || 'plaintext';
+    monacoRef.current.editor.setModelLanguage(model, lang);
+  }, [activeFile?.name, activeFile?.language]);
+
+  // Clean up bindings and models for closed tabs
+  const handleTabClose = (fileId: string) => {
+    docManager.destroyBinding(fileId);
+    viewStatesRef.current.delete(fileId);
+    if (monacoRef.current) {
+      const uri = monacoRef.current.Uri.parse(`file://${fileId}`);
+      const model = monacoRef.current.editor.getModel(uri);
+      if (model) {
+        model.dispose();
+      }
+    }
+    onCloseTab(fileId);
+  };
+
+  useEffect(() => {
+    if (!monacoRef.current) return;
+    const openSet = new Set(openFileIds);
+    files.forEach((f) => {
+      if (!openSet.has(f._id)) {
+        docManager.destroyBinding(f._id);
+        viewStatesRef.current.delete(f._id);
+        const uri = monacoRef.current!.Uri.parse(`file://${f._id}`);
+        const model = monacoRef.current!.editor.getModel(uri);
+        if (model) {
+          model.dispose();
+        }
+      }
+    });
+  }, [openFileIds, files]);
 
   return (
     <div className="flex-1 flex flex-col bg-parchment overflow-hidden select-none transition-colors duration-200">
@@ -448,7 +585,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onCloseTab(fileId);
+                    handleTabClose(fileId);
                   }}
                   className="p-0.5 rounded-xs hover:bg-stone/50 text-ash hover:text-ink transition"
                 >
@@ -524,10 +661,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               ) : (
                 <Editor
                   height="100%"
-                  language={activeFile.language || 'javascript'}
+                  language={detectLanguage(activeFile.name) || activeFile.language || 'plaintext'}
                   theme={isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light'}
-                  value={activeFile.content || ''}
                   onMount={handleEditorMount}
+                  keepCurrentModel={true}
                   options={{
                     ...baseEditorOptions,
                     readOnly: isViewer,
@@ -571,10 +708,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 ) : (
                   <Editor
                     height="100%"
-                    language={activeFile.language || 'javascript'}
+                    language={detectLanguage(activeFile.name) || activeFile.language || 'plaintext'}
                     theme={isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light'}
-                    value={activeFile.content || ''}
                     options={mirrorEditorOptions}
+                    keepCurrentModel={true}
+                    onMount={handleMirrorEditorMount}
                   />
                 )}
               </div>
