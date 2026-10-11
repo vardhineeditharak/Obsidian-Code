@@ -262,7 +262,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       const session = docManager.getSession(projectId, file._id);
       const initialText = session && session.ytext.length > 0
         ? session.ytext.toString()
-        : (file.content || '');
+        : '';
       model = monaco.editor.createModel(initialText, lang, uri);
     } else {
       monaco.editor.setModelLanguage(model, lang);
@@ -312,66 +312,41 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       monaco.editor.remeasureFonts();
     } catch {}
 
-    // Define Cursor editorial themes
-    monaco.editor.defineTheme('cursor-parchment-light', {
-      base: 'vs',
-      inherit: true,
-      rules: [
-        { token: '', foreground: '26251e', background: 'f7f7f4' },
-        { token: 'comment', foreground: '84847e', fontStyle: 'italic' },
-        { token: 'keyword', foreground: '26251e', fontStyle: 'bold' },
-        { token: 'string', foreground: '34785c' },
-        { token: 'number', foreground: 'c08532' },
-        { token: 'function', foreground: 'c08532' },
-        { token: 'type', foreground: '26251e' },
-        { token: 'variable', foreground: '26251e' },
-        { token: 'delimiter', foreground: '7a7974' },
-      ],
-      colors: {
-        'editor.background': '#f7f7f4',
-        'editor.foreground': '#26251e',
-        'editorLineNumber.foreground': '#a1a19f',
-        'editorLineNumber.activeForeground': '#26251e',
-        'editorCursor.foreground': '#26251e',
-        'editor.selectionBackground': '#26251e1a',
-        'editor.inactiveSelectionBackground': '#26251e0d',
-        'editor.lineHighlightBackground': '#f2f1ed',
-        'editorIndentGuide.background': '#cdcdc9',
-        'editorIndentGuide.activeBackground': '#7a7974',
-        'editorGutter.background': '#f7f7f4',
-      },
-    });
-
-    monaco.editor.defineTheme('cursor-parchment-dark', {
+    // Define Obsidian Crystalline themes
+    const crystallineTheme: Monaco.editor.IStandaloneThemeData = {
       base: 'vs-dark',
       inherit: true,
       rules: [
-        { token: '', foreground: 'f2f1ed', background: '1c1b17' },
-        { token: 'comment', foreground: 'a3a296', fontStyle: 'italic' },
-        { token: 'keyword', foreground: 'f2f1ed', fontStyle: 'bold' },
-        { token: 'string', foreground: '4a9e7c' },
-        { token: 'number', foreground: 'd4994a' },
-        { token: 'function', foreground: 'd4994a' },
-        { token: 'type', foreground: 'f2f1ed' },
-        { token: 'variable', foreground: 'f2f1ed' },
-        { token: 'delimiter', foreground: 'b5b4a7' },
+        { token: '', foreground: 'eeeeee', background: '171717' },
+        { token: 'comment', foreground: '6b6b6b', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'a78bfa', fontStyle: 'bold' },
+        { token: 'string', foreground: '4ade80' },
+        { token: 'number', foreground: 'facc15' },
+        { token: 'function', foreground: 'eeeeee' },
+        { token: 'type', foreground: 'bcbcbc' },
+        { token: 'variable', foreground: 'eeeeee' },
+        { token: 'delimiter', foreground: 'a3a3a3' },
       ],
       colors: {
-        'editor.background': '#1c1b17',
-        'editor.foreground': '#f2f1ed',
-        'editorLineNumber.foreground': '#8a897f',
-        'editorLineNumber.activeForeground': '#f2f1ed',
-        'editorCursor.foreground': '#f2f1ed',
-        'editor.selectionBackground': '#f2f1ed1f',
-        'editor.inactiveSelectionBackground': '#f2f1ed0f',
-        'editor.lineHighlightBackground': '#232219',
-        'editorIndentGuide.background': '#3d3c33',
-        'editorIndentGuide.activeBackground': '#8a897f',
-        'editorGutter.background': '#1c1b17',
+        'editor.background': '#171717',
+        'editor.foreground': '#eeeeee',
+        'editorLineNumber.foreground': '#6b6b6b',
+        'editorLineNumber.activeForeground': '#eeeeee',
+        'editorCursor.foreground': '#a78bfa',
+        'editor.selectionBackground': '#7c3aed59',
+        'editor.inactiveSelectionBackground': '#7c3aed26',
+        'editor.lineHighlightBackground': '#1e1e1e',
+        'editorIndentGuide.background': '#2a2a2a',
+        'editorIndentGuide.activeBackground': '#3f3f3f',
+        'editorGutter.background': '#171717',
       },
-    });
+    };
 
-    monaco.editor.setTheme(isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light');
+    monaco.editor.defineTheme('obsidian-crystalline', crystallineTheme);
+    monaco.editor.defineTheme('cursor-parchment-dark', crystallineTheme);
+    monaco.editor.defineTheme('cursor-parchment-light', crystallineTheme);
+
+    monaco.editor.setTheme('obsidian-crystalline');
 
     // Track cursor changes
     editor.onDidChangeCursorPosition((e) => {
@@ -419,7 +394,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
 
   useEffect(() => {
     if (monacoRef.current) {
-      monacoRef.current.editor.setTheme(isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light');
+      monacoRef.current.editor.setTheme('obsidian-crystalline');
     }
   }, [isDark]);
 
@@ -585,10 +560,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     onSelectFile(fileId);
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-t-md border-t cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-t-lg border-t-2 cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                   isActive
-                    ? 'bg-bone border-ink text-ink shadow-none'
-                    : 'border-transparent text-ash hover:text-ink hover:bg-linen/40'
+                    ? 'bg-bone border-amber text-ink'
+                    : 'border-transparent text-driftwood hover:text-ink hover:bg-linen/40'
                 }`}
               >
                 <span>{file.name}</span>
@@ -599,7 +574,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     e.stopPropagation();
                     handleTabClose(fileId);
                   }}
-                  className="p-0.5 rounded-sm hover:bg-stone/50 text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+                  className="p-0.5 rounded-sm hover:bg-stone/50 text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -611,21 +586,21 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
         {/* Split Controls & Viewer Warning */}
         <div className="flex items-center gap-2">
           {isViewer && (
-            <span className="flex items-center gap-1 text-[11px] font-mono text-amber bg-bone px-2 py-0.5 rounded-md border border-amber/30">
+            <span className="tag-badge flex items-center gap-1 text-[11px] font-mono text-warning-yellow bg-warning-yellow/10 border border-warning-yellow/30">
               <ShieldAlert className="w-3 h-3" />
               <span>Read-only</span>
             </span>
           )}
 
-          <div className="flex items-center bg-bone rounded-md p-0.5 border border-stone" role="group" aria-label="Editor split options">
+          <div className="flex items-center bg-bone rounded-lg p-0.5 border border-stone inset-glow" role="group" aria-label="Editor split options">
             <button
               type="button"
               onClick={() => setSplitMode(splitMode === 'vertical' ? 'single' : 'vertical')}
               title="Split Editor Right"
               aria-label="Split Editor Right"
               aria-pressed={splitMode === 'vertical'}
-              className={`p-1 rounded-sm transition focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer ${
-                splitMode === 'vertical' ? 'bg-ink text-parchment' : 'text-ash hover:text-ink'
+              className={`p-1 rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+                splitMode === 'vertical' ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
               }`}
             >
               <Columns2 className="w-3.5 h-3.5" />
@@ -636,8 +611,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               title="Split Editor Down"
               aria-label="Split Editor Down"
               aria-pressed={splitMode === 'horizontal'}
-              className={`p-1 rounded-sm transition focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer ${
-                splitMode === 'horizontal' ? 'bg-ink text-parchment' : 'text-ash hover:text-ink'
+              className={`p-1 rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+                splitMode === 'horizontal' ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
               }`}
             >
               <Rows2 className="w-3.5 h-3.5" />
@@ -680,7 +655,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 <Editor
                   height="100%"
                   language={detectLanguage(activeFile.name) || activeFile.language || 'plaintext'}
-                  theme={isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light'}
+                  theme="obsidian-crystalline"
                   onMount={handleEditorMount}
                   keepCurrentModel={true}
                   options={{
@@ -727,7 +702,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                   <Editor
                     height="100%"
                     language={detectLanguage(activeFile.name) || activeFile.language || 'plaintext'}
-                    theme={isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light'}
+                    theme="obsidian-crystalline"
                     options={mirrorEditorOptions}
                     keepCurrentModel={true}
                     onMount={handleMirrorEditorMount}

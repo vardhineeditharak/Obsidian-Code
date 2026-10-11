@@ -81,24 +81,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const getFileIconColor = (name: string) => {
     const ext = name.split('.').pop()?.toLowerCase();
     switch (ext) {
-      case 'js':
-      case 'jsx':
-        return 'text-amber-500 dark:text-yellow-400';
       case 'ts':
       case 'tsx':
-        return 'text-blue-500 dark:text-blue-400';
-      case 'html':
-        return 'text-orange-500 dark:text-orange-400';
-      case 'css':
-        return 'text-sky-500 dark:text-sky-400';
+        return 'text-amber'; // Lavender
+      case 'js':
+      case 'jsx':
+        return 'text-yellow-400'; // Warning yellow
       case 'py':
-        return 'text-emerald-500 dark:text-emerald-400';
+        return 'text-verdant'; // Success green
       case 'json':
-        return 'text-amber-600 dark:text-amber-300';
+        return 'text-amber'; // Lavender
+      case 'html':
+        return 'text-orange-400';
+      case 'css':
+        return 'text-sky-400';
       case 'md':
-        return 'text-indigo-500 dark:text-indigo-400';
+        return 'text-driftwood';
       default:
-        return 'text-slate-400';
+        return 'text-ash';
     }
   };
 
@@ -159,14 +159,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-label="Filter files"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-parchment border border-(--border-subtle) rounded-md pl-7 pr-2 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment font-mono"
+            className="w-full bg-parchment border border-stone rounded-md pl-7 pr-2 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus-visible:ring-1 focus-visible:ring-amber font-mono"
           />
         </div>
       </div>
 
       {/* Inline Create Input */}
       {(isCreatingFile || isCreatingFolder) && (
-        <div className="p-2 border-b border-(--border-subtle) bg-linen">
+        <div className="p-2 border-b border-stone bg-linen">
           <input
             type="text"
             placeholder={isCreatingFolder ? 'folder-name' : 'filename.js'}
@@ -182,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onBlur={() => handleCreateSubmit(isCreatingFolder)}
             autoFocus
             aria-label={isCreatingFolder ? "Folder name" : "File name"}
-            className="w-full bg-parchment border border-ink rounded-md px-2 py-1 text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+            className="w-full bg-parchment border border-stone rounded-md px-2 py-1 text-xs font-mono text-ink focus-visible:outline-none focus-visible:border-amber focus-visible:ring-1 focus-visible:ring-amber"
           />
         </div>
       )}
@@ -205,7 +205,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={file._id}
               className={`group flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[13px] font-normal transition cursor-pointer ${
                 isSelected
-                  ? 'bg-linen text-ink border-l-2 border-ink'
+                  ? 'bg-linen text-ink border-l-2 border-amber'
                   : 'text-ink hover:bg-linen'
               }`}
             >
@@ -223,7 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <Folder size={14} className="text-ash shrink-0" />
                   )
                 ) : (
-                  <FileCode size={14} className={`shrink-0 ${isSelected ? 'text-ink' : 'text-ash'}`} />
+                  <FileCode size={14} className={`shrink-0 ${getFileIconColor(file.name)}`} />
                 )}
 
                 {editingFileId === file._id ? (
@@ -238,7 +238,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onBlur={() => handleRenameSubmit(file._id)}
                     autoFocus
                     aria-label="Rename file"
-                    className="bg-parchment border border-ink rounded-md px-1.5 py-0.5 text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment w-28"
+                    className="bg-parchment border border-stone rounded-md px-1.5 py-0.5 text-xs font-mono text-ink focus-visible:outline-none focus-visible:border-amber focus-visible:ring-1 focus-visible:ring-amber w-28"
                   />
                 ) : (
                   <span className="truncate">{file.name}</span>
@@ -257,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }}
                     title={`Rename ${file.name}`}
                     aria-label={`Rename ${file.name}`}
-                    className="p-1 rounded-md text-ash hover:text-ink hover:bg-bone focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+                    className="p-1 rounded-md text-ash hover:text-ink hover:bg-bone focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
                   >
                     <Edit size={12} />
                   </button>

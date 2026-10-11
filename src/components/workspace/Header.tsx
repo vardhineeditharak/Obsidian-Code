@@ -150,14 +150,14 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Clearly secondary, visually separated role badge pill */}
-            <span className="font-mono text-[10px] text-ash px-1.5 py-0.5 rounded-md bg-linen/70 border border-(--border-subtle) uppercase tracking-wider shrink-0">
+            <span className="tag-badge font-mono text-[10px] uppercase tracking-wider shrink-0">
               {userRole === 'owner' ? 'Owner' : userRole === 'editor' ? 'Editor' : 'Viewer'}
             </span>
           </div>
         )}
 
         {/* Google Docs-style Save-State Indicator */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-bone border border-(--border-subtle) text-micro font-mono shrink-0">
+        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-surface border border-stone inset-glow text-micro font-mono shrink-0">
           {effectiveSaveState === 'saving' ? (
             <>
               <RotateCw className="w-3 h-3 animate-spin text-ash" />
@@ -172,8 +172,8 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           ) : effectiveSaveState === 'offline' ? (
             <>
-              <span className="w-1.5 h-1.5 rounded-full bg-amber" />
-              <span className="text-amber text-micro">Saved locally · will sync</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-warning-yellow" />
+              <span className="text-warning-yellow text-micro">Saved locally · will sync</span>
             </>
           ) : (
             <>
@@ -185,7 +185,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Center: Action Controls (Run Code, Search, Version Diff, Export) */}
-      <div className="flex items-center gap-1 bg-bone/70 border border-(--border-subtle) p-0.5 rounded-lg shadow-xs shrink-0">
+      <div className="flex items-center gap-1 bg-surface border border-stone inset-glow p-0.5 rounded-lg shrink-0">
         <button
           onClick={onRunCode}
           disabled={isRunningCode || userRole === 'viewer'}
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenSearch}
           title="Search in Project (Ctrl+Shift+F)"
           aria-label="Search in Project (Ctrl+Shift+F)"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           <Search size={15} />
         </button>
@@ -216,7 +216,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenHistory}
           title="Version History & Diff"
           aria-label="Version History & Diff"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           <History size={15} />
         </button>
@@ -225,7 +225,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onExportZip}
           title="Export Workspace as ZIP"
           aria-label="Export Workspace as ZIP"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           <Download size={15} />
         </button>
@@ -245,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({
                   title={`Collaborator: ${c.name} (${c.role})${isFollowed ? ' - Currently Following' : ' - Click to Follow'}`}
                   aria-label={`Follow ${c.name} (${c.role})${isFollowed ? ' - Currently Following' : ''}`}
                   className={`relative w-5 h-5 rounded-full border transition transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
-                    isFollowed ? 'border-amber ring-2 ring-amber/40' : 'border-parchment'
+                    isFollowed ? 'border-amber ring-2 ring-amber/40' : 'border-stone'
                   }`}
                   style={{ backgroundColor: c.color }}
                 >
@@ -265,19 +265,19 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Select Transport Mode"
             aria-haspopup="true"
             aria-expanded={showTransportMenu}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-bone hover:bg-linen border border-(--border-subtle) text-micro font-mono text-driftwood transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface hover:bg-linen border border-stone inset-glow text-micro font-mono text-driftwood transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
           >
             {isOnline ? (
               <Wifi size={13} color="var(--color-verdant)" strokeWidth={2} />
             ) : (
-              <WifiOff size={13} color="var(--color-amber)" strokeWidth={2} />
+              <WifiOff size={13} color="var(--color-warning-yellow)" strokeWidth={2} />
             )}
             <span className="font-mono text-micro hidden md:inline">{transportMode}</span>
             <ChevronDown size={11} className="text-ash" />
           </button>
 
           {showTransportMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-44 rounded-lg bg-bone border border-(--border-subtle) shadow-xl py-1 z-50 text-xs">
+            <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-surface border border-stone inset-glow shadow-xl py-1 z-50 text-xs">
               {(['Hybrid', 'WebSocket Only', 'P2P Mesh Only'] as TransportMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -302,7 +302,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onToggleAudio}
           title={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
           aria-label={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           {isAudioMuted ? (
             <VolumeMute size={15} strokeWidth={2} />
@@ -311,14 +311,16 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
-        {/* Light / Dark Mode Toggle using Morphicons */}
-        <ThemeToggle size={16} />
+        {/* Theme Toggle hidden in dark-only mode */}
+        <div className="hidden">
+          <ThemeToggle size={16} />
+        </div>
 
         {/* Share Button */}
         <button
           onClick={onOpenShare}
           aria-label="Share workspace"
-          className="btn-primary text-xs py-1 px-3 rounded-md font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="btn-primary text-xs py-1 px-3 rounded-lg font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           <Share size={13} color="currentColor" strokeWidth={2} />
           <span>Share</span>

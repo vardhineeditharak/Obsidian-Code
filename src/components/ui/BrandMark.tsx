@@ -1,42 +1,25 @@
 import React from 'react';
 
-export interface BrandMarkProps extends React.SVGProps<SVGSVGElement> {
+export interface BrandMarkProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   className?: string;
 }
 
 /**
- * Obsidian Code mark:
- * Pure-vector isometric cube reduced to its essential silhouette.
- * Uses currentColor to adapt to light (#26251e ink) and dark (#f2f1ed parchment) themes
- * without CSS filters or inversion artifacts.
+ * Obsidian Code brand mark.
+ * Loads the canonical brand asset (public/logo.svg) via an <img> so the in-app
+ * logo stays in sync with the shipped brand asset and the browser favicon — a
+ * single source of truth. Rendered as an image so it scales crisply at any size
+ * with zero inline-vector upkeep. Provide sizing via `className` (e.g. "w-8 h-8").
  */
 export const BrandMark: React.FC<BrandMarkProps> = ({ className, ...props }) => {
   return (
-    <svg
-      viewBox="0 0 48 48"
-      fill="none"
-      aria-hidden="true"
-      role="img"
+    <img
+      src="/logo.svg"
+      alt="Obsidian Code"
+      draggable={false}
       className={className}
       {...props}
-    >
-      <title>Obsidian Code mark</title>
-      {/* Hexagonal silhouette outline */}
-      <path
-        d="M24 6 L40 15 V33 L24 42 L8 33 V15 Z"
-        stroke="currentColor"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Interior Y-divider meeting at center */}
-      <path
-        d="M24 24 V6 M24 24 L40 33 M24 24 L8 33"
-        stroke="currentColor"
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 };
+

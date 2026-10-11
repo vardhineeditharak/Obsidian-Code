@@ -53,7 +53,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none transition-colors duration-150">
-          <div className="w-full max-w-lg bg-bone rounded-xl border border-stone p-8 shadow-2xl space-y-6 text-center">
+          <div className="w-full max-w-lg bg-bone rounded-xl border border-stone p-8 shadow-2xl inset-glow space-y-6 text-center">
             {/* Header Brand */}
             <div className="flex flex-col items-center gap-3">
               <BrandMark className="w-12 h-12 text-ink" />
@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <h1 className="headline-md font-normal text-ink mt-1">
                 Workspace Interrupted
               </h1>
-              <p className="font-editorial text-[16px] text-driftwood leading-relaxed max-w-md">
+              <p className="text-[16px] text-driftwood leading-relaxed max-w-md">
                 An unexpected error occurred while rendering the workspace. Your CRDT changes and snapshots remain intact.
               </p>
             </div>

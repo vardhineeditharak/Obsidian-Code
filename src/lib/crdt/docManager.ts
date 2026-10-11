@@ -68,6 +68,7 @@ class YjsDocManager {
     synced = true;
 
     // If local document is brand new and empty, seed it with initial file content
+    // Note: Seeding must happen here before any MonacoBinding is created and never after.
     if (ytext.length === 0 && initialContent) {
       doc.transact(() => {
         ytext.insert(0, initialContent);
@@ -268,6 +269,10 @@ class YjsDocManager {
     }
 
     try {
+      if (model.getValue().length > 0) {
+        model.setValue('');
+      }
+
       const binding = new MonacoBinding(
         session.ytext,
         model,

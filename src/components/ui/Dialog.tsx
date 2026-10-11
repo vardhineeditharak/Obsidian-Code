@@ -109,7 +109,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`w-full ${maxWidth} rounded-xl bg-bone border border-stone shadow-2xl overflow-hidden flex flex-col modal-dialog ${className}`}
+        className={`w-full ${maxWidth} rounded-xl bg-bone border border-stone shadow-2xl inset-glow overflow-hidden flex flex-col modal-dialog ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
@@ -121,7 +121,7 @@ export const Modal: React.FC<ModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -166,14 +166,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             className={`p-2.5 rounded-md shrink-0 ${
               isDestructive
                 ? 'bg-crimson/10 text-crimson border border-crimson/20'
-                : 'bg-amber/10 text-amber border border-amber/20'
+                : 'bg-warning-yellow/10 text-warning-yellow border border-warning-yellow/20'
             }`}
           >
             {isDestructive ? <AlertTriangle className="w-5 h-5" /> : <HelpCircle className="w-5 h-5" />}
           </div>
           <div>
             <h3 className="text-base font-normal text-ink">{title}</h3>
-            <p id={descId} className="font-editorial text-sm text-driftwood mt-1 leading-relaxed">
+            <p id={descId} className="text-sm text-driftwood mt-1 leading-relaxed">
               {message}
             </p>
           </div>
@@ -183,7 +183,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
           >
             {cancelText}
           </button>
@@ -195,8 +195,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             }}
             className={
               isDestructive
-                ? 'px-4 py-2 text-xs font-normal rounded-md bg-crimson text-white hover:opacity-90 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson'
-                : 'btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment'
+                ? 'px-4 py-2 text-xs font-normal rounded-md bg-crimson text-white hover:opacity-90 transition cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-crimson'
+                : 'btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber'
             }
           >
             {confirmText}
@@ -274,7 +274,7 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
     >
       <form onSubmit={handleSubmit} className="p-5 space-y-4">
         {message && (
-          <p id={msgId} className="font-editorial text-xs text-driftwood">
+          <p id={msgId} className="text-xs text-driftwood">
             {message}
           </p>
         )}
@@ -295,7 +295,7 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
                     onChange={(e) => setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment transition"
+                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber transition"
                   />
                 ) : (
                   <input
@@ -305,7 +305,7 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
                     value={formValues[field.id] || ''}
                     onChange={(e) => setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
                     placeholder={field.placeholder}
-                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment transition"
+                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber transition"
                   />
                 )}
               </div>
@@ -317,13 +317,13 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
           >
             {cancelText}
           </button>
           <button
             type="submit"
-            className="btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+            className="btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
           >
             {submitText}
           </button>

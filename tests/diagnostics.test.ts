@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { analyzeCode } from '../src/lib/diagnostics/codeDiagnostics';
+import { detectLanguage } from '../src/lib/language';
 
 describe('Code Diagnostics & Syntax Analyzer', () => {
   it('detects unclosed and mismatched delimiters', () => {
@@ -41,5 +42,16 @@ describe('Code Diagnostics & Syntax Analyzer', () => {
     expect(varWarning).toBeDefined();
     expect(eqWarning).toBeDefined();
     expect(debuggerWarning).toBeDefined();
+  });
+
+  it('correctly uses detectLanguage for C files and does not emit JavaScript-only lint warnings', () => {
+    expect(detectLanguage('main.c')).toBe('c');
+    expect(detectLanguage('main.py')).toBe('python');
+
+    const cItems = analyzeCode('printf("hi");', 'f1', 'main.c', detectLanguage('main.c'));
+    expect(cItems.some((i) => i.source.includes('no-var'))).toBe(false);
+    expect(cItems.some((i) => i.source.includes('eqeqeq'))).toBe(false);
+    expect(cItems.some((i) => i.source.includes('no-debugger'))).toBe(false);
+    expect(cItems.length).toBe(0);
   });
 });

@@ -219,7 +219,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       )}
 
       {/* Panel Header Bar */}
-      <div className="h-8 px-3 flex items-center justify-between border-b border-stone bg-bone">
+      <div className="h-8 px-3 flex items-center justify-between border-b border-stone bg-parchment">
         <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-2">
           {/* Tabs */}
           {(['OUTPUT', 'TERMINAL', 'PROBLEMS', 'PREVIEW'] as BottomTab[]).map((tab) => {
@@ -234,9 +234,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   onTabChange(tab);
                   if (!isOpen) onToggle();
                 }}
-                className={`px-2 py-0.5 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer border-b-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
+                className={`px-2 py-0.5 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer border-b-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber ${
                   isActive
-                    ? 'text-ink border-ink font-medium'
+                    ? 'text-ink border-amber font-medium'
                     : 'text-ash border-transparent hover:text-ink'
                 }`}
               >
@@ -335,7 +335,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                     </div>
                   ))}
                   {executionResult.stderr.map((line, idx) => (
-                    <div key={idx} className="text-amber whitespace-pre-wrap">
+                    <div key={idx} className="text-warning-yellow whitespace-pre-wrap">
                       {line}
                     </div>
                   ))}
@@ -364,7 +364,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                         : line.kind === 'stdout'
                         ? 'text-verdant'
                         : line.kind === 'stderr'
-                        ? 'text-amber'
+                        ? 'text-warning-yellow'
                         : 'text-driftwood italic'
                     }`}
                   >
@@ -375,7 +375,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               </div>
               <form
                 onSubmit={handleTermSubmit}
-                className="flex items-center gap-2 border border-stone pt-2 mt-1 bg-parchment px-3 py-1.5 rounded-md focus-within:ring-1 focus-within:ring-ink dark:focus-within:ring-parchment"
+                className="flex items-center gap-2 border border-stone pt-2 mt-1 bg-parchment px-3 py-1.5 rounded-md focus-within:ring-1 focus-within:ring-amber"
               >
                 <span className="text-ash font-mono whitespace-nowrap select-none font-medium">
                   {promptLanguage} ❯
@@ -400,7 +400,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                 <span className="flex items-center gap-1 text-crimson">
                   <AlertCircle className="w-3.5 h-3.5" /> {errorCount} Errors
                 </span>
-                <span className="flex items-center gap-1 text-amber">
+                <span className="flex items-center gap-1 text-warning-yellow">
                   <AlertTriangle className="w-3.5 h-3.5" /> {warnCount} Warnings
                 </span>
               </div>
@@ -415,7 +415,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                     className="flex items-start gap-2 p-1.5 rounded-md hover:bg-linen/60 cursor-pointer transition text-xs border-b border-stone/30"
                   >
                     {diag.severity === 'error' && <AlertCircle className="w-3.5 h-3.5 text-crimson mt-0.5 shrink-0" />}
-                    {diag.severity === 'warning' && <AlertTriangle className="w-3.5 h-3.5 text-amber mt-0.5 shrink-0" />}
+                    {diag.severity === 'warning' && <AlertTriangle className="w-3.5 h-3.5 text-warning-yellow mt-0.5 shrink-0" />}
                     {diag.severity === 'info' && <AlertCircle className="w-3.5 h-3.5 text-ash mt-0.5 shrink-0" />}
 
                     <div className="flex-1 overflow-hidden">

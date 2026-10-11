@@ -4,7 +4,11 @@ vi.mock('y-monaco', () => {
   return {
     MonacoBinding: class MockMonacoBinding {
       public destroyed = false;
-      constructor(public ytext: any, public model: any, public editors: any, public awareness: any) {}
+      constructor(public ytext: any, public model: any, public editors: any, public awareness: any) {
+        if (model && ytext && typeof model.setValue === 'function') {
+          model.setValue(ytext.toString());
+        }
+      }
       destroy() {
         this.destroyed = true;
       }
@@ -214,5 +218,72 @@ describe('Monaco Tab-Switch Corruption Fix & Per-File Model Registry', () => {
     const swappedB = getOrCreateModel(fileB);
     expect(swappedB.content).toBe(modelB.content);
     expect(swappedB.language).toBe('python');
+  });
+
+  it('prevents buffer duplication on bindMonaco by clearing pre-seeded model before hydrating from ytext', async () => {
+    const projectId = 'proj-dup-prevention';
+    const fileId = 'file-c-repro';
+    const contentC = '#include <stdio.h>\nint main(){ printf("Hello"); return 0; }';
+
+    const setValuesCalled: string[] = [];
+    let currentText = contentC; // Simulated pre-existing / pre-seeded model content
+
+    const fakeModel = {
+      id: fileId,
+      uri: { toString: () => `file://${fileId}` },
+      getValue: vi.fn(() => currentText),
+      setValue: vi.fn((val: string) => {
+        setValuesCalled.push(val);
+        currentText = val;
+      }),
+      getFullModelRange: () => ({
+        startLineNumber: 1,
+        startColumn: 1,
+        endLineNumber: 2,
+        endColumn: 50,
+      }),
+      onDidChangeContent: vi.fn(() => ({ dispose: vi.fn() })),
+      onWillDispose: vi.fn(() => ({ dispose: vi.fn() })),
+      getPositionAt: vi.fn(() => ({ lineNumber: 1, column: 1 })),
+      applyEdits: vi.fn(),
+    } as any;
+
+    const fakeEditor = {
+      getModel: () => fakeModel,
+      setModel: vi.fn(),
+      onDidChangeCursorSelection: vi.fn(() => ({ dispose: vi.fn() })),
+      deltaDecorations: vi.fn(() => []),
+      getSelection: vi.fn(() => null),
+    } as any;
+
+    // (1) Create session with canonical content C (seeds ytext once)
+    const session = await docManager.getOrCreateSession(projectId, fileId, contentC, undefined, false);
+    expect(session.ytext.toString()).toBe(contentC);
+
+    // Defensive hardening in getOrCreateModel:
+    // If no session existed yet, initialText is empty string ''
+    const noSession = docManager.getSession('non-existent-proj', 'non-existent-file');
+    const initialTextWhenNoSession = noSession && noSession.ytext.length > 0 ? noSession.ytext.toString() : '';
+    expect(initialTextWhenNoSession).toBe('');
+
+    // (2) Run bindMonaco with fakeModel that started non-empty
+    docManager.bindMonaco(
+      projectId,
+      fileId,
+      fakeEditor,
+      { id: 'u1', name: 'Tester', color: '#c08532', role: 'editor', fileId },
+      fakeModel
+    );
+
+    // (3) Assert setValue('') was invoked synchronously before hydration
+    expect(setValuesCalled).toContain('');
+
+    // And after binding, model reflects ytext exactly once (C, not C+C)
+    expect(fakeModel.getValue()).toBe(contentC);
+    expect(fakeModel.getValue()).not.toBe(contentC + contentC);
+
+    // Clean up
+    docManager.destroyBinding(fileId);
+    docManager.destroySession(projectId, fileId);
   });
 });

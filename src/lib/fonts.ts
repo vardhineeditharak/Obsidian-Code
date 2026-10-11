@@ -37,17 +37,8 @@ export function ensureFontsReady(timeoutMs: number = 3000): Promise<void> {
         const pMono = Promise.resolve()
           .then(() => document.fonts.load('13px "JetBrains Mono"'))
           .catch(() => []);
-        const pInter = Promise.resolve()
-          .then(() => document.fonts.load('13px "Inter"'))
-          .catch(() => []);
-        const pGaramond = Promise.resolve()
-          .then(() => document.fonts.load('17px "EB Garamond"'))
-          .catch(() => []);
-        const pBrand = Promise.resolve()
-          .then(() => document.fonts.load('24px "Instrument Serif"'))
-          .catch(() => []);
 
-        await Promise.all([pMono, pInter, pGaramond, pBrand]);
+        await Promise.all([pMono]);
 
         if (document.fonts.ready) {
           await document.fonts.ready.catch(() => undefined);

@@ -39,7 +39,6 @@ describe('Font Readiness Coordinator (src/lib/fonts.ts)', () => {
 
     await expect(ensureFontsReady(1000)).resolves.toBeUndefined();
     expect(mockLoad).toHaveBeenCalledWith('13px "JetBrains Mono"');
-    expect(mockLoad).toHaveBeenCalledWith('13px "Inter"');
   });
 
   it('ensureFontsReady resolves after the timeout even if fonts.ready never settles (fake timers)', async () => {

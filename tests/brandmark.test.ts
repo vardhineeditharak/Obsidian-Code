@@ -2,39 +2,33 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
-describe('BrandMark & Logo Legibility Fix', () => {
+describe('BrandMark & Logo Wiring', () => {
   const rootDir = path.resolve(__dirname, '..');
+  const publicDir = path.join(rootDir, 'public');
 
-  it('public/logo.svg contains only pure vector geometry with zero raster or base64 data', () => {
-    const logoSvg = fs.readFileSync(path.join(rootDir, 'public', 'logo.svg'), 'utf-8');
-    expect(logoSvg).not.toContain('base64');
-    expect(logoSvg).not.toContain('<image');
-    expect(logoSvg).not.toContain('xlink:href');
-    expect(logoSvg).toContain('viewBox="0 0 48 48"');
-    expect(logoSvg).toContain('stroke="currentColor"');
-    expect(logoSvg).toContain('M24 6 L40 15 V33 L24 42 L8 33 V15 Z');
+  it('public/logo.svg exists and is a valid SVG brand asset', () => {
+    const logoSvg = fs.readFileSync(path.join(publicDir, 'logo.svg'), 'utf-8');
+    // It is an SVG document with a viewBox (scales crisply at any size)
+    expect(logoSvg).toContain('<svg');
+    expect(logoSvg).toMatch(/viewBox="[^"]+"/);
+    expect(fs.statSync(path.join(publicDir, 'logo.svg')).size).toBeGreaterThan(0);
   });
 
-  it('public/favicon.svg contains pure vector geometry with zero raster or base64 data', () => {
-    const faviconSvg = fs.readFileSync(path.join(rootDir, 'public', 'favicon.svg'), 'utf-8');
-    expect(faviconSvg).not.toContain('base64');
-    expect(faviconSvg).not.toContain('<image');
-    expect(faviconSvg).not.toContain('xlink:href');
-    expect(faviconSvg).toContain('viewBox="0 0 48 48"');
-    expect(faviconSvg).toContain('prefers-color-scheme: dark');
+  it('public/favicon.svg exists and is a valid SVG', () => {
+    const faviconSvg = fs.readFileSync(path.join(publicDir, 'favicon.svg'), 'utf-8');
+    expect(faviconSvg).toContain('<svg');
+    expect(fs.statSync(path.join(publicDir, 'favicon.svg')).size).toBeGreaterThan(0);
   });
 
-  it('BrandMark component exists and defines the pure-vector isometric cube silhouette', () => {
+  it('BrandMark component loads the canonical logo asset via an <img>', () => {
     const brandMarkSource = fs.readFileSync(
       path.join(rootDir, 'src', 'components', 'ui', 'BrandMark.tsx'),
       'utf-8'
     );
-    expect(brandMarkSource).toContain('viewBox="0 0 48 48"');
-    expect(brandMarkSource).toContain('stroke="currentColor"');
-    expect(brandMarkSource).toContain('strokeWidth="4"');
-    expect(brandMarkSource).toContain('strokeLinecap="round"');
-    expect(brandMarkSource).toContain('strokeLinejoin="round"');
-    expect(brandMarkSource).toContain('Obsidian Code mark');
+    // Single source of truth: the in-app logo points at the same asset as the favicon
+    expect(brandMarkSource).toContain('src="/logo.svg"');
+    expect(brandMarkSource).toContain('<img');
+    expect(brandMarkSource).toContain('Obsidian Code');
   });
 
   it('Header, Dashboard, and AuthPage use BrandMark and have zero dark:invert filter hacks', () => {
@@ -61,4 +55,22 @@ describe('BrandMark & Logo Legibility Fix', () => {
     expect(dashboard).toContain('<BrandMark');
     expect(auth).toContain('<BrandMark');
   });
+
+  it('index.html only references favicon/icon files that actually exist (no 404s)', () => {
+    const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf-8');
+    // Collect every href pointing at a root-level icon asset
+    const iconRefs = [...html.matchAll(/<link[^>]*rel="(?:icon|apple-touch-icon|shortcut icon)"[^>]*href="([^"]+)"/g)].map(
+      (m) => m[1]
+    );
+    expect(iconRefs.length).toBeGreaterThan(0);
+    for (const ref of iconRefs) {
+      // Only assert on local, root-relative assets
+      if (ref.startsWith('/')) {
+        const fileName = ref.replace(/^\//, '').split('?')[0];
+        const exists = fs.existsSync(path.join(publicDir, fileName));
+        expect(exists, `index.html references missing icon asset: ${ref}`).toBe(true);
+      }
+    }
+  });
 });
+

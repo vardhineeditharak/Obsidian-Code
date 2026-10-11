@@ -277,7 +277,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
     if (diagTimeoutRef.current) clearTimeout(diagTimeoutRef.current);
     diagTimeoutRef.current = setTimeout(() => {
-      const items = analyzeCode(activeContent, file._id, file.name, file.language || 'javascript');
+      const items = analyzeCode(activeContent, file._id, file.name, detectLanguage(file.name) || file.language || 'plaintext');
       setDiagnostics(items);
     }, 400);
 
@@ -1008,7 +1008,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
                 </button>
               ))}
             {files.filter((f) => !f.isFolder && f.name.toLowerCase().includes(quickOpenFilter.toLowerCase())).length === 0 && (
-              <p className="text-center text-xs font-editorial text-mist py-4">No matching files</p>
+              <p className="text-center text-xs font-sans text-mist py-4">No matching files</p>
             )}
           </div>
         </div>

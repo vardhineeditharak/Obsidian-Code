@@ -43,16 +43,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const tabSize = editorOptions.tabSize ?? 2;
 
   return (
-    <footer className="h-6 border-t border-stone bg-linen dark:bg-bone px-3 flex items-center justify-between text-[11px] font-sans font-medium text-ash select-none z-20 overflow-hidden transition-colors duration-200">
+    <footer className="h-6 border-t border-stone bg-parchment px-3 flex items-center justify-between text-[11px] font-sans font-medium text-ash select-none z-20 overflow-hidden transition-colors duration-200">
       {/* Left Status: Connection, Save State, Problems, Transport */}
       <div className="flex items-center gap-2.5 min-w-0 truncate">
         <div className="flex items-center gap-1.5 shrink-0">
           {isOnline ? (
             <Wifi size={11} color="currentColor" className="text-verdant" />
           ) : (
-            <WifiOff size={11} color="currentColor" className="text-amber" />
+            <WifiOff size={11} color="currentColor" className="text-warning-yellow" />
           )}
-          <span className={isOnline ? 'text-verdant font-medium' : 'text-amber font-medium'}>
+          <span className={isOnline ? 'text-verdant font-medium' : 'text-warning-yellow font-medium'}>
             {isOnline ? 'Connected' : 'Offline'}
           </span>
         </div>
@@ -75,8 +75,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             </>
           ) : effectiveSaveState === 'offline' ? (
             <>
-              <span className="w-1.5 h-1.5 rounded-full bg-amber" />
-              <span className="text-amber">Saved locally · will sync</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-warning-yellow" />
+              <span className="text-warning-yellow">Saved locally · will sync</span>
             </>
           ) : (
             <>
@@ -96,7 +96,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span className="flex items-center gap-1 text-crimson" title={`${errorCount} Errors`}>
             <AlertCircle className="w-3 h-3" /> {errorCount}
           </span>
-          <span className="flex items-center gap-1 text-amber" title={`${warnCount} Warnings`}>
+          <span className="flex items-center gap-1 text-warning-yellow" title={`${warnCount} Warnings`}>
             <AlertTriangle className="w-3 h-3" /> {warnCount}
           </span>
         </div>
@@ -105,7 +105,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       {/* Right Status: Language, Spaces, Ln/Col, Read-only */}
       <div className="flex items-center gap-2.5 font-mono text-[11px] shrink-0">
         {userRole === 'viewer' && (
-          <span className="flex items-center gap-1 text-amber font-sans font-medium">
+          <span className="flex items-center gap-1 text-warning-yellow font-sans font-medium">
             <ShieldAlert className="w-3 h-3" /> Read-only
           </span>
         )}

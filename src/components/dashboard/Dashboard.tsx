@@ -153,22 +153,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="min-h-screen bg-parchment text-ink flex flex-col select-none transition-colors duration-150">
       {/* Top Navbar */}
-      <nav className="h-13 border-b border-(--border-subtle) px-6 flex items-center justify-between">
+      <nav className="h-13 border-b border-stone px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BrandMark className="w-8 h-8 text-ink shrink-0" />
-          <span className="font-brand text-2xl font-medium tracking-tight text-ink">
+          <span className="font-brand text-xl font-semibold tracking-tight text-ink">
             Obsidian Code
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <ThemeToggle size={16} />
+          <div className="hidden">
+            <ThemeToggle size={16} />
+          </div>
 
-          <div className="flex items-center gap-2 pl-3 border-l border-(--border-subtle)">
+          <div className="flex items-center gap-2 pl-3 border-l border-stone">
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.name}`}
               alt={user.name}
-              className="w-6 h-6 rounded-full border border-(--border-subtle)"
+              className="w-6 h-6 rounded-full border border-stone"
             />
             <span className="font-mono text-xs text-driftwood">{user.name}</span>
           </div>
@@ -177,7 +179,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={onLogout}
             title="Sign out"
             aria-label="Sign out"
-            className="btn-ghost text-xs p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
+            className="btn-ghost text-xs p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
           >
             <LogOut size={15} className="text-ash hover:text-ink" />
           </button>
@@ -187,11 +189,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-8 flex flex-col">
         {/* Welcome & Action Header */}
-        <div className="flex items-start justify-between mb-8 pb-4 border-b border-(--border-subtle)">
+        <div className="flex items-start justify-between mb-8 pb-4 border-b border-stone">
           <div>
             <div className="text-eyebrow mb-1">Workspaces</div>
-            <h1 className="headline-md font-normal text-ink">Your Projects</h1>
-            <p className="font-editorial text-[17px] text-driftwood mt-1">
+            <h1 className="headline-md font-semibold text-ink">Your Projects</h1>
+            <p className="text-sm text-driftwood mt-1">
               Collaborate in real time with peers or jump into your personal code ateliers.
             </p>
           </div>
@@ -219,12 +221,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {loading ? (
           <SkeletonGrid count={6} />
         ) : projects.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-(--border-subtle) rounded-lg text-center">
-            <div className="w-10 h-10 rounded-md bg-linen flex items-center justify-center text-ash mb-3">
+          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-stone inset-glow rounded-xl text-center">
+            <div className="w-10 h-10 rounded-lg bg-linen inset-glow flex items-center justify-center text-ash mb-3">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h2 className="headline-sm font-normal text-ink mb-1">No Projects Found</h2>
-            <p className="font-editorial text-[17px] text-driftwood max-w-sm mb-6">
+            <h2 className="headline-sm font-semibold text-ink mb-1">No Projects Found</h2>
+            <p className="text-sm text-driftwood max-w-sm mb-6">
               Create a new collaborative project or join an existing workspace with an invitation link.
             </p>
             <button
@@ -249,12 +251,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onOpenProject(p._id);
                   }
                 }}
-                className="bg-bone p-5 rounded-lg border border-(--border-subtle) hover:border-(--border-active) transition group cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="bg-bone p-5 rounded-xl border border-stone inset-glow hover:border-(--border-active) transition group cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 <div>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-md bg-linen border border-(--border-subtle) flex items-center justify-center text-ash group-hover:text-ink transition">
+                      <div className="w-8 h-8 rounded-lg bg-linen border border-stone inset-glow flex items-center justify-center text-ash group-hover:text-ink transition">
                         <FolderOpen size={15} />
                       </div>
                       <div>
@@ -283,18 +285,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
 
                   {p.description && (
-                    <p className="font-editorial text-sm text-driftwood line-clamp-2 mb-4">
+                    <p className="text-sm text-driftwood line-clamp-2 mb-4">
                       {p.description}
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-(--border-subtle) text-[11px] font-mono text-ash">
+                <div className="flex items-center justify-between pt-3 border-t border-stone text-[11px] font-mono text-ash">
                   <span className="flex items-center gap-1">
                     <Users size={12} className="text-ash" />
                     Collaborative Workspace
                   </span>
-                  <span className="text-ink group-hover:text-ember transition flex items-center gap-1 font-sans text-xs">
+                  <span className="text-ink group-hover:text-amber transition flex items-center gap-1 font-sans text-xs">
                     Open <ArrowRight className="w-3 h-3" />
                   </span>
                 </div>
@@ -312,7 +314,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         title="Create Collaborative Project"
       >
         <div className="p-6">
-          <p className="font-editorial text-[15px] text-driftwood mb-5">
+          <p className="text-sm text-driftwood mb-5">
             Choose a template to scaffold your shared project environment.
           </p>
 
@@ -360,10 +362,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     key={tpl.id}
                     type="button"
                     onClick={() => setSelectedTemplate(tpl.id as any)}
-                    className={`p-3 rounded-md border cursor-pointer transition text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
+                    className={`p-3 rounded-lg border cursor-pointer transition text-left inset-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                       selectedTemplate === tpl.id
-                        ? 'border-ink bg-linen text-ink'
-                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
+                        ? 'border-amber bg-linen text-ink'
+                        : 'border-stone bg-bone text-driftwood hover:bg-linen'
                     }`}
                   >
                     {tpl.icon}
@@ -374,7 +376,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-(--border-subtle)">
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-stone">
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
@@ -402,7 +404,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         title="Join Workspace"
       >
         <div className="p-6">
-          <p className="font-editorial text-[15px] text-driftwood mb-5">
+          <p className="text-sm text-driftwood mb-5">
             Paste your invitation token or share link to join a team's code workspace.
           </p>
 

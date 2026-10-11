@@ -118,7 +118,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 placeholder="Click generate to create an invite link..."
                 value={inviteUrl}
                 aria-label="Generated invitation URL"
-                className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs font-mono text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment placeholder-mist"
+                className="w-full bg-surface border border-stone rounded-lg px-3 py-2 text-xs font-mono text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber placeholder-mist"
               />
             </div>
 
@@ -127,7 +127,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 aria-label="Invite collaborator role"
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value as any)}
-                className="bg-bone border border-stone rounded-md px-3 py-2 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
+                className="bg-surface border border-stone rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
               >
                 <option value="editor">Editor (Can edit)</option>
                 <option value="viewer">Viewer (Read-only)</option>
@@ -138,7 +138,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="btn-primary text-xs px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="btn-primary text-xs px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-verdant" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -148,7 +148,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 type="button"
                 onClick={handleGenerateLink}
                 disabled={isLoading || !isOwner}
-                className="btn-primary text-xs px-3 py-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="btn-primary text-xs px-3 py-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 <LinkIcon className="w-3.5 h-3.5" />
                 <span>{isLoading ? 'Creating...' : 'Create Link'}</span>
@@ -156,7 +156,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             )}
           </div>
           {!isOwner && (
-            <p className="text-xs font-editorial text-amber">
+            <p className="text-xs text-amber">
               Only the workspace Owner can create new invitation links.
             </p>
           )}
@@ -177,13 +177,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               return (
                 <div
                   key={member.userId}
-                  className="flex items-center justify-between p-2.5 rounded-md bg-parchment border border-stone"
+                  className="flex items-center justify-between p-2.5 rounded-lg bg-surface border border-stone inset-glow"
                 >
                   <div className="flex items-center gap-3">
                     <img
                       src={member.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${member.name}`}
                       alt={member.name}
-                      className="w-8 h-8 rounded-md border border-stone bg-linen object-cover"
+                      className="w-8 h-8 rounded-lg border border-stone bg-linen object-cover"
                     />
                     <div>
                       <div className="flex items-center gap-1.5">
@@ -205,7 +205,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           aria-label={`Role for member ${member.name}`}
                           value={member.role}
                           onChange={(e) => handleRoleChange(member.userId, e.target.value as ProjectRole)}
-                          className="bg-bone border border-stone rounded-md px-2 py-1 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
+                          className="bg-surface border border-stone rounded-lg px-2 py-1 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
                         >
                           <option value="owner">Owner</option>
                           <option value="editor">Editor</option>
@@ -223,7 +223,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       </>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono px-2 py-0.5 rounded-md border border-stone text-ash">
+                        <span className="tag-badge text-xs font-mono px-2 py-0.5 border border-stone">
                           {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                         </span>
                         {isSelf && member.role !== 'owner' && (

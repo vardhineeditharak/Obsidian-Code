@@ -210,19 +210,19 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
 
   return (
     <div className="h-dvh w-full overflow-y-auto bg-parchment p-4 flex select-none relative transition-colors duration-150">
-      {/* Top right theme toggle */}
-      <div className="absolute top-4 right-4 z-20">
+      {/* Top right theme toggle (hidden for dark-only mode) */}
+      <div className="hidden">
         <ThemeToggle size={16} />
       </div>
 
-      <div className="m-auto w-full max-w-md bg-bone rounded-xl p-6 sm:p-8 border border-(--border-subtle) shadow-xl relative">
+      <div className="m-auto w-full max-w-md bg-bone rounded-xl p-6 sm:p-8 border border-stone inset-glow shadow-xl relative">
         {/* Brand Header */}
         <div className="text-center mb-6">
           <BrandMark className="w-12 h-12 text-ink mx-auto mb-3" />
-          <h1 className="font-brand text-4xl font-medium tracking-tight text-ink">
+          <h1 className="font-brand text-3xl font-semibold tracking-tight text-ink">
             Obsidian Code
           </h1>
-          <p className="font-editorial text-[17px] text-driftwood mt-1 italic">
+          <p className="text-sm text-driftwood mt-1">
             Your team's shared workspace for code
           </p>
         </div>
@@ -231,11 +231,11 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
         {verifying ? (
           <form onSubmit={handleVerifyCode} className="space-y-4">
             <div className="text-center mb-4">
-              <div className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-linen text-amber mb-2">
+              <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-linen text-amber mb-2 inset-glow">
                 <KeyRound className="w-4 h-4" />
               </div>
-              <h2 className="headline-sm text-base font-normal text-ink">Verify Your Email</h2>
-              <p className="font-editorial text-[15px] text-driftwood mt-1">
+              <h2 className="headline-sm text-base font-semibold text-ink">Verify Your Email</h2>
+              <p className="text-sm text-driftwood mt-1">
                 Enter the 6-digit code sent to <span className="font-mono text-xs text-ink font-normal">{email}</span>
               </p>
             </div>
@@ -264,14 +264,14 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 placeholder="123456"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
-                className="w-full bg-parchment border border-(--border-subtle) rounded-md px-4 py-2 text-center text-lg font-mono tracking-widest text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="w-full bg-surface border border-stone rounded-lg px-4 py-2 text-center text-lg font-mono tracking-widest text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || verificationCode.trim().length === 0}
-              className="btn-primary w-full py-2.5 text-sm rounded-md disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
+              className="btn-primary w-full py-2.5 text-sm rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
             >
               <span>{loading ? 'Verifying...' : 'Verify & Continue'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -289,7 +289,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 type="button"
                 onClick={handleResendCode}
                 disabled={resending}
-                className="text-ember hover:underline flex items-center gap-1"
+                className="text-amber hover:underline flex items-center gap-1"
               >
                 <RotateCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
                 <span>{resending ? 'Sending...' : 'Resend Code'}</span>
@@ -302,16 +302,16 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
             <div
               role="tablist"
               aria-label="Authentication mode"
-              className="flex bg-parchment p-1 rounded-md mb-6 border border-(--border-subtle)"
+              className="flex bg-surface p-1 rounded-lg mb-6 border border-stone"
             >
               <button
                 type="button"
                 role="tab"
                 aria-selected={isLogin}
                 onClick={() => switchMode(true)}
-                className={`flex-1 py-1.5 text-xs font-normal rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer ${
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer ${
                   isLogin
-                    ? 'bg-bone text-ink shadow-xs border border-stone'
+                    ? 'bg-linen text-ink border border-stone inset-glow'
                     : 'text-driftwood hover:text-ink'
                 }`}
               >
@@ -322,9 +322,9 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 role="tab"
                 aria-selected={!isLogin}
                 onClick={() => switchMode(false)}
-                className={`flex-1 py-1.5 text-xs font-normal rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer ${
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer ${
                   !isLogin
-                    ? 'bg-bone text-ink shadow-xs border border-stone'
+                    ? 'bg-linen text-ink border border-stone inset-glow'
                     : 'text-driftwood hover:text-ink'
                 }`}
               >
@@ -363,7 +363,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                       onChange={(e) => setName(e.target.value)}
                       aria-invalid={!!error}
                       aria-describedby={error ? 'auth-error-message' : undefined}
-                      className="w-full bg-parchment border border-(--border-subtle) rounded-md pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                      className="w-full bg-surface border border-stone rounded-lg pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                     />
                   </div>
                 </div>
@@ -385,7 +385,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'auth-error-message' : undefined}
-                    className="w-full bg-parchment border border-(--border-subtle) rounded-md pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                    className="w-full bg-surface border border-stone rounded-lg pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                   />
                 </div>
               </div>
@@ -406,13 +406,13 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'auth-error-message' : undefined}
-                    className="w-full bg-parchment border border-(--border-subtle) rounded-md pl-9 pr-10 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                    className="w-full bg-surface border border-stone rounded-lg pl-9 pr-10 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-2.5 text-ash hover:text-ink transition p-0.5 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
+                    className="absolute right-3 top-2.5 text-ash hover:text-ink transition p-0.5 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -422,7 +422,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full py-2.5 text-sm rounded-md mt-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
+                className="btn-primary w-full py-2.5 text-sm rounded-lg mt-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
               >
                 <span>{loading ? 'Authenticating...' : isLogin ? 'Sign In' : 'Get Started'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -445,7 +445,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 onClick={() => handleOAuth('oauth_google')}
                 disabled={loading}
                 aria-label="Continue with Google"
-                className="w-full py-2 bg-parchment hover:bg-linen border border-(--border-subtle) text-ink rounded-md text-sm font-normal transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="w-full py-2.5 bg-surface hover:bg-linen border border-stone text-ink rounded-lg text-sm font-medium transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer inset-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -474,7 +474,7 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
                 onClick={() => handleOAuth('oauth_github')}
                 disabled={loading}
                 aria-label="Continue with GitHub"
-                className="w-full py-2 bg-parchment hover:bg-linen border border-(--border-subtle) text-ink rounded-md text-sm font-normal transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="w-full py-2.5 bg-surface hover:bg-linen border border-stone text-ink rounded-lg text-sm font-medium transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer inset-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 <svg className="w-4 h-4 fill-current shrink-0 text-ink" viewBox="0 0 24 24">
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />

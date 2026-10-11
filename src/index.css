@@ -1,22 +1,6 @@
 @import "tailwindcss";
 
-/* Self-hosted fonts for deterministic metric calculation & Cursor editorial typography */
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
-}
-
+/* JetBrains Mono self-hosted font for code surfaces (Monaco Editor, terminal, Ln/Col, mono labels) */
 @font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
@@ -31,22 +15,6 @@
   font-weight: 500;
   font-display: swap;
   src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'EB Garamond';
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url('/fonts/eb-garamond-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Instrument Serif';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/instrument-serif-latin.woff2') format('woff2');
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -67,103 +35,90 @@
   --color-crimson: var(--color-crimson);
   --color-selection: var(--color-selection);
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  /* Crystalline tokens */
+  --color-amethyst: var(--color-amethyst);
+  --color-lavender: var(--color-lavender);
+  --color-graphite: var(--color-graphite);
+  --color-abyss: var(--color-abyss);
+  --color-surface: var(--color-surface);
+  --color-success-green: var(--color-success-green);
+  --color-warning-yellow: var(--color-warning-yellow);
+  --color-error-red: var(--color-error-red);
+  --color-tag-background: var(--color-tag-background);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --font-brand: 'JetBrains Mono', ui-monospace, monospace;
-  --font-cursorgothic: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-eb-garamond: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-cursorgothic: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-eb-garamond: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-berkeleymono: 'JetBrains Mono', ui-monospace, monospace;
 
   --radius-xs: 1.5px;
-  --radius-sm: 1.5px;
-  --radius-md: 4px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
   --radius-lg: 8px;
   --radius-xl: 12px;
+  --radius-full: 9999px;
 }
 
 @layer base {
-  :root {
-    /* Palette Tokens: Light Mode (Warm Parchment Atelier) */
-    --color-parchment: #f7f7f4;
-    --color-bone: #f2f1ed;
-    --color-linen: #e6e5e0;
-    --color-stone: #cdcdc9;
-    --color-mist: #a1a19f;
-    --color-driftwood: #84847e;
-    --color-ash: #7a7974;
-    --color-ink: #26251e;
-    --color-ember: #f54e00;
-    --color-amber: #c08532;
-    --color-forest: #34785c;
-    --color-verdant: #1f8a65;
-    --color-crimson: #cf2d56;
-    --color-selection: #8BC4F8;
+  :root,
+  .dark {
+    /* Obsidian — Crystalline Knowledge Vault Palette (Dark-only Abyss) */
+    --color-parchment: #171717;
+    --color-bone: #1e1e1e;
+    --color-linen: #242424;
+    --color-stone: #3f3f3f;
+    --color-mist: #6b6b6b;
+    --color-driftwood: #bcbcbc;
+    --color-ash: #a3a3a3;
+    --color-ink: #eeeeee;
+    --color-ember: #7c3aed;
+    --color-amber: #a78bfa;
+    --color-forest: #7c3aed;
+    --color-verdant: #4ade80;
+    --color-crimson: #f87171;
+    --color-selection: rgba(124, 58, 237, 0.35);
+
+    --color-amethyst: #7c3aed;
+    --color-lavender: #a78bfa;
+    --color-graphite: #3f3f3f;
+    --color-abyss: #171717;
+    --color-surface: #1e1e1e;
+    --color-success-green: #4ade80;
+    --color-warning-yellow: #facc15;
+    --color-error-red: #f87171;
+    --color-tag-background: #8a5cf5;
 
     /* Semantic Mappings */
-    --bg-primary: #f7f7f4;
-    --surface-primary: #f2f1ed;
-    --surface-secondary: #e6e5e0;
-    --surface-hover: #e6e5e0;
-    --surface-active: #cdcdc9;
-    --text-primary: #26251e;
-    --text-secondary: #84847e;
-    --text-muted: #a1a19f;
-    --border-subtle: rgba(38, 37, 30, 0.10);
-    --border-active: rgba(38, 37, 30, 0.28);
-    --accent-primary: #26251e;
-    --accent-secondary: #34785c;
-    --accent-link: #f54e00;
-    --accent-blue: #c08532;
-    --accent-indigo: #34785c;
+    --bg-primary: #171717;
+    --surface-primary: #1e1e1e;
+    --surface-secondary: #242424;
+    --surface-hover: #2a2a2a;
+    --surface-active: #3f3f3f;
+    --text-primary: #eeeeee;
+    --text-secondary: #bcbcbc;
+    --text-muted: #a3a3a3;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-active: rgba(255, 255, 255, 0.16);
+    --accent-primary: #7c3aed;
+    --accent-secondary: #a78bfa;
+    --accent-link: #a78bfa;
+    --accent-blue: #a78bfa;
+    --accent-indigo: #7c3aed;
 
     /* Font Tokens */
-    --font-cursorgothic: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-    --font-eb-garamond: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', ui-serif, Georgia, serif;
+    --font-cursorgothic: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-eb-garamond: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-berkeleymono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --font-brand: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  }
-
-  .dark {
-    /* Palette Tokens: Dark Mode (Night Atelier) */
-    --color-parchment: #1c1b17;
-    --color-bone: #232219;
-    --color-linen: #2e2d25;
-    --color-stone: #3d3c33;
-    --color-mist: #8a897f;
-    --color-driftwood: #a3a296;
-    --color-ash: #b5b4a7;
-    --color-ink: #f2f1ed;
-    --color-ember: #ff6b35;
-    --color-amber: #d4994a;
-    --color-forest: #4a9e7c;
-    --color-verdant: #37a57f;
-    --color-crimson: #e2557a;
-    --color-selection: #8BC4F8;
-
-    /* Semantic Mappings */
-    --bg-primary: #1c1b17;
-    --surface-primary: #232219;
-    --surface-secondary: #2e2d25;
-    --surface-hover: #2e2d25;
-    --surface-active: #3d3c33;
-    --text-primary: #f2f1ed;
-    --text-secondary: #a3a296;
-    --text-muted: #8a897f;
-    --border-subtle: rgba(242, 241, 237, 0.10);
-    --border-active: rgba(242, 241, 237, 0.24);
-    --accent-primary: #f2f1ed;
-    --accent-secondary: #4a9e7c;
-    --accent-link: #ff6b35;
-    --accent-blue: #d4994a;
-    --accent-indigo: #4a9e7c;
   }
 
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     font-family: var(--font-cursorgothic);
-    font-feature-settings: 'ss08' 1, 'ss09' 1, 'tnum' 1;
     user-select: none;
     -webkit-font-smoothing: antialiased;
     transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -189,11 +144,11 @@
 
   ::selection {
     background-color: var(--color-selection);
-    color: #1c1b17;
+    color: #ffffff;
   }
 }
 
-/* Crisp 4px / Hairline Scrollbar */
+/* Crisp Hairline Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -205,49 +160,65 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-stone);
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-ash);
 }
 
-/* Neutralized Flat Surfaces (No Glassmorphism, No Gradients) */
+/* Inset Glow Elevation Utilities */
+.inset-glow {
+  box-shadow: rgba(255, 255, 255, 0.05) 0 0 0 1px inset;
+}
+
+.inset-glow-strong {
+  box-shadow: rgba(255, 255, 255, 0.1) 0 0 0 1px inset;
+}
+
+/* Tag Badge Pill */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: color-mix(in srgb, var(--color-tag-background) 15%, transparent);
+  color: var(--color-lavender);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+/* Crystalline Surfaces */
 .glass-panel {
   background-color: var(--surface-primary);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: 12px;
+  box-shadow: rgba(255, 255, 255, 0.05) 0 0 0 1px inset;
 }
 
 .glass-modal {
   background-color: var(--surface-primary);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  box-shadow: rgba(0, 0, 0, 0.14) 0px 20px 50px -10px, oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
-}
-
-.dark .glass-modal {
-  background-color: var(--surface-primary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
-  box-shadow: rgba(0, 0, 0, 0.35) 0px 20px 50px -10px, rgba(242, 241, 237, 0.08) 0px 0px 0px 1px;
+  border-radius: 12px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 25px 50px -12px, rgba(255, 255, 255, 0.05) 0 0 0 1px inset;
 }
 
 .glow-accent, .glow-purple {
   box-shadow: none !important;
 }
 
-/* Remote Cursor and Caret Decorations in Monaco (Warm Palette) */
+/* Remote Cursor and Caret Decorations in Monaco (Crystalline Lavender Palette) */
 .yRemoteSelection {
-  background-color: rgba(192, 133, 50, 0.22);
+  background-color: rgba(124, 58, 237, 0.25);
   border-radius: 2px;
 }
 
 .yRemoteSelectionHead {
   position: absolute;
-  border-left: 2px solid var(--color-amber);
-  border-top: 2px solid var(--color-amber);
-  border-bottom: 2px solid var(--color-amber);
+  border-left: 2px solid var(--color-lavender);
+  border-top: 2px solid var(--color-lavender);
+  border-bottom: 2px solid var(--color-lavender);
   height: 100%;
   box-sizing: border-box;
 }
@@ -255,7 +226,7 @@
 .yRemoteSelectionHead::after {
   position: absolute;
   content: ' ';
-  border: 3px solid var(--color-amber);
+  border: 3px solid var(--color-lavender);
   border-radius: 2px;
   left: -4px;
   top: -5px;
@@ -269,145 +240,183 @@
   background-color: var(--color-stone);
 }
 
-/* Ensure no ancestor styling skews Monaco caret measurement (H5) */
+/* Ensure no ancestor styling skews Monaco caret measurement */
 .monaco-editor {
   letter-spacing: normal !important;
   transform: none;
 }
 
-/* Cursor Signature Headline Utilities (Weight 400 + Scale Tracking) */
+/* Crystalline Typography Scale */
 .headline-display {
-  font-size: 72px;
+  font-family: var(--font-cursorgothic);
+  font-size: 60px;
   line-height: 1.1;
-  letter-spacing: -2.16px;
-  font-weight: 400;
+  letter-spacing: -1.2px;
+  font-weight: 600;
 }
 
 .headline-lg {
+  font-family: var(--font-cursorgothic);
   font-size: 36px;
-  line-height: 1.2;
+  line-height: 1.25;
   letter-spacing: -0.72px;
-  font-weight: 400;
+  font-weight: 600;
 }
 
 .headline-md {
-  font-size: 26px;
+  font-family: var(--font-cursorgothic);
+  font-size: 28px;
   line-height: 1.25;
-  letter-spacing: -0.312px;
-  font-weight: 400;
+  letter-spacing: -0.56px;
+  font-weight: 600;
 }
 
 .headline-sm {
-  font-size: 22px;
-  line-height: 1.3;
-  letter-spacing: -0.11px;
-  font-weight: 400;
+  font-family: var(--font-cursorgothic);
+  font-size: 24px;
+  line-height: 1.33;
+  letter-spacing: -0.48px;
+  font-weight: 600;
+}
+
+.text-subheading {
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: -0.36px;
+}
+
+.text-body {
+  font-size: 16px;
+  line-height: 1.5;
+  letter-spacing: -0.32px;
 }
 
 .text-body-sm {
   font-size: 14px;
   line-height: 1.5;
-  letter-spacing: 0.14px;
+  letter-spacing: -0.28px;
+}
+
+.text-caption {
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: -0.24px;
 }
 
 .text-eyebrow {
-  font-family: var(--font-berkeleymono);
+  font-family: var(--font-cursorgothic);
   font-size: 12px;
-  line-height: 1.63;
+  line-height: 1.5;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.24px;
   color: var(--color-ash);
 }
 
 .font-brand {
-  font-family: var(--font-brand);
+  font-family: var(--font-cursorgothic);
+  font-weight: 600;
 }
 
 .font-editorial {
-  font-family: var(--font-eb-garamond);
+  font-family: var(--font-cursorgothic);
 }
 
-/* Cursor Button & Component Classes */
+/* Micro typography utility for compact indicators (POLISH-2) */
+.text-micro {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Crystalline Button & Component Classes */
 .btn-primary {
-  background-color: var(--color-ink);
-  color: var(--color-parchment);
-  border-radius: 4px;
-  padding: 0.78em 1.35em 0.8em;
+  background-color: var(--color-amethyst);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 0.65em 1.25em;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   border: none;
-  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: rgba(255, 255, 255, 0.05) 0 0 0 1px inset;
 }
 
-.dark .btn-primary {
-  background-color: var(--color-ink);
-  color: var(--color-parchment);
+.btn-primary:hover {
+  background-color: #6d28d9;
+  box-shadow: rgba(255, 255, 255, 0.15) 0 0 0 1px inset;
 }
 
 .btn-secondary {
-  background-color: var(--color-linen);
-  color: var(--color-ink);
-  border-radius: 4px;
-  padding: 0.78em 1.35em 0.8em;
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--color-graphite);
+  border-radius: 8px;
+  padding: 0.65em 1.25em;
   font-size: 14px;
   font-weight: 400;
-  border: none;
-  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1), border-color 150ms ease;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  box-shadow: rgba(255, 255, 255, 0.05) 0 0 0 1px inset;
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-hover);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-ghost {
   background: transparent;
-  color: color-mix(in srgb, var(--color-ink) 70%, transparent);
-  border-radius: 4px;
+  color: var(--text-secondary);
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 400;
   border: none;
   cursor: pointer;
-  transition: color 150ms ease;
+  transition: color 150ms ease, background-color 150ms ease;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
 .btn-ghost:hover {
-  color: var(--color-ink);
-  text-decoration: underline;
+  color: var(--text-primary);
+  background-color: var(--surface-hover);
+  text-decoration: none;
 }
 
 .btn-amber {
-  background-color: var(--color-amber);
-  color: #f7f7f4;
-  border-radius: 4px;
+  background-color: var(--color-amethyst);
+  color: #ffffff;
+  border-radius: 8px;
   padding: 6px 12px;
   font-size: 13px;
   font-weight: 500;
   border: none;
   cursor: pointer;
-  transition: opacity 150ms ease;
+  transition: opacity 150ms ease, box-shadow 150ms ease;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  box-shadow: rgba(255, 255, 255, 0.08) 0 0 0 1px inset;
 }
 
 .btn-amber:hover {
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .btn-forest {
-  background-color: var(--color-forest);
-  color: #f7f7f4;
-  border: 1px solid var(--color-forest);
-  border-radius: 4px;
+  background-color: var(--color-amethyst);
+  color: #ffffff;
+  border: 1px solid var(--color-amethyst);
+  border-radius: 8px;
   padding: 6px 12px;
   font-size: 13px;
   font-weight: 500;
@@ -419,45 +428,36 @@
 }
 
 .btn-forest:hover {
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .input-atelier {
-  background-color: var(--color-parchment);
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-graphite);
+  border-radius: 8px;
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 400;
-  color: var(--color-ink);
+  color: var(--text-primary);
   transition: box-shadow 150ms ease, border-color 150ms ease;
 }
 
 .input-atelier::placeholder {
-  color: var(--color-mist);
+  color: var(--color-ash);
 }
 
 .input-atelier:focus {
   outline: none;
-  border-color: var(--border-active);
-  box-shadow: 0 0 0 2px var(--color-ink);
-}
-
-.dark .input-atelier:focus {
-  box-shadow: 0 0 0 2px var(--color-parchment);
+  border-color: var(--color-lavender);
+  box-shadow: 0 0 0 2px var(--color-lavender);
 }
 
 .card-atelier {
-  background-color: var(--color-bone);
+  background-color: var(--color-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: 12px;
   padding: 24px;
-}
-
-/* Micro typography utility for compact indicators (POLISH-2) */
-.text-micro {
-  font-size: 11px;
-  line-height: 1.4;
+  box-shadow: rgba(255, 255, 255, 0.05) 0 0 0 1px inset;
 }
 
 /* Modal Scrim and Container Keyframes (BUG-1, POLISH-2) */
@@ -482,12 +482,7 @@
 }
 
 .modal-scrim {
-  background-color: color-mix(in srgb, var(--color-ink) 45%, transparent);
-  animation: modal-fade-in 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.dark .modal-scrim {
-  background-color: color-mix(in srgb, #0a0a08 70%, transparent);
+  background-color: color-mix(in srgb, var(--color-abyss) 70%, transparent);
   animation: modal-fade-in 150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -506,4 +501,3 @@
     scroll-behavior: auto !important;
   }
 }
-

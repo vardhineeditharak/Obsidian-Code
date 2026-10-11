@@ -132,7 +132,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
           <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
             {loading && <p className="text-xs font-mono text-mist p-4">Loading checkpoints...</p>}
             {!loading && versions.length === 0 && (
-              <div className="text-center p-6 text-mist text-xs font-editorial">
+              <div className="text-center p-6 text-mist text-xs font-sans">
                 No named checkpoints created yet. Press Ctrl+S in the editor or create a checkpoint.
               </div>
             )}
@@ -142,9 +142,9 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 <button
                   key={v._id}
                   onClick={() => setSelectedVersion(v)}
-                  className={`w-full text-left p-3 rounded-md border transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
+                  className={`w-full text-left p-3 rounded-lg border transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                     isSelected
-                      ? 'bg-bone border-ink text-ink shadow-none'
+                      ? 'bg-bone border-amber text-ink shadow-none inset-glow'
                       : 'bg-transparent border-transparent text-driftwood hover:bg-linen/50'
                   }`}
                 >
@@ -152,10 +152,10 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="font-normal text-sm text-ink truncate">{v.name}</span>
                       <span
-                        className={`px-1.5 py-0.5 rounded-md text-micro font-mono shrink-0 ${
+                        className={`tag-badge shrink-0 ${
                           v.type === 'auto'
-                            ? 'bg-linen text-ash border border-(--border-subtle)'
-                            : 'bg-amber/10 text-amber border border-amber/30'
+                            ? 'bg-linen text-ash border border-stone'
+                            : 'bg-amber/15 text-amber border border-amber/30'
                         }`}
                       >
                         {v.type === 'auto' ? 'Auto' : 'Manual'}
@@ -169,7 +169,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                       {formatRelativeTime(v.createdAt)}
                     </span>
                   </div>
-                  {v.note && <p className="text-xs font-editorial text-driftwood line-clamp-1 mb-1">{v.note}</p>}
+                  {v.note && <p className="text-xs text-driftwood line-clamp-1 mb-1">{v.note}</p>}
                   <div className="flex items-center gap-1 text-[11px] font-mono text-ash">
                     <UserIcon className="w-3 h-3" />
                     <span>{v.createdBy.name}</span>
@@ -193,7 +193,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 aria-label="Select file to compare"
                 value={selectedFileId}
                 onChange={(e) => setSelectedFileId(e.target.value)}
-                className="bg-parchment text-ink border border-stone rounded-md px-2.5 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment font-mono text-xs cursor-pointer"
+                className="bg-surface text-ink border border-stone rounded-lg px-2.5 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber font-mono text-xs cursor-pointer"
               >
                 {files
                   .filter((f) => !f.isFolder)
@@ -215,7 +215,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                   onClick={() => setShowConfirmRestore(true)}
                   disabled={restoring || userRole === 'viewer'}
                   title={userRole === 'viewer' ? 'Viewers cannot restore checkpoints' : 'Restore this checkpoint to workspace'}
-                  className="btn-forest text-xs px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-40 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-forest"
+                  className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-40 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>{restoring ? 'Restoring…' : 'Restore This Version'}</span>
@@ -230,7 +230,37 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
               original={historicalContent}
               modified={selectedFileId === activeFileId ? currentContent : (currentFile?.content || '')}
               language={currentFile?.language || 'javascript'}
-              theme={isDark ? 'cursor-parchment-dark' : 'cursor-parchment-light'}
+              theme="obsidian-crystalline"
+              beforeMount={(monaco) => {
+                monaco.editor.defineTheme('obsidian-crystalline', {
+                  base: 'vs-dark',
+                  inherit: true,
+                  rules: [
+                    { token: '', foreground: 'eeeeee', background: '171717' },
+                    { token: 'comment', foreground: '6b6b6b', fontStyle: 'italic' },
+                    { token: 'keyword', foreground: 'a78bfa', fontStyle: 'bold' },
+                    { token: 'string', foreground: '4ade80' },
+                    { token: 'number', foreground: 'facc15' },
+                    { token: 'function', foreground: 'eeeeee' },
+                    { token: 'type', foreground: 'bcbcbc' },
+                    { token: 'variable', foreground: 'eeeeee' },
+                    { token: 'delimiter', foreground: 'a3a3a3' },
+                  ],
+                  colors: {
+                    'editor.background': '#171717',
+                    'editor.foreground': '#eeeeee',
+                    'editorLineNumber.foreground': '#6b6b6b',
+                    'editorLineNumber.activeForeground': '#eeeeee',
+                    'editorCursor.foreground': '#a78bfa',
+                    'editor.selectionBackground': '#7c3aed59',
+                    'editor.inactiveSelectionBackground': '#7c3aed26',
+                    'editor.lineHighlightBackground': '#1e1e1e',
+                    'editorIndentGuide.background': '#2a2a2a',
+                    'editorIndentGuide.activeBackground': '#3f3f3f',
+                    'editorGutter.background': '#171717',
+                  },
+                });
+              }}
               options={{
                 readOnly: true,
                 renderSideBySide: true,
