@@ -18,6 +18,8 @@ import {
   BottomTab,
   DiagnosticsItem,
   ExecutionResult,
+  SaveState,
+  VersionCheckpoint,
 } from '../../lib/types';
 import { api } from '../../lib/api';
 import { docManager } from '../../lib/crdt/docManager';
@@ -52,6 +54,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Transport & Connectivity
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [transportMode, setTransportMode] = useState<TransportMode>('Hybrid');
+
+  // Autosave state machine & checkpoint refs
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autosaveTimeoutRef = useRef<any>(null);
+  const lastSavedContentMapRef = useRef<Map<string, string>>(new Map());
+  const pendingAutosaveRef = useRef<{ fileId: string; content: string } | null>(null);
+  const lastCheckpointHashRef = useRef<string>('');
 
   // Presence & Follow Mode
   const [collaborators, setCollaborators] = useState<CollaboratorPresence[]>([]);
@@ -88,18 +98,50 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   // Debounce ref for diagnostics
   const diagTimeoutRef = useRef<any>(null);
 
+  // Reflect active project name in browser tab title (Step 2)
+  useEffect(() => {
+    const defaultTitle = 'Obsidian Code — Real-Time Collaborative Code Editor';
+    if (project) {
+      const displayName = project.name && project.name.trim() ? project.name : 'Untitled Project';
+      document.title = `${displayName} — Obsidian Code`;
+    }
+    return () => {
+      document.title = defaultTitle;
+    };
+  }, [project?.name]);
+
   // Load project details and files
   useEffect(() => {
     loadWorkspace();
 
-    const handleOnline = () => {
+    const handleOnline = async () => {
       setIsOnline(true);
       notify.networkStatus(true, transportMode);
       sound.networkReconnected();
+
+      // Flush offline pending autosave if any
+      if (pendingAutosaveRef.current && userRole !== 'viewer') {
+        const { fileId, content } = pendingAutosaveRef.current;
+        pendingAutosaveRef.current = null;
+        setSaveState('saving');
+        try {
+          await api.updateFile(fileId, { content });
+          lastSavedContentMapRef.current.set(fileId, content);
+          setFiles((prev) => prev.map((f) => (f._id === fileId ? { ...f, content } : f)));
+          setSaveState('saved');
+          setLastSavedAt(Date.now());
+        } catch (err) {
+          console.warn('Failed to flush offline pending save:', err);
+          setSaveState('idle');
+        }
+      } else {
+        setSaveState('idle');
+      }
     };
 
     const handleOffline = () => {
       setIsOnline(false);
+      setSaveState('offline');
       notify.networkStatus(false);
       sound.networkDisconnected();
     };
@@ -136,11 +178,21 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const loadWorkspace = async () => {
     try {
       const { project: p, userRole: role } = await api.getProject(projectId);
+      if (p) {
+        p.name = typeof p.name === 'string' ? p.name : '';
+      }
       setProject(p);
       setUserRole(role);
 
       const fList = await api.getProjectFiles(projectId);
       setFiles(fList);
+
+      // Initialize lastSavedContentMap
+      fList.forEach((f) => {
+        if (!f.isFolder) {
+          lastSavedContentMapRef.current.set(f._id, f.content || '');
+        }
+      });
 
       // Open first non-folder file by default
       const firstFile = fList.find((f) => !f.isFolder);
@@ -149,8 +201,6 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         setActiveFileId(firstFile._id);
         setActiveContent(firstFile.content || '');
       }
-
-
     } catch (err: any) {
       notify.error('Failed to load workspace', err.message);
     }
@@ -230,8 +280,66 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     };
   }, [activeContent, activeFileId, files]);
 
+  // Debounced per-file autosave to server (Step 4)
+  useEffect(() => {
+    if (!activeFileId || userRole === 'viewer') {
+      return;
+    }
+
+    const lastSaved = lastSavedContentMapRef.current.get(activeFileId);
+    if (activeContent === lastSaved) {
+      return;
+    }
+
+    if (!navigator.onLine || !isOnline) {
+      pendingAutosaveRef.current = { fileId: activeFileId, content: activeContent };
+      setSaveState('offline');
+      return;
+    }
+
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+
+    autosaveTimeoutRef.current = setTimeout(async () => {
+      setSaveState('saving');
+      try {
+        await api.updateFile(activeFileId, { content: activeContent });
+        lastSavedContentMapRef.current.set(activeFileId, activeContent);
+        setFiles((prev) =>
+          prev.map((f) => (f._id === activeFileId ? { ...f, content: activeContent } : f))
+        );
+        pendingAutosaveRef.current = null;
+        setSaveState('saved');
+        setLastSavedAt(Date.now());
+      } catch (err) {
+        console.warn('Autosave failed, will retry on next change:', err);
+        setSaveState('idle');
+      }
+    }, 1500);
+
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
+  }, [activeFileId, activeContent, userRole, isOnline]);
+
   // File Selection & Tab Management
   const handleSelectFile = (fileId: string) => {
+    // Flush pending changes of active file if switching
+    if (activeFileId && activeFileId !== fileId && userRole !== 'viewer') {
+      const prevSaved = lastSavedContentMapRef.current.get(activeFileId);
+      if (activeContent !== prevSaved && isOnline && navigator.onLine) {
+        api.updateFile(activeFileId, { content: activeContent }).then(() => {
+          lastSavedContentMapRef.current.set(activeFileId, activeContent);
+          setFiles((prev) =>
+            prev.map((f) => (f._id === activeFileId ? { ...f, content: activeContent } : f))
+          );
+        }).catch((e) => console.warn('Flush on file switch failed:', e));
+      }
+    }
+
     if (!openFileIds.includes(fileId)) {
       setOpenFileIds((prev) => [...prev, fileId]);
     }
@@ -254,6 +362,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const handleCreateFile = async (name: string, isFolder: boolean) => {
     try {
       const newFile = await api.createFile(projectId, name, isFolder);
+      lastSavedContentMapRef.current.set(newFile._id, newFile.content || '');
       setFiles((prev) => [...prev, newFile]);
       notify.fileCreated(name);
       if (!isFolder) {
@@ -268,6 +377,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     try {
       const oldFile = files.find((f) => f._id === fileId);
       const updated = await api.updateFile(fileId, { name: newName });
+      lastSavedContentMapRef.current.set(fileId, updated.content || '');
       setFiles((prev) => prev.map((f) => (f._id === fileId ? updated : f)));
       if (oldFile) notify.fileRenamed(oldFile.name, newName);
     } catch (err: any) {
@@ -279,6 +389,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     try {
       const file = files.find((f) => f._id === fileId);
       await api.deleteFile(fileId);
+      lastSavedContentMapRef.current.delete(fileId);
       setFiles((prev) => prev.filter((f) => f._id !== fileId));
       handleCloseTab(fileId);
       if (file) notify.fileDeleted(file.name);
@@ -287,11 +398,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     }
   };
 
-  // Rename Project
+  // Rename Project (Step 3)
   const handleRenameProject = async (newName: string) => {
     try {
       const updated = await api.updateProject(projectId, { name: newName });
-      setProject(updated);
+      if (updated) {
+        updated.name = typeof updated.name === 'string' ? updated.name : '';
+        setProject(updated);
+      }
       notify.success(`Workspace renamed to "${newName}"`);
     } catch (err: any) {
       notify.error('Failed to rename workspace', err.message);
@@ -438,12 +552,88 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
     try {
       const liveFiles = getLiveFiles();
-      const version = await api.createVersion(projectId, name, note, liveFiles);
+      const version = await api.createVersion(projectId, name, note, liveFiles, 'manual', 'manual');
+      lastCheckpointHashRef.current = liveFiles.map((f) => `${f.fileId}:${f.content}`).join('|');
       notify.checkpointCreated(version.name);
       sound.checkpointSaved();
     } catch (err: any) {
       notify.error('Failed to create checkpoint', err.message);
     }
+  };
+
+  // Periodic auto checkpoints (Step 7)
+  const createAutoCheckpointIfNeeded = async (trigger: string = 'periodic') => {
+    if (!projectId || userRole === 'viewer' || !isOnline || !navigator.onLine) {
+      return;
+    }
+    const liveFiles = getLiveFiles();
+    if (liveFiles.length === 0) return;
+
+    // Check if content has changed since last checkpoint
+    const currentHash = liveFiles.map((f) => `${f.fileId}:${f.content}`).join('|');
+    if (lastCheckpointHashRef.current === currentHash) {
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const autoName = `Auto-save checkpoint (${timeStr})`;
+      await api.createVersion(
+        projectId,
+        autoName,
+        'Automatic periodic checkpoint',
+        liveFiles,
+        'auto',
+        trigger
+      );
+      lastCheckpointHashRef.current = currentHash;
+    } catch (err) {
+      console.warn('Auto checkpoint failed:', err);
+    }
+  };
+
+  // Periodic checkpoint timer (Step 7: every 5 minutes)
+  useEffect(() => {
+    if (!projectId || userRole === 'viewer') return;
+
+    const interval = setInterval(() => {
+      createAutoCheckpointIfNeeded('interval');
+    }, 300000);
+
+    return () => clearInterval(interval);
+  }, [projectId, userRole, isOnline, files, activeFileId, activeContent]);
+
+  // Restore Entire Checkpoint (Step 8)
+  const handleRestoreVersion = async (version: VersionCheckpoint) => {
+    await api.restoreVersion(version._id);
+
+    // Apply restored content to all files in the version snapshot
+    for (const f of version.files) {
+      if (f.fileId === activeFileId) {
+        setActiveContent(f.content);
+        setReplaceModelContent({ fileId: f.fileId, content: f.content, nonce: Date.now() });
+      }
+      const session = docManager.getSession(projectId, f.fileId);
+      if (session) {
+        session.doc.transact(() => {
+          session.ytext.delete(0, session.ytext.length);
+          session.ytext.insert(0, f.content);
+        });
+      }
+      lastSavedContentMapRef.current.set(f.fileId, f.content);
+    }
+
+    setFiles((prev) =>
+      prev.map((file) => {
+        const matching = version.files.find((vf) => vf.fileId === file._id);
+        return matching ? { ...file, content: matching.content } : file;
+      })
+    );
+
+    await handleRefreshFiles();
+    notify.checkpointRestored(version.name);
+    sound.checkpointSaved();
   };
 
   // Restore Checkpoint Content (T2)
@@ -459,6 +649,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         session.ytext.insert(0, restoredContent);
       });
     }
+    lastSavedContentMapRef.current.set(fileId, restoredContent);
     setFiles((prev) =>
       prev.map((f) => (f._id === fileId ? { ...f, content: restoredContent } : f))
     );
@@ -564,6 +755,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         user={currentUser}
         userRole={userRole}
         isOnline={isOnline}
+        saveState={saveState}
+        lastSavedAt={lastSavedAt}
         transportMode={transportMode}
         onTransportChange={handleTransportChange}
         collaborators={collaborators}
@@ -659,6 +852,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       {/* Status Bar */}
       <StatusBar
         isOnline={isOnline}
+        saveState={saveState}
+        lastSavedAt={lastSavedAt}
         transportMode={transportMode}
         errorCount={errorCount}
         warnCount={warnCount}
@@ -689,7 +884,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         files={files}
         activeFileId={activeFileId}
         currentContent={activeContent}
+        userRole={userRole}
         onRestoreContent={handleRestoreContent}
+        onRestoreVersion={handleRestoreVersion}
       />
 
       {/* Workspace Search & Replace Modal */}

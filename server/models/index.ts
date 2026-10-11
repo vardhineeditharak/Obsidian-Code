@@ -116,6 +116,8 @@ export interface IVersion extends Document {
   projectId: mongoose.Types.ObjectId;
   name: string;
   note?: string;
+  type?: 'auto' | 'manual';
+  trigger?: string;
   createdBy: {
     userId: mongoose.Types.ObjectId;
     name: string;
@@ -132,6 +134,8 @@ const VersionSchema = new Schema<IVersion>({
   projectId: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },
   name: { type: String, required: true },
   note: { type: String, default: '' },
+  type: { type: String, enum: ['auto', 'manual'], default: 'manual' },
+  trigger: { type: String, default: 'manual' },
   createdBy: {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },

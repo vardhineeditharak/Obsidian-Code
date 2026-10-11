@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, History, RotateCcw, Clock, User as UserIcon, FileCode, Check } from 'lucide-react';
 import { DiffEditor } from '@monaco-editor/react';
-import { VersionCheckpoint, ProjectFile } from '../../lib/types';
+import { VersionCheckpoint, ProjectFile, ProjectRole } from '../../lib/types';
 import { api } from '../../lib/api';
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
@@ -14,7 +14,25 @@ interface VersionHistoryModalProps {
   files: ProjectFile[];
   activeFileId: string | null;
   currentContent: string;
+  userRole?: ProjectRole;
   onRestoreContent: (fileId: string, restoredContent: string) => void;
+  onRestoreVersion?: (version: VersionCheckpoint) => Promise<void>;
+}
+
+function formatRelativeTime(dateInput: string | number | Date): string {
+  const time = new Date(dateInput).getTime();
+  const diffSec = Math.floor((Date.now() - time) / 1000);
+  if (diffSec < 10) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin === 1) return '1 min ago';
+  if (diffMin < 60) return `${diffMin} mins ago`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour === 1) return '1 hr ago';
+  if (diffHour < 24) return `${diffHour} hrs ago`;
+  const diffDays = Math.floor(diffHour / 24);
+  if (diffDays === 1) return 'yesterday';
+  return `${diffDays}d ago`;
 }
 
 export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
@@ -24,7 +42,9 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   files,
   activeFileId,
   currentContent,
+  userRole = 'editor',
   onRestoreContent,
+  onRestoreVersion,
 }) => {
   const { isDark } = useTheme();
   const [versions, setVersions] = useState<VersionCheckpoint[]>([]);
@@ -32,6 +52,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   const [selectedFileId, setSelectedFileId] = useState<string>(activeFileId || '');
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [showConfirmRestore, setShowConfirmRestore] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,13 +81,17 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (showConfirmRestore) {
+          setShowConfirmRestore(false);
+          return;
+        }
         e.stopPropagation();
         onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, showConfirmRestore, onClose]);
 
   if (!isOpen) return null;
 
@@ -74,14 +99,21 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   const historicalFile = selectedVersion?.files.find((f) => f.fileId === selectedFileId);
   const historicalContent = historicalFile ? historicalFile.content : '';
 
-  const handleRestore = async () => {
-    if (!selectedVersion || !historicalFile) return;
+  const handleConfirmRestore = async () => {
+    if (!selectedVersion) return;
     setRestoring(true);
     try {
-      await api.restoreVersion(selectedVersion._id);
-      onRestoreContent(selectedFileId, historicalContent);
-      notify.checkpointRestored(selectedVersion.name);
-      sound.checkpointSaved();
+      if (onRestoreVersion) {
+        await onRestoreVersion(selectedVersion);
+      } else {
+        await api.restoreVersion(selectedVersion._id);
+        if (historicalFile) {
+          onRestoreContent(selectedFileId, historicalContent);
+        }
+        notify.checkpointRestored(selectedVersion.name);
+        sound.checkpointSaved();
+      }
+      setShowConfirmRestore(false);
       onClose();
     } catch (err: any) {
       notify.error('Restore failed', err.message);
@@ -137,10 +169,24 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-normal text-sm text-ink">{v.name}</span>
-                      <span className="text-[11px] font-mono text-mist flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-normal text-sm text-ink truncate">{v.name}</span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded text-[10px] font-mono shrink-0 ${
+                            v.type === 'auto'
+                              ? 'bg-linen text-ash border border-(--border-subtle)'
+                              : 'bg-amber/10 text-amber border border-amber/30'
+                          }`}
+                        >
+                          {v.type === 'auto' ? 'Auto' : 'Manual'}
+                        </span>
+                      </div>
+                      <span
+                        className="text-[11px] font-mono text-mist flex items-center gap-1 shrink-0 ml-2"
+                        title={new Date(v.createdAt).toLocaleString()}
+                      >
                         <Clock className="w-3 h-3" />
-                        {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatRelativeTime(v.createdAt)}
                       </span>
                     </div>
                     {v.note && <p className="text-xs font-editorial text-driftwood line-clamp-1 mb-1">{v.note}</p>}
@@ -179,14 +225,15 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 <span className="text-mist font-mono text-[11px]">
                   Original (Checkpoint) ⟷ Modified (Current)
                 </span>
-                {selectedVersion && historicalFile && (
+                {selectedVersion && (
                   <button
-                    onClick={handleRestore}
-                    disabled={restoring}
-                    className="btn-forest text-xs px-3 py-1.5 flex items-center gap-1.5"
+                    onClick={() => setShowConfirmRestore(true)}
+                    disabled={restoring || userRole === 'viewer'}
+                    title={userRole === 'viewer' ? 'Viewers cannot restore checkpoints' : 'Restore this checkpoint to workspace'}
+                    className="btn-forest text-xs px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>{restoring ? 'Restoring...' : 'Restore This Version'}</span>
+                    <span>{restoring ? 'Restoring…' : 'Restore This Version'}</span>
                   </button>
                 )}
               </div>
@@ -211,6 +258,41 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Restore Confirmation Dialog */}
+        {showConfirmRestore && selectedVersion && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md rounded-lg border border-stone bg-bone p-5 shadow-2xl space-y-4">
+              <div className="flex items-center gap-2 text-ink font-medium">
+                <RotateCcw className="w-4 h-4 text-amber" />
+                <h3 className="text-sm">Restore Checkpoint</h3>
+              </div>
+              <p className="text-xs text-driftwood leading-relaxed">
+                Are you sure you want to restore checkpoint <span className="font-semibold text-ink">"{selectedVersion.name}"</span>?
+                All workspace files will be reverted to this saved version.
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmRestore(false)}
+                  disabled={restoring}
+                  className="btn-ghost text-xs px-3 py-1.5 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmRestore}
+                  disabled={restoring}
+                  className="btn-forest text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{restoring ? 'Restoring…' : 'Confirm Restore'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

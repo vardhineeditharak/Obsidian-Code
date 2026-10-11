@@ -16,6 +16,8 @@ router.post('/projects/:projectId/versions', authenticateJWT, requireProjectRole
   const schema = z.object({
     name: z.string().min(1),
     note: z.string().optional(),
+    type: z.enum(['auto', 'manual']).optional(),
+    trigger: z.string().optional(),
     files: z.array(
       z.object({
         fileId: z.string(),
@@ -30,7 +32,7 @@ router.post('/projects/:projectId/versions', authenticateJWT, requireProjectRole
     return res.status(400).json({ message: 'Validation failed', errors: parsed.error.issues });
   }
 
-  const { name, note, files } = parsed.data;
+  const { name, note, type, trigger, files } = parsed.data;
   const projectId = param(req.params.projectId);
 
   // If client didn't supply full files map, pull current project files from store
@@ -46,12 +48,17 @@ router.post('/projects/:projectId/versions', authenticateJWT, requireProjectRole
       }));
   }
 
+  const versionType = type || 'manual';
+  const versionTrigger = trigger || (versionType === 'auto' ? 'periodic' : 'manual');
+
   const version = await dbStore.createVersion(
     projectId,
     name,
     note || '',
     { userId: req.user!.userId, name: req.user!.name },
-    snapshotFiles
+    snapshotFiles,
+    versionType,
+    versionTrigger
   );
 
   return res.status(201).json(version);

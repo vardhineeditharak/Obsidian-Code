@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Project, ProjectRole, TransportMode, CollaboratorPresence, User } from '../../lib/types';
+import React, { useState, useEffect } from 'react';
+import { Project, ProjectRole, TransportMode, CollaboratorPresence, User, SaveState } from '../../lib/types';
 import {
   ThemeToggle,
   Search,
@@ -25,6 +25,8 @@ interface HeaderProps {
   user: User;
   userRole: ProjectRole;
   isOnline: boolean;
+  saveState?: SaveState;
+  lastSavedAt?: number | null;
   transportMode: TransportMode;
   onTransportChange: (mode: TransportMode) => void;
   collaborators: CollaboratorPresence[];
@@ -43,11 +45,23 @@ interface HeaderProps {
   onBackToDashboard: () => void;
 }
 
+function formatSaveRelativeTime(timestamp: number | null | undefined): string {
+  if (!timestamp) return 'just now';
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 10) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  return `${Math.floor(diffMin / 60)}h ago`;
+}
+
 export const Header: React.FC<HeaderProps> = ({
   project,
   user,
   userRole,
   isOnline,
+  saveState = 'idle',
+  lastSavedAt = null,
   transportMode,
   onTransportChange,
   collaborators,
@@ -66,18 +80,27 @@ export const Header: React.FC<HeaderProps> = ({
   onBackToDashboard,
 }) => {
   const [isEditingName, setIsEditingName] = useState(false);
-  const [projectName, setProjectName] = useState(project.name);
+  const [projectName, setProjectName] = useState(project.name || '');
   const [showTransportMenu, setShowTransportMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // Sync internal edit buffer when incoming project.name changes
+  useEffect(() => {
+    setProjectName(project?.name || '');
+  }, [project?.name]);
+
   const handleNameSubmit = () => {
     setIsEditingName(false);
-    if (projectName.trim() && projectName !== project.name) {
-      onRenameProject(projectName.trim());
+    const trimmed = projectName.trim();
+    if (trimmed && trimmed !== project.name) {
+      onRenameProject(trimmed);
     } else {
-      setProjectName(project.name);
+      setProjectName(project.name || '');
     }
   };
+
+  const displayName = project.name && project.name.trim() ? project.name : 'Untitled Project';
+  const effectiveSaveState = !isOnline ? 'offline' : saveState;
 
   return (
     <header className="h-13 border-b border-stone bg-parchment px-3 flex items-center justify-between select-none z-30 transition-colors duration-150">
@@ -96,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <span className="text-stone text-xs font-light">/</span>
 
-        {/* Inline editable project name */}
+        {/* Project name with 'Untitled Project' fallback and separate role badge */}
         {isEditingName ? (
           <input
             type="text"
@@ -108,30 +131,53 @@ export const Header: React.FC<HeaderProps> = ({
             className="input-atelier text-xs px-2 py-0.5 rounded"
           />
         ) : (
-          <button
-            onClick={() => userRole === 'owner' && setIsEditingName(true)}
-            title={userRole === 'owner' ? 'Click to rename' : undefined}
-            className={`text-xs font-medium text-ink px-2 py-0.5 rounded hover:bg-linen transition flex items-center gap-1.5 ${
-              userRole === 'owner' ? 'cursor-pointer' : 'cursor-default'
-            }`}
-          >
-            <span>{project.name}</span>
-            <span className="font-mono text-[10px] text-ash">
-              {userRole === 'owner' ? '(Owner)' : `(${userRole})`}
+          <div className="flex items-center gap-2">
+            {userRole === 'owner' ? (
+              <button
+                onClick={() => setIsEditingName(true)}
+                title="Click to rename"
+                className="text-xs font-medium text-ink px-2 py-0.5 rounded hover:bg-linen transition flex items-center cursor-pointer"
+              >
+                <span>{displayName}</span>
+              </button>
+            ) : (
+              <span className="text-xs font-medium text-ink px-2 py-0.5 cursor-default">
+                {displayName}
+              </span>
+            )}
+
+            {/* Clearly secondary, visually separated role badge pill */}
+            <span className="font-mono text-[10px] text-ash px-1.5 py-0.5 rounded bg-linen/70 border border-(--border-subtle) uppercase tracking-wider">
+              {userRole === 'owner' ? 'Owner' : userRole === 'editor' ? 'Editor' : 'Viewer'}
             </span>
-          </button>
+          </div>
         )}
 
-        {/* Sync Indicator */}
+        {/* Google Docs-style Save-State Indicator */}
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-bone border border-(--border-subtle) text-[11px] font-mono">
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              isOnline ? 'bg-verdant' : 'bg-amber'
-            }`}
-          />
-          <span className={isOnline ? 'text-verdant text-[10px]' : 'text-amber text-[10px]'}>
-            {isOnline ? 'Synced' : 'Offline'}
-          </span>
+          {effectiveSaveState === 'saving' ? (
+            <>
+              <RotateCw className="w-3 h-3 animate-spin text-ash" />
+              <span className="text-ash text-[10px]">Saving…</span>
+            </>
+          ) : effectiveSaveState === 'saved' ? (
+            <>
+              <Check className="w-3 h-3 text-verdant" />
+              <span className="text-verdant text-[10px]">
+                All changes saved · {formatSaveRelativeTime(lastSavedAt)}
+              </span>
+            </>
+          ) : effectiveSaveState === 'offline' ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber" />
+              <span className="text-amber text-[10px]">Saved locally · will sync</span>
+            </>
+          ) : (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-verdant" />
+              <span className="text-verdant text-[10px]">Up to date</span>
+            </>
+          )}
         </div>
       </div>
 

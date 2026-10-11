@@ -108,10 +108,13 @@ export const api = {
   },
 
   async updateProject(projectId: string, data: Partial<Project>): Promise<Project> {
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined)
+    );
     const res = await fetch(`${BASE_URL}/projects/${projectId}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanData),
     });
     return handleResponse<Project>(res);
   },
@@ -172,11 +175,18 @@ export const api = {
     return handleResponse<VersionCheckpoint[]>(res);
   },
 
-  async createVersion(projectId: string, name: string, note?: string, files?: { fileId: string; fileName: string; content: string }[]): Promise<VersionCheckpoint> {
+  async createVersion(
+    projectId: string,
+    name: string,
+    note?: string,
+    files?: { fileId: string; fileName: string; content: string }[],
+    type?: 'auto' | 'manual',
+    trigger?: string
+  ): Promise<VersionCheckpoint> {
     const res = await fetch(`${BASE_URL}/projects/${projectId}/versions`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ name, note, files }),
+      body: JSON.stringify({ name, note, files, type, trigger }),
     });
     return handleResponse<VersionCheckpoint>(res);
   },

@@ -62,14 +62,19 @@ interface MemInvitation {
   createdAt: Date;
 }
 
+let versionSeq = 0;
+
 interface MemVersion {
   _id: string;
   projectId: string;
   name: string;
   note?: string;
+  type?: 'auto' | 'manual';
+  trigger?: string;
   createdBy: { userId: string; name: string };
   files: { fileId: string; fileName: string; content: string }[];
   createdAt: Date;
+  seq?: number;
 }
 
 const mem = {
@@ -296,12 +301,15 @@ export const dbStore = {
   },
 
   async updateProject(id: string, update: Partial<MemProject>) {
+    const cleanUpdate = Object.fromEntries(
+      Object.entries(update).filter(([_, v]) => v !== undefined)
+    );
     if (isMongoOnline()) {
-      return Project.findByIdAndUpdate(id, { ...update, updatedAt: new Date() }, { new: true });
+      return Project.findByIdAndUpdate(id, { ...cleanUpdate, updatedAt: new Date() }, { new: true });
     }
     const p = mem.projects.get(id);
     if (!p) return null;
-    Object.assign(p, update, { updatedAt: new Date() });
+    Object.assign(p, cleanUpdate, { updatedAt: new Date() });
     return p;
   },
 
@@ -540,18 +548,34 @@ export const dbStore = {
   // Versions / Checkpoints
   async getVersions(projectId: string) {
     if (isMongoOnline()) {
-      return Version.find({ projectId }).sort({ createdAt: -1 });
+      return Version.find({ projectId }).sort({ createdAt: -1, _id: -1 });
     }
     const list: MemVersion[] = [];
     for (const v of mem.versions.values()) {
       if (v.projectId === projectId) list.push(v);
     }
-    return list.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return list.sort((a, b) => {
+      const diff = b.createdAt.getTime() - a.createdAt.getTime();
+      if (diff !== 0) return diff;
+      return (b.seq || 0) - (a.seq || 0);
+    });
   },
 
-  async createVersion(projectId: string, name: string, note: string, createdBy: { userId: string; name: string }, files: any[]) {
+  async createVersion(
+    projectId: string,
+    name: string,
+    note: string,
+    createdBy: { userId: string; name: string },
+    files: any[],
+    type: 'auto' | 'manual' = 'manual',
+    trigger: string = 'manual'
+  ) {
     if (isMongoOnline()) {
-      return Version.create({ projectId, name, note, createdBy, files });
+      const v = await Version.create({ projectId, name, note, createdBy, files, type, trigger });
+      if (type === 'auto') {
+        await this.pruneAutoVersions(projectId, 50);
+      }
+      return v;
     }
     const v: MemVersion = {
       _id: genId(),
@@ -560,10 +584,46 @@ export const dbStore = {
       note,
       createdBy,
       files,
+      type,
+      trigger,
       createdAt: new Date(),
+      seq: ++versionSeq,
     };
     mem.versions.set(v._id, v);
+    if (type === 'auto') {
+      await this.pruneAutoVersions(projectId, 50);
+    }
     return v;
+  },
+
+  async pruneAutoVersions(projectId: string, keepCount: number = 50) {
+    if (isMongoOnline()) {
+      const autoVersions = await Version.find({ projectId, type: 'auto' })
+        .sort({ createdAt: -1, _id: -1 })
+        .select('_id');
+      if (autoVersions.length > keepCount) {
+        const toDeleteIds = autoVersions.slice(keepCount).map((v: any) => v._id);
+        await Version.deleteMany({ _id: { $in: toDeleteIds } });
+      }
+      return;
+    }
+    const autoList: MemVersion[] = [];
+    for (const v of mem.versions.values()) {
+      if (v.projectId === projectId && v.type === 'auto') {
+        autoList.push(v);
+      }
+    }
+    autoList.sort((a, b) => {
+      const diff = b.createdAt.getTime() - a.createdAt.getTime();
+      if (diff !== 0) return diff;
+      return (b.seq || 0) - (a.seq || 0);
+    });
+    if (autoList.length > keepCount) {
+      const toDelete = autoList.slice(keepCount);
+      for (const v of toDelete) {
+        mem.versions.delete(v._id);
+      }
+    }
   },
 
   async findVersionById(id: string) {

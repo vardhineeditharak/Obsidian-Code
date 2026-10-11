@@ -1,10 +1,12 @@
 import React from 'react';
-import { AlertCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
-import { TransportMode, ProjectRole } from '../../lib/types';
+import { AlertCircle, AlertTriangle, ShieldAlert, RotateCw, Check } from 'lucide-react';
+import { TransportMode, ProjectRole, SaveState } from '../../lib/types';
 import { Wifi, WifiOff } from '../ui/AnimatedIcon';
 
 interface StatusBarProps {
   isOnline: boolean;
+  saveState?: SaveState;
+  lastSavedAt?: number | null;
   transportMode: TransportMode;
   errorCount: number;
   warnCount: number;
@@ -14,8 +16,20 @@ interface StatusBarProps {
   userRole: ProjectRole;
 }
 
+function formatSaveRelativeTime(timestamp: number | null | undefined): string {
+  if (!timestamp) return 'just now';
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 10) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  return `${Math.floor(diffMin / 60)}h ago`;
+}
+
 export const StatusBar: React.FC<StatusBarProps> = ({
   isOnline,
+  saveState = 'idle',
+  lastSavedAt = null,
   transportMode,
   errorCount,
   warnCount,
@@ -24,9 +38,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   cursorColumn,
   userRole,
 }) => {
+  const effectiveSaveState = !isOnline ? 'offline' : saveState;
+
   return (
     <footer className="h-6 border-t border-stone bg-linen dark:bg-bone px-3 flex items-center justify-between text-[11px] font-sans font-medium text-ash select-none z-20 transition-colors duration-200">
-      {/* Left Status: Connection, Problems, Transport */}
+      {/* Left Status: Connection, Save State, Problems, Transport */}
       <div className="flex items-center gap-2.5">
         <div className="flex items-center gap-1.5">
           {isOnline ? (
@@ -37,6 +53,35 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span className={isOnline ? 'text-verdant font-medium' : 'text-amber font-medium'}>
             {isOnline ? 'Connected' : 'Offline'}
           </span>
+        </div>
+
+        <span className="text-stone">|</span>
+
+        {/* Save State Indicator */}
+        <div className="flex items-center gap-1.5 font-mono text-[10px]">
+          {effectiveSaveState === 'saving' ? (
+            <>
+              <RotateCw className="w-2.5 h-2.5 animate-spin text-ash" />
+              <span>Saving…</span>
+            </>
+          ) : effectiveSaveState === 'saved' ? (
+            <>
+              <Check className="w-2.5 h-2.5 text-verdant" />
+              <span className="text-verdant">
+                All changes saved · {formatSaveRelativeTime(lastSavedAt)}
+              </span>
+            </>
+          ) : effectiveSaveState === 'offline' ? (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-amber" />
+              <span className="text-amber">Saved locally · will sync</span>
+            </>
+          ) : (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-verdant" />
+              <span className="text-verdant">Up to date</span>
+            </>
+          )}
         </div>
 
         <span className="text-stone">|</span>

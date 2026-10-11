@@ -215,8 +215,12 @@ router.get('/:projectId', authenticateJWT, requireProjectRole(['owner', 'editor'
 
 // Update project (Owner only)
 router.patch('/:projectId', authenticateJWT, requireProjectRole(['owner']), async (req: AuthRequest, res: Response) => {
-  const { name, description, isPublic } = req.body;
-  const updated = await dbStore.updateProject(param(req.params.projectId), { name, description, isPublic });
+  const updateData: any = {};
+  if (req.body.name !== undefined) updateData.name = req.body.name;
+  if (req.body.description !== undefined) updateData.description = req.body.description;
+  if (req.body.isPublic !== undefined) updateData.isPublic = req.body.isPublic;
+
+  const updated = await dbStore.updateProject(param(req.params.projectId), updateData);
   return res.json(updated);
 });
 

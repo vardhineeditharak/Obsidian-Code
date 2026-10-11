@@ -49,11 +49,15 @@ export interface FileCheckpoint {
   content: string;
 }
 
+export type SaveState = 'idle' | 'saving' | 'saved' | 'offline';
+
 export interface VersionCheckpoint {
   _id: string;
   projectId: string;
   name: string;
   note?: string;
+  type?: 'auto' | 'manual';
+  trigger?: string;
   createdBy: {
     userId: string;
     name: string;

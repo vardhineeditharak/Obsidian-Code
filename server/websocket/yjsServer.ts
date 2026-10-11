@@ -143,6 +143,18 @@ export class YjsWebSocketServer {
 
       const clients = new Set<ClientConnection>();
 
+      room = {
+        name: roomName,
+        projectId,
+        fileId,
+        doc,
+        awareness,
+        clients,
+        awarenessHandler: () => {},
+        docUpdateHandler: () => {},
+        snapshotTimeout: null,
+      };
+
       const awarenessHandler = ({ added, updated, removed }: any, origin: any) => {
         const changedClients = added.concat(updated, removed);
         const encoder = encoding.createEncoder();
@@ -161,37 +173,51 @@ export class YjsWebSocketServer {
       };
 
       awareness.on('update', awarenessHandler);
+      room.awarenessHandler = awarenessHandler;
 
-      let snapshotTimeout: NodeJS.Timeout | null = null;
       const docUpdateHandler = () => {
-        if (snapshotTimeout) clearTimeout(snapshotTimeout);
-        snapshotTimeout = setTimeout(async () => {
+        if (room!.snapshotTimeout) {
+          clearTimeout(room!.snapshotTimeout);
+          room!.snapshotTimeout = null;
+        }
+        room!.snapshotTimeout = setTimeout(async () => {
+          if (room) {
+            room.snapshotTimeout = null;
+          }
           try {
             const state = Buffer.from(Y.encodeStateAsUpdate(doc));
             await dbStore.saveDocSnapshot(projectId, fileId, state);
           } catch (err) {
             console.error('Failed to save debounced snapshot:', err);
           }
-        }, 5000);
+        }, 3000);
       };
 
       doc.on('update', docUpdateHandler);
-
-      room = {
-        name: roomName,
-        projectId,
-        fileId,
-        doc,
-        awareness,
-        clients,
-        awarenessHandler,
-        docUpdateHandler,
-        snapshotTimeout,
-      };
+      room.docUpdateHandler = docUpdateHandler;
 
       this.rooms.set(roomName, room);
     }
     return room;
+  }
+
+  public getRoom(roomName: string): Room | undefined {
+    return this.rooms.get(roomName);
+  }
+
+  public async getOrCreateRoomForTest(roomName: string, projectId: string, fileId: string): Promise<Room> {
+    return this.getOrCreateRoom(roomName, projectId, fileId);
+  }
+
+  public async flushRoomSnapshot(roomName: string): Promise<void> {
+    const room = this.rooms.get(roomName);
+    if (!room) return;
+    if (room.snapshotTimeout) {
+      clearTimeout(room.snapshotTimeout);
+      room.snapshotTimeout = null;
+    }
+    const state = Buffer.from(Y.encodeStateAsUpdate(room.doc));
+    await dbStore.saveDocSnapshot(room.projectId, room.fileId, state);
   }
 
   private async handleConnection(ws: WebSocket, req: IncomingMessage, clientInfo: any) {
