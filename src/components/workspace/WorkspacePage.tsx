@@ -8,6 +8,7 @@ import { ShareModal } from './ShareModal';
 import { VersionHistoryModal } from './VersionHistoryModal';
 import { SearchReplaceModal } from './SearchReplaceModal';
 import { PromptDialog, Modal } from '../ui/Dialog';
+import { LoadingState } from '../ui/LoadingState';
 import {
   Project,
   ProjectFile,
@@ -85,7 +86,12 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const [showCheckpointDialog, setShowCheckpointDialog] = useState(false);
   const [showQuickOpen, setShowQuickOpen] = useState(false);
   const [quickOpenFilter, setQuickOpenFilter] = useState('');
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
+  const [showMobileNotice, setShowMobileNotice] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 640 : false
+  );
 
   // Navigation and content sync
   const [revealTarget, setRevealTarget] = useState<{ fileId: string; line: number; column: number; endColumn?: number; nonce: number } | null>(null);
@@ -743,9 +749,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   if (!project) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-parchment text-driftwood font-mono text-xs">
-        Loading collaborative workspace...
-      </div>
+      <LoadingState fullscreen label="Loading collaborative workspace…" />
     );
   }
 
@@ -755,6 +759,25 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   return (
     <div className="h-screen w-screen flex flex-col bg-parchment text-ink overflow-hidden transition-colors duration-200">
+      {/* Mobile viewport notice for small screens */}
+      {showMobileNotice && (
+        <aside
+          aria-label="Mobile viewport notice"
+          className="bg-linen border-b border-stone px-3 py-1.5 flex items-center justify-between text-xs text-driftwood z-40 shrink-0"
+        >
+          <span className="truncate pr-2">
+            Obsidian Code is desktop-optimized. Code editing is best experienced on wider displays.
+          </span>
+          <button
+            onClick={() => setShowMobileNotice(false)}
+            aria-label="Dismiss mobile notice"
+            className="text-ash hover:text-ink font-mono text-xs px-1.5 py-0.5 rounded-md hover:bg-stone/20 shrink-0 cursor-pointer"
+          >
+            ✕
+          </button>
+        </aside>
+      )}
+
       {/* Workspace Header */}
       <Header
         project={project}
@@ -961,10 +984,11 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
           <input
             type="text"
             autoFocus
+            aria-label="Filter files by name"
             placeholder="Search file by name..."
             value={quickOpenFilter}
             onChange={(e) => setQuickOpenFilter(e.target.value)}
-            className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs font-mono text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink"
+            className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs font-mono text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
           />
           <div className="max-h-60 overflow-y-auto space-y-1">
             {files
@@ -977,10 +1001,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
                     setShowQuickOpen(false);
                     setQuickOpenFilter('');
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-left hover:bg-linen/60 text-xs font-mono text-driftwood hover:text-ink transition cursor-pointer"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-left hover:bg-linen/60 text-xs font-mono text-driftwood hover:text-ink transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
                 >
                   <span className="font-normal text-ink">{file.name}</span>
-                  <span className="text-[10px] text-mist font-mono">{file.path}</span>
+                  <span className="text-micro text-mist font-mono">{file.path}</span>
                 </button>
               ))}
             {files.filter((f) => !f.isFolder && f.name.toLowerCase().includes(quickOpenFilter.toLowerCase())).length === 0 && (

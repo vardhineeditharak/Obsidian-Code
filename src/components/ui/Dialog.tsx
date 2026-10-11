@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useId } from 'react';
 import { X, AlertTriangle, HelpCircle } from 'lucide-react';
 
 interface ModalProps {
@@ -8,6 +8,7 @@ interface ModalProps {
   children: React.ReactNode;
   className?: string;
   maxWidth?: string;
+  ariaDescribedBy?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,47 +18,110 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   className = '',
   maxWidth = 'max-w-md',
+  ariaDescribedBy,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const autoTitleId = useId();
+  const titleId = title ? autoTitleId : undefined;
 
   useEffect(() => {
     if (!isOpen) return;
 
+    // Capture the trigger element that had focus before modal opened (A11Y-1)
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+
+    // Move focus into the dialog on open (A11Y-1)
+    const focusTimer = setTimeout(() => {
+      if (!dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length > 0) {
+        focusable[0].focus();
+      } else {
+        dialogRef.current.focus();
+      }
+    }, 25);
+
+    // Keyboard handlers: ESC to close + Tab/Shift+Tab focus trap (A11Y-1)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first || !dialogRef.current.contains(document.activeElement)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last || !dialogRef.current.contains(document.activeElement)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleKeyDown);
+
+      // Restore focus to previously focused trigger element on unmount/close (A11Y-1)
+      if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.focus === 'function') {
+        previouslyFocusedRef.current.focus();
+      }
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(38,37,30,0.35)] dark:bg-[rgba(10,10,8,0.65)] animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-scrim"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={ariaDescribedBy}
     >
       <div
         ref={dialogRef}
-        className={`w-full ${maxWidth} rounded-lg bg-bone border border-stone shadow-2xl overflow-hidden flex flex-col ${className}`}
+        tabIndex={-1}
+        className={`w-full ${maxWidth} rounded-xl bg-bone border border-stone shadow-2xl overflow-hidden flex flex-col modal-dialog ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone bg-bone">
-            <div className="text-sm font-normal text-ink flex items-center gap-2">
+            <div id={titleId} className="text-sm font-normal text-ink flex items-center gap-2">
               {title}
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+              aria-label="Close dialog"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -90,24 +154,28 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const descId = useId();
+
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={onCancel} maxWidth="max-w-md" ariaDescribedBy={descId}>
       <div className="p-6 space-y-4">
         <div className="flex items-start gap-3.5">
           <div
             className={`p-2.5 rounded-md shrink-0 ${
               isDestructive
-                ? 'bg-red-500/10 text-crimson border border-crimson/20'
-                : 'bg-amber-500/10 text-amber border border-amber/20'
+                ? 'bg-crimson/10 text-crimson border border-crimson/20'
+                : 'bg-amber/10 text-amber border border-amber/20'
             }`}
           >
             {isDestructive ? <AlertTriangle className="w-5 h-5" /> : <HelpCircle className="w-5 h-5" />}
           </div>
           <div>
             <h3 className="text-base font-normal text-ink">{title}</h3>
-            <p className="font-editorial text-sm text-driftwood mt-1 leading-relaxed">{message}</p>
+            <p id={descId} className="font-editorial text-sm text-driftwood mt-1 leading-relaxed">
+              {message}
+            </p>
           </div>
         </div>
 
@@ -115,7 +183,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary text-xs px-4 py-2"
+            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
           >
             {cancelText}
           </button>
@@ -127,8 +195,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             }}
             className={
               isDestructive
-                ? 'px-4 py-2 text-xs font-normal rounded-md bg-crimson text-white hover:opacity-90 transition cursor-pointer'
-                : 'btn-primary text-xs px-4 py-2'
+                ? 'px-4 py-2 text-xs font-normal rounded-md bg-crimson text-white hover:opacity-90 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson'
+                : 'btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment'
             }
           >
             {confirmText}
@@ -171,6 +239,7 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
 }) => {
   const [formValues, setFormValues] = React.useState<Record<string, string>>({});
   const firstInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const msgId = useId();
 
   React.useEffect(() => {
     if (isOpen) {
@@ -196,50 +265,65 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} maxWidth="max-w-md" title={title}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      maxWidth="max-w-md"
+      title={title}
+      ariaDescribedBy={message ? msgId : undefined}
+    >
       <form onSubmit={handleSubmit} className="p-5 space-y-4">
-        {message && <p className="font-editorial text-xs text-driftwood">{message}</p>}
+        {message && (
+          <p id={msgId} className="font-editorial text-xs text-driftwood">
+            {message}
+          </p>
+        )}
 
         <div className="space-y-3">
-          {fields.map((field, idx) => (
-            <div key={field.id}>
-              <label className="block text-xs font-normal text-ink mb-1">
-                {field.label} {field.required && <span className="text-crimson">*</span>}
-              </label>
-              {field.type === 'textarea' ? (
-                <textarea
-                  ref={idx === 0 ? (firstInputRef as any) : undefined}
-                  value={formValues[field.id] || ''}
-                  onChange={(e) => setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  rows={3}
-                  className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink"
-                />
-              ) : (
-                <input
-                  ref={idx === 0 ? (firstInputRef as any) : undefined}
-                  type="text"
-                  value={formValues[field.id] || ''}
-                  onChange={(e) => setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
-                  placeholder={field.placeholder}
-                  className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink"
-                />
-              )}
-            </div>
-          ))}
+          {fields.map((field, idx) => {
+            const inputId = `prompt-${field.id}`;
+            return (
+              <div key={field.id}>
+                <label htmlFor={inputId} className="block text-xs font-normal text-ink mb-1">
+                  {field.label} {field.required && <span className="text-crimson">*</span>}
+                </label>
+                {field.type === 'textarea' ? (
+                  <textarea
+                    id={inputId}
+                    ref={idx === 0 ? (firstInputRef as any) : undefined}
+                    value={formValues[field.id] || ''}
+                    onChange={(e) => setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    rows={3}
+                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment transition"
+                  />
+                ) : (
+                  <input
+                    id={inputId}
+                    type="text"
+                    ref={idx === 0 ? (firstInputRef as any) : undefined}
+                    value={formValues[field.id] || ''}
+                    onChange={(e) => setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-ink dark:focus:ring-parchment transition"
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-stone">
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary text-xs px-4 py-2"
+            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
           >
             {cancelText}
           </button>
           <button
             type="submit"
-            className="btn-primary text-xs px-4 py-2"
+            className="btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
           >
             {submitText}
           </button>

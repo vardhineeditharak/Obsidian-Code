@@ -103,7 +103,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
     setHistoryIndex(-1);
     setTermInput('');
 
-    const promptText = `$ ${promptLanguage} > ${raw}`;
+    const promptText = `${promptLanguage} ❯ ${raw}`;
     const newLines: TerminalLine[] = [
       { id: String(Date.now()), kind: 'input', text: promptText },
     ];
@@ -220,18 +220,21 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
       {/* Panel Header Bar */}
       <div className="h-8 px-3 flex items-center justify-between border-b border-stone bg-bone">
-        <div className="flex items-center gap-2">
+        <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-2">
           {/* Tabs */}
           {(['OUTPUT', 'TERMINAL', 'PROBLEMS', 'PREVIEW'] as BottomTab[]).map((tab) => {
             const isActive = activeTab === tab;
             return (
               <button
                 key={tab}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => {
                   onTabChange(tab);
                   if (!isOpen) onToggle();
                 }}
-                className={`px-2 py-0.5 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer border-b-2 ${
+                className={`px-2 py-0.5 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer border-b-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
                   isActive
                     ? 'text-ink border-ink font-medium'
                     : 'text-ash border-transparent hover:text-ink'
@@ -252,9 +255,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         <div className="flex items-center gap-1.5">
           {activeTab === 'OUTPUT' && (
             <button
+              type="button"
               onClick={onClearOutput}
               title="Clear Output"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+              aria-label="Clear Output"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
             >
               <Trash size={13} />
             </button>
@@ -262,9 +267,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
           {activeTab === 'TERMINAL' && (
             <button
+              type="button"
               onClick={() => setTerminalLog([])}
               title="Clear Terminal Console"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+              aria-label="Clear Terminal Console"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
             >
               <Trash size={13} />
             </button>
@@ -272,18 +279,22 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
           {activeTab === 'PREVIEW' && (
             <button
+              type="button"
               onClick={onRefreshPreview}
               title="Refresh Preview"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+              aria-label="Refresh Preview"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           )}
 
           <button
+            type="button"
             onClick={onToggle}
             title={isOpen ? 'Collapse Panel' : 'Expand Panel'}
-            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+            aria-label={isOpen ? 'Collapse Bottom Panel' : 'Expand Bottom Panel'}
+            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
           >
             {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
@@ -292,7 +303,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
       {/* Panel Content (Visible when expanded) */}
       {isOpen && (
-        <div className="flex-1 overflow-hidden p-3 font-mono text-xs">
+        <div className="flex-1 overflow-hidden p-3 font-mono text-xs select-text selectable-text">
           {/* 1. OUTPUT TAB */}
           {activeTab === 'OUTPUT' && (
             <div className="h-full overflow-y-auto space-y-1">
@@ -364,13 +375,14 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               </div>
               <form
                 onSubmit={handleTermSubmit}
-                className="flex items-center gap-2 border border-stone pt-2 mt-1 bg-parchment px-3 py-1.5 rounded-md"
+                className="flex items-center gap-2 border border-stone pt-2 mt-1 bg-parchment px-3 py-1.5 rounded-md focus-within:ring-1 focus-within:ring-ink dark:focus-within:ring-parchment"
               >
-                <span className="text-ash font-mono whitespace-nowrap">
-                  $ {promptLanguage} &gt;
+                <span className="text-ash font-mono whitespace-nowrap select-none font-medium">
+                  {promptLanguage} ❯
                 </span>
                 <input
                   type="text"
+                  aria-label="Terminal command"
                   placeholder="Type 'run', 'python main.py', 'runtimes', or 'help'..."
                   value={termInput}
                   onChange={(e) => setTermInput(e.target.value)}

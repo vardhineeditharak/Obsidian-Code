@@ -6,6 +6,7 @@ import { WorkspacePage } from './components/workspace/WorkspacePage';
 import { User } from './lib/types';
 import { api } from './lib/api';
 import { notify } from './lib/notifications';
+import { LoadingState } from './components/ui/LoadingState';
 
 export const App: React.FC = () => {
   const { isLoaded: isClerkLoaded, isSignedIn, user: clerkUser } = useUser();
@@ -172,11 +173,7 @@ export const App: React.FC = () => {
   }
 
   if (loading || !isClerkLoaded) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-parchment text-driftwood font-mono text-xs">
-        Initializing Obsidian Code...
-      </div>
-    );
+    return <LoadingState fullscreen label="Initializing Obsidian Code…" />;
   }
 
   if (currentRoute === 'auth' || !currentUser) {

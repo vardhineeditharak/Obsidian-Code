@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertCircle, AlertTriangle, ShieldAlert, RotateCw, Check } from 'lucide-react';
 import { TransportMode, ProjectRole, SaveState } from '../../lib/types';
 import { Wifi, WifiOff } from '../ui/AnimatedIcon';
+import { editorOptions } from './editorOptions';
 
 interface StatusBarProps {
   isOnline: boolean;
@@ -39,12 +40,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   userRole,
 }) => {
   const effectiveSaveState = !isOnline ? 'offline' : saveState;
+  const tabSize = editorOptions.tabSize ?? 2;
 
   return (
-    <footer className="h-6 border-t border-stone bg-linen dark:bg-bone px-3 flex items-center justify-between text-[11px] font-sans font-medium text-ash select-none z-20 transition-colors duration-200">
+    <footer className="h-6 border-t border-stone bg-linen dark:bg-bone px-3 flex items-center justify-between text-[11px] font-sans font-medium text-ash select-none z-20 overflow-hidden transition-colors duration-200">
       {/* Left Status: Connection, Save State, Problems, Transport */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2.5 min-w-0 truncate">
+        <div className="flex items-center gap-1.5 shrink-0">
           {isOnline ? (
             <Wifi size={11} color="currentColor" className="text-verdant" />
           ) : (
@@ -55,10 +57,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </span>
         </div>
 
-        <span className="text-stone">|</span>
+        <span className="text-stone shrink-0">|</span>
 
         {/* Save State Indicator */}
-        <div className="flex items-center gap-1.5 font-mono text-[10px]">
+        <div className="flex items-center gap-1.5 font-mono text-[10px] shrink-0">
           {effectiveSaveState === 'saving' ? (
             <>
               <RotateCw className="w-2.5 h-2.5 animate-spin text-ash" />
@@ -84,24 +86,24 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
         </div>
 
-        <span className="text-stone">|</span>
+        <span className="text-stone shrink-0 hidden sm:inline">|</span>
 
-        <span className="font-mono text-[11px] text-ash uppercase">{transportMode}</span>
+        <span className="font-mono text-[11px] text-ash uppercase shrink-0 hidden sm:inline">{transportMode}</span>
 
-        <span className="text-stone">|</span>
+        <span className="text-stone shrink-0 hidden sm:inline">|</span>
 
-        <div className="flex items-center gap-2 font-mono">
-          <span className="flex items-center gap-1 text-crimson">
+        <div className="flex items-center gap-2 font-mono shrink-0">
+          <span className="flex items-center gap-1 text-crimson" title={`${errorCount} Errors`}>
             <AlertCircle className="w-3 h-3" /> {errorCount}
           </span>
-          <span className="flex items-center gap-1 text-amber">
+          <span className="flex items-center gap-1 text-amber" title={`${warnCount} Warnings`}>
             <AlertTriangle className="w-3 h-3" /> {warnCount}
           </span>
         </div>
       </div>
 
       {/* Right Status: Language, Spaces, Ln/Col, Read-only */}
-      <div className="flex items-center gap-2.5 font-mono text-[11px]">
+      <div className="flex items-center gap-2.5 font-mono text-[11px] shrink-0">
         {userRole === 'viewer' && (
           <span className="flex items-center gap-1 text-amber font-sans font-medium">
             <ShieldAlert className="w-3 h-3" /> Read-only
@@ -110,13 +112,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span>Ln {cursorLine}, Col {cursorColumn}</span>
 
-        <span className="text-stone">|</span>
+        <span className="text-stone hidden sm:inline">|</span>
 
-        <span>Spaces: 2</span>
+        <span className="hidden sm:inline">Spaces: {tabSize}</span>
 
-        <span className="text-stone">|</span>
+        <span className="text-stone hidden sm:inline">|</span>
 
-        <span>UTF-8</span>
+        <span className="hidden sm:inline">UTF-8</span>
 
         <span className="text-stone">|</span>
 

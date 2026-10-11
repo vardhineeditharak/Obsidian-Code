@@ -122,22 +122,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {canEdit && (
           <div className="flex items-center gap-0.5">
             <button
+              type="button"
               onClick={() => {
                 setIsCreatingFile(true);
                 setIsCreatingFolder(false);
               }}
               title="New File"
-              className="p-1 rounded text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+              aria-label="New File"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
             >
               <FilePlus size={14} />
             </button>
             <button
+              type="button"
               onClick={() => {
                 setIsCreatingFolder(true);
                 setIsCreatingFile(false);
               }}
               title="New Folder"
-              className="p-1 rounded text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+              aria-label="New Folder"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
             >
               <FolderPlus size={14} />
             </button>
@@ -152,9 +156,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <input
             type="text"
             placeholder="Filter files..."
+            aria-label="Filter files"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-parchment border border-(--border-subtle) rounded pl-7 pr-2 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink dark:focus:ring-parchment font-mono"
+            className="w-full bg-parchment border border-(--border-subtle) rounded-md pl-7 pr-2 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:ring-1 focus:ring-ink focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment font-mono"
           />
         </div>
       </div>
@@ -176,7 +181,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             onBlur={() => handleCreateSubmit(isCreatingFolder)}
             autoFocus
-            className="w-full bg-parchment border border-ink rounded px-2 py-1 text-xs font-mono text-ink focus:outline-none"
+            aria-label={isCreatingFolder ? "Folder name" : "File name"}
+            className="w-full bg-parchment border border-ink rounded-md px-2 py-1 text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment"
           />
         </div>
       )}
@@ -184,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* File Tree List */}
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {filteredFiles.length === 0 && (
-          <p className="text-center font-mono text-[11px] text-ash py-8">
+          <p className="text-center font-mono text-micro text-ash py-8">
             {filterQuery ? 'No matching files' : 'No files in workspace'}
           </p>
         )}
@@ -231,7 +237,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }}
                     onBlur={() => handleRenameSubmit(file._id)}
                     autoFocus
-                    className="bg-parchment border border-ink rounded px-1.5 py-0.5 text-xs font-mono text-ink focus:outline-none w-28"
+                    aria-label="Rename file"
+                    className="bg-parchment border border-ink rounded-md px-1.5 py-0.5 text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment w-28"
                   />
                 ) : (
                   <span className="truncate">{file.name}</span>
@@ -240,25 +247,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {/* Action buttons (Rename, Delete) */}
               {canEdit && (
-                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 shrink-0 transition">
+                <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 flex items-center gap-0.5 shrink-0 transition">
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setEditingFileId(file._id);
                       setEditingName(file.name);
                     }}
-                    title="Rename"
-                    className="p-1 rounded text-ash hover:text-ink hover:bg-bone transition cursor-pointer"
+                    title={`Rename ${file.name}`}
+                    aria-label={`Rename ${file.name}`}
+                    className="p-1 rounded-md text-ash hover:text-ink hover:bg-bone focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
                   >
                     <Edit size={12} />
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setFileToDelete({ id: file._id, name: file.name });
                     }}
-                    title="Delete"
-                    className="p-1 rounded text-ash hover:text-crimson hover:bg-bone transition cursor-pointer"
+                    title={`Delete ${file.name}`}
+                    aria-label={`Delete ${file.name}`}
+                    className="p-1 rounded-md text-ash hover:text-crimson hover:bg-bone focus:outline-none focus-visible:ring-1 focus-visible:ring-crimson transition cursor-pointer"
                   >
                     <Trash size={12} />
                   </button>

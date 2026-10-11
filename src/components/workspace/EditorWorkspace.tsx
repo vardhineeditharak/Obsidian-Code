@@ -565,7 +565,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       {/* Editor Tabs Header Bar */}
       <div className="h-9 border-b border-stone bg-parchment flex items-center justify-between px-2">
         {/* Open Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto max-w-[80vw]">
+        <div role="tablist" aria-label="Open editor tabs" className="flex items-center gap-1 overflow-x-auto max-w-[80vw]">
           {openFileIds.map((fileId) => {
             const file = files.find((f) => f._id === fileId);
             if (!file) return null;
@@ -574,8 +574,18 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             return (
               <div
                 key={fileId}
+                role="tab"
+                tabIndex={0}
+                aria-selected={isActive}
+                aria-label={`File ${file.name}`}
                 onClick={() => onSelectFile(fileId)}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-t-md border-t cursor-pointer transition ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectFile(fileId);
+                  }
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-t-md border-t cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
                   isActive
                     ? 'bg-bone border-ink text-ink shadow-none'
                     : 'border-transparent text-ash hover:text-ink hover:bg-linen/40'
@@ -583,11 +593,13 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               >
                 <span>{file.name}</span>
                 <button
+                  type="button"
+                  aria-label={`Close tab ${file.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleTabClose(fileId);
                   }}
-                  className="p-0.5 rounded-xs hover:bg-stone/50 text-ash hover:text-ink transition"
+                  className="p-0.5 rounded-sm hover:bg-stone/50 text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -605,20 +617,26 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             </span>
           )}
 
-          <div className="flex items-center bg-bone rounded-md p-0.5 border border-stone">
+          <div className="flex items-center bg-bone rounded-md p-0.5 border border-stone" role="group" aria-label="Editor split options">
             <button
+              type="button"
               onClick={() => setSplitMode(splitMode === 'vertical' ? 'single' : 'vertical')}
               title="Split Editor Right"
-              className={`p-1 rounded-xs transition ${
+              aria-label="Split Editor Right"
+              aria-pressed={splitMode === 'vertical'}
+              className={`p-1 rounded-sm transition focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer ${
                 splitMode === 'vertical' ? 'bg-ink text-parchment' : 'text-ash hover:text-ink'
               }`}
             >
               <Columns2 className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => setSplitMode(splitMode === 'horizontal' ? 'single' : 'horizontal')}
               title="Split Editor Down"
-              className={`p-1 rounded-xs transition ${
+              aria-label="Split Editor Down"
+              aria-pressed={splitMode === 'horizontal'}
+              className={`p-1 rounded-sm transition focus:outline-none focus-visible:ring-1 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer ${
                 splitMode === 'horizontal' ? 'bg-ink text-parchment' : 'text-ash hover:text-ink'
               }`}
             >

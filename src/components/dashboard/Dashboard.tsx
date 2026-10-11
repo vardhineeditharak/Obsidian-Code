@@ -18,7 +18,8 @@ import {
   LogOut,
   ThemeToggle,
 } from '../ui/AnimatedIcon';
-import { ConfirmDialog } from '../ui/Dialog';
+import { ConfirmDialog, Modal } from '../ui/Dialog';
+import { SkeletonGrid } from '../ui/Skeleton';
 import { BrandMark } from '../ui/BrandMark';
 import { Project, User } from '../../lib/types';
 import { api } from '../../lib/api';
@@ -65,19 +66,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       executeJoin(initialInviteToken);
     }
   }, [initialInviteToken]);
-
-  // ESC keydown listener for Dashboard modals
-  useEffect(() => {
-    if (!showCreateModal && !showJoinModal) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowCreateModal(false);
-        setShowJoinModal(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showCreateModal, showJoinModal]);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -180,7 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.name}`}
               alt={user.name}
-              className="w-6 h-6 rounded border border-(--border-subtle)"
+              className="w-6 h-6 rounded-full border border-(--border-subtle)"
             />
             <span className="font-mono text-xs text-driftwood">{user.name}</span>
           </div>
@@ -188,7 +176,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             onClick={onLogout}
             title="Sign out"
-            className="btn-ghost text-xs p-1.5"
+            aria-label="Sign out"
+            className="btn-ghost text-xs p-1.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment cursor-pointer"
           >
             <LogOut size={15} className="text-ash hover:text-ink" />
           </button>
@@ -228,12 +217,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Project Grid */}
         {loading ? (
-          <div className="flex-1 flex items-center justify-center font-mono text-xs text-ash">
-            Loading workspaces...
-          </div>
+          <SkeletonGrid count={6} />
         ) : projects.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-(--border-subtle) rounded text-center">
-            <div className="w-10 h-10 rounded bg-linen flex items-center justify-center text-ash mb-3">
+          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-(--border-subtle) rounded-lg text-center">
+            <div className="w-10 h-10 rounded-md bg-linen flex items-center justify-center text-ash mb-3">
               <Sparkles className="w-5 h-5" />
             </div>
             <h2 className="headline-sm font-normal text-ink mb-1">No Projects Found</h2>
@@ -241,6 +228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               Create a new collaborative project or join an existing workspace with an invitation link.
             </p>
             <button
+              type="button"
               onClick={() => setShowCreateModal(true)}
               className="btn-primary text-xs"
             >
@@ -252,13 +240,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {projects.map((p) => (
               <div
                 key={p._id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onOpenProject(p._id)}
-                className="bg-bone p-5 rounded border border-(--border-subtle) hover:border-(--border-active) transition group cursor-pointer flex flex-col justify-between"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onOpenProject(p._id);
+                  }
+                }}
+                className="bg-bone p-5 rounded-lg border border-(--border-subtle) hover:border-(--border-active) transition group cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
               >
                 <div>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded bg-linen border border-(--border-subtle) flex items-center justify-center text-ash group-hover:text-ink transition">
+                      <div className="w-8 h-8 rounded-md bg-linen border border-(--border-subtle) flex items-center justify-center text-ash group-hover:text-ink transition">
                         <FolderOpen size={15} />
                       </div>
                       <div>
@@ -273,12 +269,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
 
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteProject(p._id, p.name);
                       }}
-                      title="Delete Project"
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-ash hover:text-crimson transition cursor-pointer"
+                      title={`Delete ${p.name}`}
+                      aria-label={`Delete project ${p.name}`}
+                      className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1 rounded-md text-ash hover:text-crimson hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer"
                     >
                       <Trash size={14} />
                     </button>
@@ -307,169 +305,152 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </main>
 
       {/* New Project Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-bone w-full max-w-lg rounded-lg border border-(--border-subtle) shadow-2xl p-6">
-            <h2 className="headline-sm font-normal text-ink mb-1">Create Collaborative Project</h2>
-            <p className="font-editorial text-[15px] text-driftwood mb-5">
-              Choose a template to scaffold your shared project environment.
-            </p>
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        maxWidth="max-w-lg"
+        title="Create Collaborative Project"
+      >
+        <div className="p-6">
+          <p className="font-editorial text-[15px] text-driftwood mb-5">
+            Choose a template to scaffold your shared project environment.
+          </p>
 
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="text-xs font-normal text-driftwood block mb-1">Project Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. NextGen Web App"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="input-atelier w-full"
-                />
-              </div>
+          <form onSubmit={handleCreateProject} className="space-y-4">
+            <div>
+              <label htmlFor="project-name-input" className="text-xs font-normal text-driftwood block mb-1">
+                Project Name
+              </label>
+              <input
+                id="project-name-input"
+                type="text"
+                required
+                placeholder="e.g. NextGen Web App"
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                className="input-atelier w-full"
+              />
+            </div>
 
-              <div>
-                <label className="text-xs font-normal text-driftwood block mb-1">Description (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="Short workspace description..."
-                  value={newProjectDesc}
-                  onChange={(e) => setNewProjectDesc(e.target.value)}
-                  className="input-atelier w-full"
-                />
-              </div>
+            <div>
+              <label htmlFor="project-desc-input" className="text-xs font-normal text-driftwood block mb-1">
+                Description (Optional)
+              </label>
+              <input
+                id="project-desc-input"
+                type="text"
+                placeholder="Short workspace description..."
+                value={newProjectDesc}
+                onChange={(e) => setNewProjectDesc(e.target.value)}
+                className="input-atelier w-full"
+              />
+            </div>
 
-              {/* Starter Templates */}
-              <div>
-                <label className="text-xs font-normal text-driftwood block mb-2">Starter Template</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div
-                    onClick={() => setSelectedTemplate('web')}
-                    className={`p-3 rounded border cursor-pointer transition text-left ${
-                      selectedTemplate === 'web'
+            {/* Starter Templates */}
+            <div>
+              <label className="text-xs font-normal text-driftwood block mb-2">Starter Template</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'web', label: 'Web App', sub: 'HTML, CSS, JS', icon: <Globe className="w-4 h-4 text-ash mb-1.5" /> },
+                  { id: 'node', label: 'Node.js', sub: 'Package & script', icon: <Terminal className="w-4 h-4 text-ash mb-1.5" /> },
+                  { id: 'algorithms', label: 'Algorithms', sub: 'Data structures', icon: <Binary className="w-4 h-4 text-ash mb-1.5" /> },
+                  { id: 'blank', label: 'Blank', sub: 'Clean slate', icon: <Sparkles className="w-4 h-4 text-amber mb-1.5" /> },
+                ].map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => setSelectedTemplate(tpl.id as any)}
+                    className={`p-3 rounded-md border cursor-pointer transition text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment ${
+                      selectedTemplate === tpl.id
                         ? 'border-ink bg-linen text-ink'
                         : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
                     }`}
                   >
-                    <Globe className="w-4 h-4 text-ash mb-1.5" />
-                    <p className="text-xs font-medium text-ink">Web App</p>
-                    <p className="font-mono text-[10px] text-ash">HTML, CSS, JS</p>
-                  </div>
-
-                  <div
-                    onClick={() => setSelectedTemplate('node')}
-                    className={`p-3 rounded border cursor-pointer transition text-left ${
-                      selectedTemplate === 'node'
-                        ? 'border-ink bg-linen text-ink'
-                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
-                    }`}
-                  >
-                    <Terminal className="w-4 h-4 text-ash mb-1.5" />
-                    <p className="text-xs font-medium text-ink">Node.js</p>
-                    <p className="font-mono text-[10px] text-ash">Package & script</p>
-                  </div>
-
-                  <div
-                    onClick={() => setSelectedTemplate('algorithms')}
-                    className={`p-3 rounded border cursor-pointer transition text-left ${
-                      selectedTemplate === 'algorithms'
-                        ? 'border-ink bg-linen text-ink'
-                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
-                    }`}
-                  >
-                    <Binary className="w-4 h-4 text-ash mb-1.5" />
-                    <p className="text-xs font-medium text-ink">Algorithms</p>
-                    <p className="font-mono text-[10px] text-ash">Data structures</p>
-                  </div>
-
-                  <div
-                    onClick={() => setSelectedTemplate('blank')}
-                    className={`p-3 rounded border cursor-pointer transition text-left ${
-                      selectedTemplate === 'blank'
-                        ? 'border-ink bg-linen text-ink'
-                        : 'border-(--border-subtle) bg-bone text-driftwood hover:bg-linen'
-                    }`}
-                  >
-                    <Sparkles className="w-4 h-4 text-amber mb-1.5" />
-                    <p className="text-xs font-medium text-ink">Blank</p>
-                    <p className="font-mono text-[10px] text-ash">Clean slate</p>
-                  </div>
-                </div>
+                    {tpl.icon}
+                    <p className="text-xs font-medium text-ink">{tpl.label}</p>
+                    <p className="font-mono text-[10px] text-ash">{tpl.sub}</p>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-(--border-subtle)">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="btn-primary text-xs"
-                >
-                  {creating ? 'Creating...' : 'Create Project'}
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-(--border-subtle)">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="btn-ghost text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={creating}
+                className="btn-primary text-xs"
+              >
+                {creating ? 'Creating...' : 'Create Project'}
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </Modal>
 
       {/* Join Project Modal */}
-      {showJoinModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-bone w-full max-w-md rounded-lg border border-(--border-subtle) shadow-2xl p-6">
-            <h2 className="headline-sm font-normal text-ink mb-1">Join Workspace</h2>
-            <p className="font-editorial text-[15px] text-driftwood mb-5">
-              Paste your invitation token or share link to join a team's code workspace.
-            </p>
+      <Modal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
+        maxWidth="max-w-md"
+        title="Join Workspace"
+      >
+        <div className="p-6">
+          <p className="font-editorial text-[15px] text-driftwood mb-5">
+            Paste your invitation token or share link to join a team's code workspace.
+          </p>
 
-            {joinError && (
-              <div className="mb-4 text-[13px] text-crimson flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
-                <span>{joinError}</span>
-              </div>
-            )}
+          {joinError && (
+            <div role="alert" className="mb-4 text-[13px] text-crimson flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
+              <span>{joinError}</span>
+            </div>
+          )}
 
-            <form onSubmit={handleJoinProject} className="space-y-4">
-              <div>
-                <label className="text-xs font-normal text-driftwood block mb-1">Invitation Link or Token</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Paste token or link (e.g. 5a9b...)"
-                  value={inviteToken}
-                  onChange={(e) => {
-                    setInviteToken(e.target.value);
-                    if (joinError) setJoinError(null);
-                  }}
-                  className="input-atelier w-full font-mono text-xs"
-                />
-              </div>
+          <form onSubmit={handleJoinProject} className="space-y-4">
+            <div>
+              <label htmlFor="join-token-input" className="text-xs font-normal text-driftwood block mb-1">
+                Invitation Link or Token
+              </label>
+              <input
+                id="join-token-input"
+                type="text"
+                required
+                placeholder="Paste token or link (e.g. 5a9b...)"
+                value={inviteToken}
+                onChange={(e) => {
+                  setInviteToken(e.target.value);
+                  if (joinError) setJoinError(null);
+                }}
+                className="input-atelier w-full font-mono text-xs"
+              />
+            </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-(--border-subtle)">
-                <button
-                  type="button"
-                  onClick={() => setShowJoinModal(false)}
-                  className="btn-ghost text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={joining}
-                  className="btn-primary text-xs disabled:opacity-50"
-                >
-                  {joining ? 'Joining...' : 'Join Workspace'}
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-(--border-subtle)">
+              <button
+                type="button"
+                onClick={() => setShowJoinModal(false)}
+                className="btn-ghost text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={joining}
+                className="btn-primary text-xs disabled:opacity-50"
+              >
+                {joining ? 'Joining...' : 'Join Workspace'}
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </Modal>
 
       {/* Delete Project Confirm Dialog (D1) */}
       <ConfirmDialog
