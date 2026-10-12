@@ -1,15 +1,44 @@
 {
   "name": "obsidian-code",
   "version": "1.0.0",
+  "description": "Production-grade, real-time collaborative code editor combining CRDT multiplayer synchronization with VS Code ergonomics and a Cursor-inspired warm parchment design system.",
   "type": "module",
+  "author": "Obsidian Code Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vardhineeditharak/Obsidian-Code.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vardhineeditharak/Obsidian-Code/issues"
+  },
+  "homepage": "https://github.com/vardhineeditharak/Obsidian-Code#readme",
+  "keywords": [
+    "collaborative-editor",
+    "crdt",
+    "yjs",
+    "monaco-editor",
+    "real-time",
+    "webrtc",
+    "code-editor",
+    "developer-tools",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx server/index.ts\"",
     "dev:client": "vite",
     "dev:server": "tsx server/index.ts",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "preview": "vite preview",
     "start": "tsx server/index.ts",
     "test": "vitest run",
+    "test:watch": "vitest",
     "db:clear": "tsx server/scripts/clearDb.ts"
   },
   "dependencies": {

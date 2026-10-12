@@ -20,6 +20,9 @@ const envSchema = z.object({
   WEBRTC_TURN_URL: z.string().optional(),
   WEBRTC_TURN_USERNAME: z.string().optional(),
   WEBRTC_TURN_CREDENTIAL: z.string().optional(),
+  CLERK_SECRET_KEY: z.string().optional(),
+  CLERK_PUBLISHABLE_KEY: z.string().optional(),
+  VITE_CLERK_PUBLISHABLE_KEY: z.string().optional(),
 });
 
 const isProd = process.env.NODE_ENV === 'production';
