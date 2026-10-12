@@ -13,10 +13,10 @@
 [![Monaco Editor](https://img.shields.io/badge/Editor-Monaco-1E1E1E?style=flat-square&logo=visualstudiocode&logoColor=white)](https://microsoft.github.io/monaco-editor/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Tests](https://img.shields.io/badge/Tests-109%20Passed-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-127%20Passed-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-[Features](#-key-features) • [Architecture](#-architecture) • [Tech Stack](#-tech-stack) • [Quickstart](#-quickstart) • [Configuration](#-environment-variables) • [Testing](#-testing--quality-assurance) • [Deployment](#-deployment)
+[Features](#-key-features) • [Architecture](#-architecture) • [Research Evaluation](docs/EVALUATION.md) • [Tech Stack](#-tech-stack) • [Quickstart](#-quickstart) • [Configuration](#-environment-variables) • [Testing](#-testing--quality-assurance) • [Deployment](#-deployment)
 
 </div>
 
@@ -210,16 +210,26 @@ A complete `.env.example` file is provided in the repository. Below is a breakdo
 | `npm run lint` | `tsc --noEmit` | Static analysis verification |
 | `npm run preview` | `vite preview` | Previews the compiled production build locally |
 | `npm start` | `tsx server/index.ts` | Runs the production backend (serves compiled SPA and API) |
-| `npm test` | `vitest run` | Runs all 109 automated unit, integration, and security tests |
+| `npm test` | `vitest run` | Runs all 127 automated unit, integration, and research evaluation tests |
 | `npm run test:watch` | `vitest` | Runs Vitest in interactive watch mode |
 | `npm run db:clear` | `tsx server/scripts/clearDb.ts` | Wipes MongoDB collections (utility script for test resets) |
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🧪 Testing & Research Evaluation
 
-Obsidian Code includes a comprehensive suite of **109 unit and integration tests across 28 test suites** covering critical application behaviors:
+Obsidian Code includes an empirical research evaluation harness and comprehensive test suite totaling **127 unit, integration, and research evaluation tests across 33 test suites**:
 
+### Academic Research Suites (PROJ2999 Capstone Alignment)
+- **Offline Divergence & Reconnection**: Verifies deterministic recovery and zero lost updates following extended offline editing sessions (`tests/crdt_offline_convergence.test.ts`).
+- **Merge Latency & Metadata Overhead**: Empirically benchmarks sub-millisecond merge latency (<0.2 ms) and asymptotic ~1.001x metadata overhead scaling (`tests/benchmark_sync.test.ts`, `src/lib/crdt/benchmark.ts`).
+- **Offline Recovery Time**: Measures snapshot hydration and network state reconciliation (<0.6 ms) (`tests/crdt_offline_recovery.test.ts`).
+- **Post-Merge Source-Code Integrity**: Investigates the "Convergence != Validity" dichotomy under concurrent edits (100% convergence vs 20% intent preservation) (`tests/code_integrity_experiment.test.ts`).
+- **Realistic Code Workloads**: Analyzes linear CRDT behavior on functions, moves, and symbol renames (`tests/code_workloads.test.ts`).
+
+> 📄 For the complete academic research evaluation report, methodology, and empirical tables, see [**docs/EVALUATION.md**](docs/EVALUATION.md).
+
+### Core Workspace Engineering Suites
 - **CRDT Document Convergence**: Validates eventual consistency of concurrent edits across isolated `Y.Doc` instances.
 - **Monaco Tab-Switch Isolation**: Verifies per-file model binding to prevent editor content corruption when switching active files.
 - **WebSocket RBAC Enforcement**: Tests that Viewers receive initial document state but are rejected when attempting to push CRDT updates to the server.
