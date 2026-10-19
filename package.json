@@ -1,6 +1,6 @@
 {
   "name": "obsidian-code",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "Production-grade, real-time collaborative code editor combining CRDT multiplayer synchronization with VS Code ergonomics and a Cursor-inspired warm parchment design system.",
   "type": "module",
   "author": "Obsidian Code Contributors",
