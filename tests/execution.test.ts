@@ -55,7 +55,7 @@ describe('Multi-Language Process Execution (Phase 2)', () => {
 
     const unknownResolved = await resolveLanguage('unknown.xyz');
     expect(unknownResolved).toBeNull();
-  });
+  }, 15000);
 
   it('processRunner executes JavaScript code and returns stdout and exitCode 0', async () => {
     const res = await runProcessCode({

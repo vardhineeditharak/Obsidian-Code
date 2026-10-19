@@ -38,6 +38,8 @@ if (config.APP_URL) {
     allowedOrigins.add(config.APP_URL);
   }
 }
+allowedOrigins.add('http://localhost:3000');
+allowedOrigins.add('http://127.0.0.1:3000');
 
 app.use(
   cors({

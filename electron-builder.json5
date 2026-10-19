@@ -1,0 +1,73 @@
+/**
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+  "appId": "com.obsidiancode.app",
+  "productName": "Obsidian Code",
+  "copyright": "Copyright © 2026 Obsidian Code Contributors",
+  "directories": {
+    "output": "dist/desktop",
+    "buildResources": "build"
+  },
+  "files": [
+    "dist/client/**/*",
+    "dist-electron/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+    "icon": "build/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false,
+    "createDesktopShortcut": "always",
+    "createStartMenuShortcut": true,
+    "shortcutName": "Obsidian Code"
+  },
+  "mac": {
+    "category": "public.app-category.developer-tools",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "icon": "build/icon.png",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist"
+  },
+  "dmg": {
+    "contents": [
+      {
+        "x": 130,
+        "y": 220
+      },
+      {
+        "x": 410,
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ]
+  }
+}

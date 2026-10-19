@@ -1,6 +1,20 @@
 import { User, Project, ProjectFile, VersionCheckpoint, ProjectRole, ExecutionResult } from './types';
 
-const BASE_URL = '/api';
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (import.meta.env.VITE_API_URL) {
+    const raw = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
+    return raw.endsWith('/api') ? raw : `${raw}/api`;
+  }
+  if (typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.location.protocol === 'app:')) {
+    return 'http://localhost:5000/api';
+  }
+  return '/api';
+};
+
+const BASE_URL = getApiBaseUrl();
 
 function getAuthHeaders(): HeadersInit {
   const token = typeof window !== 'undefined' ? localStorage.getItem('obsidian_token') : null;

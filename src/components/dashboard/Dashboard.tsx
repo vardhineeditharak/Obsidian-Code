@@ -150,18 +150,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const isMacDesktop = typeof window !== 'undefined' && window.obsidianDesktop?.platform === 'darwin';
+  const isDesktop = typeof window !== 'undefined' && Boolean(window.obsidianDesktop?.isDesktop);
+
   return (
     <div className="min-h-screen bg-parchment text-ink flex flex-col select-none transition-colors duration-150">
       {/* Top Navbar */}
-      <nav className="h-13 border-b border-stone px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <nav className={`h-13 border-b border-stone px-6 flex items-center justify-between ${isDesktop ? 'app-drag-region' : ''} ${isMacDesktop ? 'pl-20' : ''}`}>
+        <div className="flex items-center gap-3 app-no-drag">
           <BrandMark className="w-8 h-8 text-ink shrink-0" />
           <span className="font-brand text-xl font-semibold tracking-tight text-ink">
             Obsidian Code
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 app-no-drag">
           <div className="hidden">
             <ThemeToggle size={16} />
           </div>

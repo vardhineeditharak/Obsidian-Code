@@ -82,11 +82,18 @@ class YjsDocManager {
     const cleanups: (() => void)[] = [];
 
     // Protocol & Host discovery
+    const isDesktopPackaged = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.location.protocol === 'app:');
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     const wsProto = isHttps ? 'wss:' : 'ws:';
-    const wsHost = typeof window !== 'undefined' 
-      ? `${wsProto}//${window.location.host}/ws`
-      : 'ws://localhost:5000/ws';
+    const defaultHost = (isDesktopPackaged || (typeof window !== 'undefined' && !window.location.host))
+      ? 'localhost:5000'
+      : (typeof window !== 'undefined' ? window.location.host : 'localhost:5000');
+    const rawWs = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WS_URL)
+      ? String((import.meta as any).env.VITE_WS_URL).trim()
+      : '';
+    const wsHost = rawWs
+      ? (rawWs.endsWith('/ws') ? rawWs : `${rawWs.replace(/\/+$/, '')}/ws`)
+      : `${wsProto}//${defaultHost}/ws`;
 
     // 2. Attach WebSocket Relay (if Hybrid or WebSocket Only)
     if (this.activeTransport === 'Hybrid' || this.activeTransport === 'WebSocket Only') {

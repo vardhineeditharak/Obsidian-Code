@@ -175,8 +175,11 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     setError(null);
     setLoading(true);
     const providerName = strategy === 'oauth_google' ? 'Google' : 'GitHub';
-    const redirectUrl = `${window.location.origin}/sso-callback`;
-    const redirectUrlComplete = `${window.location.origin}/`;
+    const origin = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
+      ? window.location.origin
+      : 'http://localhost:3000';
+    const redirectUrl = `${origin}/sso-callback`;
+    const redirectUrlComplete = `${origin}/`;
 
     try {
       if (isLogin) {

@@ -2,34 +2,116 @@
 # Obsidian Code — Git Ignore Rules
 # ==============================================================================
 
-# Dependencies
+# Dependencies & Package Managers
 node_modules/
 .pnp/
 .pnp.js
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
 
-# Build Outputs
-dist/
-dist-ssr/
-build/
-*.tsbuildinfo
-
-# Environment & Local Configuration
+# ------------------------------------------------------------------------------
+# Sensitive Data, Secrets & Environment Configurations
+# ------------------------------------------------------------------------------
+# Environment variable files (NEVER commit live secrets or keys)
 .env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-!.env.example
 
-# Logs
+# API credentials, OAuth secrets & Service accounts
+credentials.json
+service-account*.json
+client_secret*.json
+*.secret
+*.secrets
+secrets/
+*.token
+*.tokens
+auth/tokens/
+
+# SSL / TLS / Cryptographic keys & Certificates
+*.pem
+*.key
+*.pk8
+*.pfx
+*.p12
+*.cer
+*.crt
+*.der
+certs/
+certificates/
+
+# Code Signing Keys & Keystores (macOS / Windows desktop signing)
+*.keystore
+*.jks
+*.mobileprovision
+*.provisionprofile
+.csc/
+
+# ------------------------------------------------------------------------------
+# Databases, Local Stores & Dumps
+# ------------------------------------------------------------------------------
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db
+*.db-journal
+*.db-wal
+*.dump
+*.rdb
+*.bson
+data/
+mongodb/
+local_storage/
+
+# ------------------------------------------------------------------------------
+# Build Outputs & Packaging
+# ------------------------------------------------------------------------------
+dist/
+dist-ssr/
+dist-electron/
+release/
+out/
+.electron-builder/
+electron-pack/
+
+# Preserved build resources
+build/*
+!build/entitlements.mac.plist
+!build/icon.png
+
+# Standalone binary packages & installers
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.AppImage
+*.snap
+*.blockmap
+
+# TypeScript build metadata
+*.tsbuildinfo
+
+# ------------------------------------------------------------------------------
+# Logs & Process Output
+# ------------------------------------------------------------------------------
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
-# OS Artifacts
+# ------------------------------------------------------------------------------
+# OS Artifacts & Metadata
+# ------------------------------------------------------------------------------
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -39,27 +121,46 @@ Icon?
 .Trashes
 ehthumbs.db
 Thumbs.db
+[Dd]esktop.ini
 
+# ------------------------------------------------------------------------------
 # IDE & Editor Scratch Files
+# ------------------------------------------------------------------------------
 .idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.bak
+*.old
+*.orig
+*~
+# VS Code local overrides (preserve project settings/extensions if tracked)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
-# Testing & Coverage
+# ------------------------------------------------------------------------------
+# Testing & Code Coverage
+# ------------------------------------------------------------------------------
 coverage/
 .nyc_output/
 
+# ------------------------------------------------------------------------------
 # Cache & Temporary Directories
+# ------------------------------------------------------------------------------
 .turbo/
 .cache/
 .eslintcache
 temp/
 tmp/
 
-# Workspace agent files
+# ------------------------------------------------------------------------------
+# Workspace Agent & Local Context Files
+# ------------------------------------------------------------------------------
 .agents/
 skills-lock.json
 context.md

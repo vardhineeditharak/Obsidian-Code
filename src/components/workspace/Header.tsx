@@ -101,11 +101,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   const displayName = project.name && project.name.trim() ? project.name : 'Untitled Project';
   const effectiveSaveState = !isOnline ? 'offline' : saveState;
+  const isMacDesktop = typeof window !== 'undefined' && window.obsidianDesktop?.platform === 'darwin';
+  const isDesktop = typeof window !== 'undefined' && Boolean(window.obsidianDesktop?.isDesktop);
 
   return (
-    <header className="h-13 border-b border-stone bg-parchment px-3 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2">
+    <header className={`h-13 border-b border-stone bg-parchment px-3 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2 ${isDesktop ? 'app-drag-region' : ''} ${isMacDesktop ? 'pl-20' : ''}`}>
       {/* Left: Brand, Project Name & Sync Pill */}
-      <div className="flex items-center gap-2 min-w-0 shrink">
+      <div className="flex items-center gap-2 min-w-0 shrink app-no-drag">
         <button
           onClick={onBackToDashboard}
           title="Back to Dashboard"
@@ -232,7 +234,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Presence, Transport, Audio, Theme Toggle, Share, Profile */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 app-no-drag">
         {/* Collaborator Avatars & Follow Mode */}
         {collaborators.length > 0 && (
           <div className="flex items-center -space-x-1 mr-0.5">

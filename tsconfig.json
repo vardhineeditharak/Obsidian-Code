@@ -28,6 +28,7 @@
   "include": [
     "src",
     "server",
+    "electron",
     "vite.config.ts"
   ]
 }

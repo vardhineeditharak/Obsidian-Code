@@ -28,11 +28,18 @@
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
+  "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx server/index.ts\"",
     "dev:client": "vite",
     "dev:server": "tsx server/index.ts",
     "build": "tsc --noEmit && vite build",
+    "desktop:dev": "cross-env ELECTRON=true concurrently \"vite\" \"tsx server/index.ts\"",
+    "desktop:client": "cross-env ELECTRON=true vite",
+    "desktop:build": "cross-env ELECTRON=true tsc --noEmit && cross-env ELECTRON=true vite build && electron-builder",
+    "desktop:build:win": "cross-env ELECTRON=true tsc --noEmit && cross-env ELECTRON=true vite build && electron-builder --win",
+    "desktop:build:mac": "cross-env ELECTRON=true tsc --noEmit && cross-env ELECTRON=true vite build && electron-builder --mac",
+    "desktop:pack": "cross-env ELECTRON=true tsc --noEmit && cross-env ELECTRON=true vite build && electron-builder --dir",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "preview": "vite preview",
@@ -82,10 +89,14 @@
     "@vitejs/plugin-react": "^6.1.2",
     "autoprefixer": "^10.6.1",
     "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.5.29",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
+    "vite-plugin-electron": "^1.1.2",
     "vitest": "^5.0.3"
   }
 }

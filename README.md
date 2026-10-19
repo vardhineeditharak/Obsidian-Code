@@ -4,19 +4,19 @@
 
 # Obsidian Code
 
-**A production-grade, real-time collaborative code editor combining CRDT multiplayer synchronization with VS Code ergonomics and a Cursor-inspired warm parchment atelier design.**
+**A production-grade, real-time collaborative code editor combining CRDT multiplayer synchronization with VS Code ergonomics and a Cursor-inspired warm parchment atelier design — available as both a Web IDE and a Native Desktop Application for Windows and macOS.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.0+-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Electron](https://img.shields.io/badge/Electron-44+-47848F?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![Yjs CRDT](https://img.shields.io/badge/CRDT-Yjs-orange?style=flat-square)](https://yjs.dev/)
 [![Monaco Editor](https://img.shields.io/badge/Editor-Monaco-1E1E1E?style=flat-square&logo=visualstudiocode&logoColor=white)](https://microsoft.github.io/monaco-editor/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Tests](https://img.shields.io/badge/Tests-127%20Passed-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-[Features](#-key-features) • [Architecture](#-architecture) • [Research Evaluation](docs/EVALUATION.md) • [Tech Stack](#-tech-stack) • [Quickstart](#-quickstart) • [Configuration](#-environment-variables) • [Testing](#-testing--quality-assurance) • [Deployment](#-deployment)
+[Features](#-key-features) • [Desktop Application](#-desktop-application-windows--macos) • [Architecture](#-architecture) • [Research Evaluation](docs/EVALUATION.md) • [Tech Stack](#-tech-stack) • [Quickstart](#-quickstart) • [CI/CD Workflow](#-automated-desktop-release-workflow) • [Configuration](#-environment-variables--security) • [Testing](#-testing--quality-assurance) • [Deployment](#-deployment)
 
 </div>
 
@@ -24,9 +24,11 @@
 
 ## 📖 Overview
 
-**Obsidian Code** brings the seamless multiplayer presence and instant conflict-free collaboration of Google Docs into a full-featured, developer-friendly web IDE. Built from the ground up on Conflict-free Replicated Data Types (CRDTs) via **Yjs**, Obsidian Code ensures that multi-user edits always converge deterministically without data loss—even across network interruptions or high-latency connections.
+**Obsidian Code** brings the seamless multiplayer presence and instant conflict-free collaboration of Google Docs into a full-featured, developer-friendly IDE. Built from the ground up on Conflict-free Replicated Data Types (CRDTs) via **Yjs**, Obsidian Code ensures that multi-user edits always converge deterministically without data loss—even across network interruptions or high-latency connections.
 
 Wrapped in an artisanal **Cursor-inspired warm parchment atelier design**, the interface replaces harsh synthetic dark blues with warm canvas tones, hairline stone borders, crisp typography, and fluid micro-interactions designed for deep focus and long coding sessions.
+
+Obsidian Code runs seamlessly in **modern web browsers** and as a **native cross-platform desktop application** on **Windows** and **macOS**.
 
 ---
 
@@ -40,6 +42,15 @@ Wrapped in an artisanal **Cursor-inspired warm parchment atelier design**, the i
   - **Hybrid Mode (Default)**: Automatically balances server durability and peer-to-peer performance.
 - **Awareness & Presence**: Real-time multi-cursor position tracking, collaborator name tags, deterministic color assignment, and an active **Follow Mode** viewport synchronizer.
 - **Role-Based Access Control (RBAC)**: Enforces **Owner**, **Editor**, and **Viewer** permissions at both the REST API level and the WebSocket protocol level (unauthorized sync updates from Viewers are dropped by the server).
+
+### 🖥️ Native Desktop Application (Windows & macOS)
+- **Frameless Native Experience**: Custom parchment-themed title bar with integrated window drag region, window controls (minimize, maximize, close), and native system dialogs.
+- **Local Loopback OAuth Server**: Automatically spins up an embedded loopback server on `http://localhost:3000` in production desktop mode, bypassing Chromium `file://` restrictions and enabling seamless OAuth login with Clerk, Google, and GitHub.
+- **User-Agent Normalization**: Prevents identity providers from rejecting embedded Electron web views.
+- **Multi-Platform Installers**:
+  - **Windows**: NSIS Setup installer (`.exe`) with custom installation paths and desktop shortcuts, plus standalone portable `.exe`.
+  - **macOS**: Apple Silicon (`arm64`) and Intel (`x64`) disk images (`.dmg`) and zip archives (`.zip`).
+- **Offline Persistence**: Hydrates local documents directly from IndexedDB via `y-indexeddb` when working without internet connectivity.
 
 ### 🎨 Cursor-Inspired Warm Parchment Atelier UI
 - **Refined Color Palette**: Warm parchment canvas (`#f7f7f4` light / `#1c1b17` dark), bone elevated surfaces (`#f2f1ed` / `#232219`), hairline stone borders (`#cdcdc9` / `#3d3c33`), and ink typography (`#26251e` / `#f2f1ed`).
@@ -55,7 +66,7 @@ Wrapped in an artisanal **Cursor-inspired warm parchment atelier design**, the i
 - **Bottom Drawer Suite**: Integrated drawers for **Output**, **Terminal**, **Problems / Diagnostics**, and **Live HTML/CSS Preview** in an isolated sandbox.
 
 ### ⚡ Multi-Language Code Execution
-- **Sandboxed Runner**: Execute **JavaScript**, **TypeScript**, **Python**, **C**, **C++**, and **Java** code directly within the web workspace.
+- **Sandboxed Runner**: Execute **JavaScript**, **TypeScript**, **Python**, **C**, **C++**, and **Java** code directly within the workspace.
 - **Safety & Resource Guardrails**:
   - Ephemeral per-run workspace directories (`fs.mkdtemp`).
   - Strict compile (10s) and execution (5s) timeouts with recursive process tree killing.
@@ -73,36 +84,46 @@ Wrapped in an artisanal **Cursor-inspired warm parchment atelier design**, the i
 ## 🏛️ Architecture
 
 ```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                        CLIENT BROWSER (Vite + React)                   │
-│                                                                        │
-│   ┌───────────────┐      ┌─────────────────┐     ┌──────────────────┐  │
-│   │ Monaco Editor │ ◄──► │  y-monaco Bind  │ ◄─► │  Canonical Y.Doc │  │
-│   └───────────────┘      └─────────────────┘     └────────┬─────────┘  │
-│                                                           │            │
-│                 ┌──────────────────┐                      │            │
-│                 │   y-indexeddb    │ ◄────────────────────┤            │
-│                 │ (Local Storage)  │                      │            │
-│                 └──────────────────┘                      │            │
-│                                                           ▼            │
-│                          ┌──────────────────────────────────────┐      │
-│                          │      Transport Coordinator (Mesh)     │      │
-│                          └──────────┬───────────────────┬───────┘      │
-└─────────────────────────────────────┼───────────────────┼──────────────┘
-                                      │                   │
-                  WebRTC P2P (Public) │                   │ WebSocket (Secure)
-                                      ▼                   ▼
-                      ┌──────────────────────┐    ┌──────────────────────┐
-                      │ Peer Collaborators   │    │ Express + WS Server  │
-                      │ (Direct DataChannel) │    │ (/ws + /api + SPA)   │
-                      └──────────────────────┘    └──────────┬───────────┘
-                                                             │
-                                                             ▼
-                                                  ┌──────────────────────┐
-                                                  │    MongoDB Atlas     │
-                                                  │ (Users, Projects,    │
-                                                  │  Snapshots, Members) │
-                                                  └──────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        OBSIDIAN CODE RUNTIME (Web or Desktop)                          │
+│                                                                                        │
+│   ┌────────────────────────────────────────────────────────────────────────────────┐   │
+│   │ Electron Native Shell (Desktop Only)                                           │   │
+│   │ • Window frame & control IPC           • Local Loopback Server (:3000)         │   │
+│   │ • User-Agent identity normalization    • File & OS integration                 │   │
+│   └──────────────────────────────────────┬─────────────────────────────────────────┘   │
+│                                          │                                             │
+│   ┌──────────────────────────────────────▼─────────────────────────────────────────┐   │
+│   │ React 19 Frontend Workspace                                                    │   │
+│   │                                                                                │   │
+│   │   ┌───────────────┐      ┌─────────────────┐     ┌──────────────────┐          │   │
+│   │   │ Monaco Editor │ ◄──► │  y-monaco Bind  │ ◄─► │  Canonical Y.Doc │          │   │
+│   │   └───────────────┘      └─────────────────┘     └────────┬─────────┘          │   │
+│   │                                                           │                    │   │
+│   │                 ┌──────────────────┐                      │                    │   │
+│   │                 │   y-indexeddb    │ ◄────────────────────┤                    │   │
+│   │                 │ (Local Storage)  │                      │                    │   │
+│   │                 └──────────────────┘                      │                    │   │
+│   │                                                           ▼                    │   │
+│   │                          ┌──────────────────────────────────────┐              │   │
+│   │                          │      Transport Coordinator (Mesh)     │              │   │
+│   │                          └──────────┬───────────────────┬───────┘              │   │
+│   └─────────────────────────────────────┼───────────────────┼──────────────────────┘   │
+└─────────────────────────────────────────┼───────────────────┼──────────────────────────┘
+                                          │                   │
+                      WebRTC P2P (Public) │                   │ WebSocket (Secure)
+                                          ▼                   ▼
+                          ┌──────────────────────┐    ┌──────────────────────┐
+                          │ Peer Collaborators   │    │ Express + WS Server  │
+                          │ (Direct DataChannel) │    │ (/ws + /api + SPA)   │
+                          └──────────────────────┘    └──────────┬───────────┘
+                                                                 │
+                                                                 ▼
+                                                      ┌──────────────────────┐
+                                                      │    MongoDB Atlas     │
+                                                      │ (Users, Projects,    │
+                                                      │  Snapshots, Members) │
+                                                      └──────────────────────┘
 ```
 
 ---
@@ -112,16 +133,18 @@ Wrapped in an artisanal **Cursor-inspired warm parchment atelier design**, the i
 | Domain | Technology / Library | Description |
 | :--- | :--- | :--- |
 | **Frontend Framework** | React 19, TypeScript | Reactive, typed component hierarchy |
-| **Bundler & Tooling** | Vite 8 | Instant HMR and Rolldown/Rollup optimized production builds |
-| **Styling** | Tailwind CSS 4, CSS Modules | Zero-runtime modern stylesheet with custom parchment tokens |
-| **Editor** | Monaco Editor, `@monaco-editor/react` | Visual Studio Code editing engine in browser |
+| **Desktop Runtime** | Electron 44, `vite-plugin-electron`, `electron-builder` | Cross-platform desktop runtime for Windows & macOS |
+| **Bundler & Tooling** | Vite 8, Rolldown / Rollup | High-speed HMR and optimized production bundles |
+| **Styling** | Tailwind CSS 4, CSS Modules | Modern zero-runtime stylesheet with custom parchment tokens |
+| **Editor Engine** | Monaco Editor, `@monaco-editor/react` | Visual Studio Code editing engine in browser & desktop |
 | **CRDT Multiplayer** | Yjs, `y-monaco`, `y-websocket`, `y-webrtc`, `y-indexeddb` | Conflict-free real-time sync, P2P mesh & local cache |
 | **Authentication** | Clerk (`@clerk/react`), JWT | Enterprise-grade user authentication and session sync |
 | **Backend Runtime** | Node.js (v18+ / v20+ / v24+), Express 5 | High-performance RESTful API and static asset delivery |
 | **WebSockets** | `ws` (v8) | Real-time Yjs binary sync protocol handler with RBAC filter |
 | **Database** | MongoDB Atlas, Mongoose 9 | Document persistence with automatic fallback support |
 | **Audio & Motion** | Web Audio API, Morphicons, Sonner | Sonic interaction feedback and physics-based animations |
-| **Testing** | Vitest | Lightning-fast test runner with 109 automated regression tests |
+| **CI / CD** | GitHub Actions | Automated multi-platform build, packaging, and version bump |
+| **Testing** | Vitest | Comprehensive test runner with 127 automated regression tests |
 
 ---
 
@@ -158,9 +181,13 @@ cp .env.example .env
 
 Open `.env` and fill in your values (notably `VITE_CLERK_PUBLISHABLE_KEY` and `MONGODB_URI`).
 
-### 4. Start the Development Server
+---
 
-Run both the Vite frontend client and Express / WebSocket backend simultaneously:
+## 💻 Running the Application
+
+### Option A: Web Application (Browser)
+
+To run both the Vite frontend client and Express / WebSocket backend simultaneously:
 
 ```bash
 npm run dev
@@ -171,11 +198,66 @@ The application will be accessible at:
 - **API & WebSocket Server**: [`http://localhost:5000`](http://localhost:5000)
 - **Health Check Endpoint**: [`http://localhost:5000/healthz`](http://localhost:5000/healthz)
 
+### Option B: Desktop Application (Windows & macOS)
+
+#### 1. Run in Development Mode
+Launches the native Electron window connected to the Vite dev server with instant Hot Module Replacement (HMR):
+
+```bash
+npm run desktop:dev
+```
+
+#### 2. Package & Build Desktop Installers Locally
+
+To compile TypeScript, build the web client, and generate native desktop packages:
+
+- **Build Windows Installers** (NSIS Setup `.exe` + Standalone Portable `.exe`):
+  ```bash
+  npm run desktop:build:win
+  ```
+- **Build macOS Packages** (Universal/Intel/Apple Silicon `.dmg` + `.zip`):
+  ```bash
+  npm run desktop:build:mac
+  ```
+- **Unpackaged Directory Pack** (Quick local smoke test without creating installer files):
+  ```bash
+  npm run desktop:pack
+  ```
+
+Output binaries will be placed in `dist/desktop/`.
+
 ---
 
-## ⚙️ Environment Variables
+## 🤖 Automated Desktop Release Workflow
 
-A complete `.env.example` file is provided in the repository. Below is a breakdown of all configuration keys:
+The repository includes a dedicated, automated GitHub Actions workflow at [`.github/workflows/desktop-release.yml`](.github/workflows/desktop-release.yml) to package and release the desktop application for both **Windows** and **macOS**.
+
+### Key Workflow Highlights
+- **100% Manual Dispatch (`workflow_dispatch`)**: Does not trigger unexpectedly on git pushes or PRs.
+- **Automatic Version Incrementing**: Every time the workflow is dispatched, it automatically increments the application version (`patch` by default, or selectable `minor` / `major`), commits the updated `package.json`, creates an annotated git tag (e.g., `v1.0.1`), and pushes it to the repository with `[skip ci]`.
+- **Parallel Cross-Platform Matrix Build**: Spawns concurrent build runners on `windows-latest` and `macos-latest` to compile and package:
+  - Windows: NSIS Installer (`.exe`) + Portable executable (`.exe`)
+  - macOS: Apple Silicon (`arm64`) & Intel (`x64`) disk images (`.dmg`) & archives (`.zip`)
+- **Automated GitHub Release**: Automatically generates a GitHub Release tagged with the new version and attaches all installers and binary artifacts directly to the release.
+- **Action Artifacts**: Retains build artifacts on the GitHub Action run summary for 14 days.
+
+### Triggering the Release Workflow
+
+1. Navigate to your repository on GitHub.
+2. Click the **Actions** tab.
+3. Select **"Build Desktop (Windows & macOS)"** in the left sidebar.
+4. Click **Run workflow**, choose your branch and desired version increment level (`patch`, `minor`, `major`), and click **Run workflow**.
+
+> [!IMPORTANT]
+> **Repository Prerequisite**: To enable GitHub Actions to commit and push the bumped version tag back to your repository, make sure **Workflow permissions** is set to **"Read and write permissions"** under **Repository Settings** → **Actions** → **General**.
+
+---
+
+## ⚙️ Environment Variables & Security
+
+### Environment Configuration Reference
+
+A complete, documented [.env.example](.env.example) file is provided in the repository. Below is a breakdown of all configuration keys:
 
 | Variable | Required | Default | Description |
 | :--- | :---: | :--- | :--- |
@@ -184,7 +266,7 @@ A complete `.env.example` file is provided in the repository. Below is a breakdo
 | `CLIENT_ORIGIN` | No | `http://localhost:3000` | Allowed CORS origin for frontend client requests |
 | `APP_URL` | No | `http://localhost:5000` | Canonical backend application URL |
 | `MONGODB_URI` | **Yes** | `mongodb://127.0.0.1:27017/obsidian-code` | MongoDB connection URI (Atlas or local) |
-| `JWT_SECRET` | **Yes** | *Dev Placeholder* | Secret key for JWT session tokens (min. 32 chars; **must change in production**) |
+| `JWT_SECRET` | **Yes** | *Dev Placeholder* | Secret key for signing session tokens (min. 32 chars; **must change in production**) |
 | `VITE_CLERK_PUBLISHABLE_KEY` | **Yes** | — | Clerk Publishable Key (`pk_test_...` or `pk_live_...`) |
 | `CLERK_SECRET_KEY` | No | — | Clerk Secret Key (`sk_test_...` or `sk_live_...`) |
 | `WEBRTC_STUN_URLS` | No | `stun:stun.l.google.com:19302` | STUN server for WebRTC P2P mesh discovery |
@@ -196,23 +278,43 @@ A complete `.env.example` file is provided in the repository. Below is a breakdo
 | `GITHUB_CLIENT_ID` | No | — | Optional GitHub OAuth Client ID |
 | `GITHUB_CLIENT_SECRET` | No | — | Optional GitHub OAuth Client Secret |
 
+### 🔒 Sensitive Data Protection & Git Hygiene
+
+> [!CAUTION]
+> **Never commit secrets, tokens, or environment files into version control.**
+
+The repository's [.gitignore](.gitignore) is strictly configured to protect all sensitive assets:
+
+- **Environment Files**: `.env`, `.env.*` (excluding `.env.example`), `.env.local`, `.env.production.local`
+- **Keys & Certificates**: `*.pem`, `*.key`, `*.pfx`, `*.p12`, `*.cer`, `*.crt`, `*.der`
+- **Code Signing Credentials**: `*.keystore`, `*.jks`, `*.mobileprovision`, `*.provisionprofile`, `.csc/`
+- **API Secrets & Service Accounts**: `credentials.json`, `client_secret*.json`, `service-account*.json`, `*.secret`, `*.tokens`
+- **Database Dumps & Local Stores**: `*.sqlite*`, `*.db`, `*.db-wal`, `*.dump`, `*.bson`, `data/`, `mongodb/`
+- **Binary Packages & Build Outputs**: `dist/`, `dist-electron/`, `release/`, `*.exe`, `*.dmg`, `*.blockmap`, etc.
+
 ---
 
 ## 📜 Available Scripts
 
 | Script | Command | Purpose |
 | :--- | :--- | :--- |
-| `npm run dev` | `concurrently "vite" "tsx server/index.ts"` | Starts Vite frontend on `:3000` and Express server on `:5000` |
+| `npm run dev` | `concurrently "vite" "tsx server/index.ts"` | Starts Web IDE: Vite client (`:3000`) and Express server (`:5000`) |
 | `npm run dev:client` | `vite` | Runs only the Vite client development server |
 | `npm run dev:server` | `tsx server/index.ts` | Runs only the Express & WebSocket backend server |
-| `npm run build` | `tsc --noEmit && vite build` | Typechecks TypeScript and compiles client bundle to `dist/client` |
+| `npm run desktop:dev` | `cross-env ELECTRON=true concurrently "vite" "tsx server/index.ts"` | Starts Desktop App with Electron live window and HMR |
+| `npm run desktop:client` | `cross-env ELECTRON=true vite` | Runs Vite client configured for Electron |
+| `npm run desktop:build` | `cross-env ELECTRON=true tsc ... && electron-builder` | Builds desktop packages for current host OS |
+| `npm run desktop:build:win` | `cross-env ELECTRON=true tsc ... && electron-builder --win` | Builds Windows NSIS installer & portable `.exe` |
+| `npm run desktop:build:mac` | `cross-env ELECTRON=true tsc ... && electron-builder --mac` | Builds macOS `.dmg` and `.zip` packages |
+| `npm run desktop:pack` | `cross-env ELECTRON=true tsc ... && electron-builder --dir` | Creates unpacked desktop binary directory |
+| `npm run build` | `tsc --noEmit && vite build` | Typechecks and compiles web client bundle to `dist/client` |
 | `npm run typecheck` | `tsc --noEmit` | Runs TypeScript static type checking across the entire project |
 | `npm run lint` | `tsc --noEmit` | Static analysis verification |
-| `npm run preview` | `vite preview` | Previews the compiled production build locally |
-| `npm start` | `tsx server/index.ts` | Runs the production backend (serves compiled SPA and API) |
-| `npm test` | `vitest run` | Runs all 127 automated unit, integration, and research evaluation tests |
+| `npm run preview` | `vite preview` | Previews the compiled production web build locally |
+| `npm start` | `tsx server/index.ts` | Runs production backend (serves compiled SPA and API) |
+| `npm test` | `vitest run` | Runs all 127 automated unit, integration, and research tests |
 | `npm run test:watch` | `vitest` | Runs Vitest in interactive watch mode |
-| `npm run db:clear` | `tsx server/scripts/clearDb.ts` | Wipes MongoDB collections (utility script for test resets) |
+| `npm run db:clear` | `tsx server/scripts/clearDb.ts` | Clears MongoDB test collections |
 
 ---
 
@@ -238,7 +340,7 @@ Obsidian Code includes an empirical research evaluation harness and comprehensiv
 - **Font & Asset Readiness**: Tests that self-hosted font loading resolves deterministically without unhandled promise rejections.
 - **UI & Brand Consistency**: Ensures design tokens strictly follow the Cursor warm parchment atelier palette with zero regression leaks.
 
-To run tests:
+To execute the test suite:
 ```bash
 npm test
 ```
@@ -282,6 +384,7 @@ The Express server (`server/index.ts`) serves:
 - **CRDT RBAC Protocol Guard**: The Yjs WebSocket server parses document update payloads and drops unauthorized write transactions originating from users with the `viewer` role.
 - **Sandboxed Execution**: Code runners execute in isolated ephemeral temporary directories without shell wrappers (`shell: false`), enforcing strict memory limits and execution deadlines.
 - **Safe Secrets Handling**: Production mode enforces a non-default high-entropy `JWT_SECRET` (minimum 32 characters) and halts startup if a placeholder secret is detected.
+- **Desktop Isolation**: Production desktop mode serves local files via an internal HTTP loopback server with normalized User-Agents, shielding tokens from `file://` privilege elevation attacks.
 
 ---
 

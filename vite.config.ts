@@ -1,12 +1,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import electron from 'vite-plugin-electron/simple';
 import path from 'path';
 
+const isElectron = process.env.ELECTRON === 'true';
+
 export default defineConfig({
+  base: isElectron ? './' : '/',
   plugins: [
     react(),
     tailwindcss(),
+    ...(isElectron
+      ? [
+          electron({
+            main: {
+              entry: 'electron/main.ts',
+            },
+            preload: {
+              input: 'electron/preload.ts',
+              vite: {
+                build: {
+                  rollupOptions: {
+                    output: {
+                      format: 'cjs',
+                      entryFileNames: 'preload.cjs',
+                    },
+                  },
+                },
+              },
+            },
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
