@@ -123,9 +123,11 @@ jobs:
         env:
           ELECTRON: 'true'
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_dG9nZXRoZXItaGVuLTg4MTAuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
-          VITE_WS_URL: ${{ secrets.VITE_WS_URL || '' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets['VITE_CLERK_PUBLISHABLE_KEY'] || 'pk_test_dG9nZXRoZXItaGVuLTg4MTAuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
+          VITE_API_URL: ${{ secrets['VITE_API_URL'] || '' }}
+          VITE_WS_URL: ${{ secrets['VITE_WS_URL'] || '' }}
 
       - name: Upload Artifacts to Action Run
         uses: actions/upload-artifact@v4
