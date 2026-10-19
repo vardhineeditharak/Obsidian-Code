@@ -246,7 +246,7 @@ The repository includes a dedicated, automated GitHub Actions workflow at [`.git
 1. Navigate to your repository on GitHub.
 2. Click the **Actions** tab.
 3. Select **"Build Desktop (Windows & macOS)"** in the left sidebar.
-4. Click **Run workflow**, choose your branch and desired version increment level (`patch`, `minor`, `major`), and click **Run workflow**.
+4. Click **Run workflow**, choose your branch and desired version action (`patch`, `minor`, `major`, or `none (retry current version)`), and click **Run workflow**.
 
 > [!IMPORTANT]
 > **Repository Prerequisite**: To enable GitHub Actions to commit and push the bumped version tag back to your repository, make sure **Workflow permissions** is set to **"Read and write permissions"** under **Repository Settings** → **Actions** → **General**.
