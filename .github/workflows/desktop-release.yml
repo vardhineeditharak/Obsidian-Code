@@ -122,6 +122,7 @@ jobs:
         run: npm run ${{ matrix.build_script }}
         env:
           ELECTRON: 'true'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_dG9nZXRoZXItaGVuLTg4MTAuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || '' }}
