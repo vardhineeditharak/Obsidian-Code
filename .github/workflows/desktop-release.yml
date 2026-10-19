@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       bump_type:
-        description: 'Version increment level'
+        description: 'Version increment action'
         required: true
         default: 'patch'
         type: choice
@@ -12,13 +12,14 @@ on:
           - patch
           - minor
           - major
+          - none (retry current version)
 
 permissions:
   contents: write
 
 jobs:
   bump-version:
-    name: Auto-Increment Version & Tag
+    name: Resolve Version & Tag
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
@@ -40,22 +41,32 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Increment Version
+      - name: Process Version Action
         id: bump
         run: |
           BUMP_TYPE="${{ github.event.inputs.bump_type || 'patch' }}"
-          echo "Incrementing version ($BUMP_TYPE)..."
-          TAG_NAME=$(npm version $BUMP_TYPE -m "chore(release): bump version to %s [skip ci]")
-          VERSION_NUM="${TAG_NAME#v}"
+          echo "Selected version action: $BUMP_TYPE"
+
+          if [[ "$BUMP_TYPE" =~ ^(none|retry) ]]; then
+            VERSION_NUM=$(node -p "require('./package.json').version")
+            TAG_NAME="v$VERSION_NUM"
+            echo "Retrying current version $VERSION_NUM ($TAG_NAME)..."
+            
+            # Force-point the tag to the current HEAD commit being released
+            git tag -fa "$TAG_NAME" -m "chore(release): release $TAG_NAME [skip ci]"
+            git push origin "$TAG_NAME" --force
+          else
+            echo "Incrementing version ($BUMP_TYPE)..."
+            TAG_NAME=$(npm version $BUMP_TYPE -m "chore(release): bump version to %s [skip ci]")
+            VERSION_NUM="${TAG_NAME#v}"
+            echo "Successfully bumped version to $VERSION_NUM ($TAG_NAME)"
+            git push origin HEAD:${{ github.ref_name }} --follow-tags
+          fi
+
           echo "new_version=$VERSION_NUM" >> $GITHUB_OUTPUT
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "Successfully bumped version to $VERSION_NUM ($TAG_NAME)"
 
-      - name: Push Version Commit & Tag
-        run: |
-          git push origin HEAD:${{ github.ref_name }} --follow-tags
-
-      - name: Create GitHub Release
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.bump.outputs.tag_name }}
@@ -93,7 +104,7 @@ jobs:
             artifact_name: obsidian-code-macos
 
     steps:
-      - name: Checkout repository at new version tag
+      - name: Checkout repository at version tag
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.bump-version.outputs.tag_name }}
@@ -126,15 +137,19 @@ jobs:
             dist/desktop/*.zip
             dist/desktop/*.blockmap
           retention-days: 14
+          overwrite: true
 
       - name: Upload Binaries to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.bump-version.outputs.tag_name }}
-          files: |
-            dist/desktop/*.exe
-            dist/desktop/*.dmg
-            dist/desktop/*.zip
-            dist/desktop/*.blockmap
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.bump-version.outputs.tag_name }}
+        run: |
+          shopt -s nullglob
+          FILES=(dist/desktop/*.exe dist/desktop/*.dmg dist/desktop/*.zip dist/desktop/*.blockmap)
+          if [ ${#FILES[@]} -gt 0 ]; then
+            echo "Uploading ${#FILES[@]} binary assets to release $TAG_NAME (with --clobber for retries)..."
+            gh release upload "$TAG_NAME" "${FILES[@]}" --clobber
+          else
+            echo "No matching binary files found to upload."
+          fi
