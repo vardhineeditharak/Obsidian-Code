@@ -1,6 +1,8 @@
-# Obsidian Code
+<div align="center">
 
-![Obsidian Code Logo](public/logo.svg)
+<img src="public/logo.svg" alt="Obsidian Code Logo" width="96" height="96" />
+
+# Obsidian Code
 
 **A production-grade, real-time collaborative code editor combining CRDT multiplayer synchronization with VS Code ergonomics and a Cursor-inspired warm parchment atelier design — available as both a Web IDE and a Native Desktop Application for Windows and macOS.**
 
@@ -14,7 +16,11 @@
 [![Tests](https://img.shields.io/badge/Tests-127%20Passed-success?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-[Overview](#overview) • [Key Features](#key-features) • [Architecture](#architecture) • [Research Evaluation](docs/EVALUATION.md) • [Tech Stack](#tech-stack) • [Quickstart](#quickstart) • [Running](#running-the-application) • [Release Workflow](#automated-desktop-release-workflow) • [Configuration](#environment-variables--security) • [Testing](#testing--research-evaluation) • [Deployment](#deployment)
+<br />
+
+[Overview](#overview) • [Key Features](#key-features) • [Desktop App](#native-desktop-application-windows--macos) • [Architecture](#architecture) • [Research Evaluation](docs/EVALUATION.md) • [Tech Stack](#tech-stack) • [Quickstart](#quickstart) • [Running](#running-the-application) • [Release Workflow](#automated-desktop-release-workflow) • [Configuration](#environment-variables--security) • [Available Scripts](#available-scripts) • [Testing](#testing--research-evaluation) • [Deployment](#deployment)
+
+</div>
 
 ---
 
@@ -424,4 +430,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-*Crafted with passion for collaborative engineering by the Obsidian Code Team.*
+<div align="center">
+  <sub>Crafted with passion for collaborative engineering by the Obsidian Code Team.</sub>
+</div>
