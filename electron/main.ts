@@ -167,7 +167,8 @@ function isAllowedInternalNavigation(url: string, localOrigin?: string): boolean
 
 /**
  * Starts a lightweight local loopback HTTP server to serve the client assets
- * in packaged production mode, providing an http:// origin for OAuth redirects.
+ * in packaged production mode, providing an http:// origin for OAuth redirects,
+ * and seamlessly proxying /api and /ws requests to the Obsidian Code backend server.
  */
 function startLocalServer(clientDistPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -190,7 +191,53 @@ function startLocalServer(clientDistPath: string): Promise<string> {
     const server = http.createServer((req, res) => {
       try {
         const parsedUrl = new URL(req.url || '/', 'http://localhost');
-        let requestPath = decodeURIComponent(parsedUrl.pathname);
+        const pathname = decodeURIComponent(parsedUrl.pathname);
+
+        // 1. Proxy API endpoints (/api/*) directly to the backend Express server (:5000)
+        if (pathname.startsWith('/api')) {
+          const targetHost = '127.0.0.1';
+          const targetPort = 5000;
+
+          const proxyReq = http.request(
+            {
+              hostname: targetHost,
+              port: targetPort,
+              path: req.url,
+              method: req.method,
+              headers: {
+                ...req.headers,
+                host: `${targetHost}:${targetPort}`,
+              },
+            },
+            (proxyRes) => {
+              res.writeHead(proxyRes.statusCode || 500, proxyRes.headers);
+              proxyRes.pipe(res);
+            }
+          );
+
+          proxyReq.on('error', (proxyErr) => {
+            console.error('[Electron localServer] Failed to proxy API request:', proxyErr.message);
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                message: 'Obsidian Code backend server is unavailable on port 5000. Please ensure the server is running.',
+              })
+            );
+          });
+
+          req.pipe(proxyReq);
+          return;
+        }
+
+        // 2. Reject WebSocket HTTP requests (should use upgrade handler)
+        if (pathname.startsWith('/ws')) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'WebSocket handshake required' }));
+          return;
+        }
+
+        // 3. Serve static assets
+        let requestPath = pathname;
         if (requestPath === '/' || requestPath === '') {
           requestPath = '/index.html';
         }
@@ -203,7 +250,7 @@ function startLocalServer(clientDistPath: string): Promise<string> {
           res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
           fs.createReadStream(targetFile).pipe(res);
         } else {
-          // SPA Fallback: serve index.html for client routes (/sso-callback, /dashboard, etc.)
+          // SPA Fallback: serve index.html for client routes (/sso-callback, /dashboard, /desktop-callback, etc.)
           const indexPath = path.join(clientDistPath, 'index.html');
           res.setHeader('Content-Type', 'text/html; charset=utf-8');
           fs.createReadStream(indexPath).pipe(res);
@@ -211,6 +258,44 @@ function startLocalServer(clientDistPath: string): Promise<string> {
       } catch (err) {
         res.statusCode = 500;
         res.end('Internal Server Error');
+      }
+    });
+
+    // Proxy WebSocket upgrade connections to backend server
+    server.on('upgrade', (req, socket, head) => {
+      const parsedUrl = new URL(req.url || '/', 'http://localhost');
+      if (parsedUrl.pathname.startsWith('/ws') || parsedUrl.pathname.startsWith('/obsidian-project-')) {
+        const proxyReq = http.request({
+          hostname: '127.0.0.1',
+          port: 5000,
+          path: req.url,
+          method: 'GET',
+          headers: {
+            ...req.headers,
+            host: '127.0.0.1:5000',
+          },
+        });
+
+        proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+          socket.write(
+            `HTTP/${proxyRes.httpVersion} ${proxyRes.statusCode} ${proxyRes.statusMessage}\r\n` +
+              Object.entries(proxyRes.headers)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join('\r\n') +
+              '\r\n\r\n'
+          );
+          if (proxyHead && proxyHead.length) socket.write(proxyHead);
+          proxySocket.pipe(socket);
+          socket.pipe(proxySocket);
+        });
+
+        proxyReq.on('error', () => {
+          socket.destroy();
+        });
+
+        proxyReq.end();
+      } else {
+        socket.destroy();
       }
     });
 

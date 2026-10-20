@@ -24,11 +24,44 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
+export async function handleResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(errorData.message || `Request failed with status ${res.status}`);
+    let message = `Request failed with status ${res.status}`;
+    if (isJson) {
+      try {
+        const errorData = await res.json();
+        if (errorData?.message) message = errorData.message;
+      } catch {}
+    } else {
+      try {
+        const text = await res.text();
+        if (text && !text.includes('<!DOCTYPE') && !text.includes('<html')) {
+          message = text.slice(0, 150);
+        } else if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+          message = `Backend API returned an unexpected HTML error page (status ${res.status}).`;
+        }
+      } catch {}
+    }
+    throw new Error(message);
   }
+
+  if (!isJson) {
+    const text = await res.text().catch(() => '');
+    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+      throw new Error(
+        'Backend API returned an unexpected HTML response instead of JSON. Please verify that the Obsidian Code backend server is running.'
+      );
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error('Received invalid non-JSON response from server.');
+    }
+  }
+
   return res.json();
 }
 

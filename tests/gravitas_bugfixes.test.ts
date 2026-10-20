@@ -5,6 +5,7 @@ import { ROOM_NAME_REGEX } from '../server/websocket/yjsServer';
 import { detectLanguage as serverDetectLanguage } from '../server/routes/fileRoutes';
 import { detectLanguage as clientDetectLanguage } from '../src/lib/language';
 import { analyzeCode } from '../src/lib/diagnostics/codeDiagnostics';
+import { handleResponse } from '../src/lib/api';
 
 describe('Gravitas Bug Fixes & Codebase Inconsistencies', () => {
   describe('Fix 1: Yjs WebSocket Room Name Regex with Hyphenated IDs', () => {
@@ -116,6 +117,55 @@ describe('Gravitas Bug Fixes & Codebase Inconsistencies', () => {
       const unclosedParen = diagnostics.find((d) => d.message.includes("Unclosed delimiter '('"));
       expect(unclosedParen).toBeDefined();
       expect(unclosedParen?.line).toBe(4);
+    });
+  });
+
+  describe('Fix 4: Desktop Loopback API Proxy and HTML-to-JSON Guard (Unexpected token <)', () => {
+    it('safely rejects HTML 200 OK responses with a descriptive error instead of SyntaxError', async () => {
+      const mockHtmlResponse = new Response('<!DOCTYPE html><html><body>Obsidian Code</body></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+
+      await expect(handleResponse(mockHtmlResponse)).rejects.toThrow(
+        /unexpected HTML response instead of JSON/
+      );
+    });
+
+    it('safely decodes JSON responses when valid', async () => {
+      const mockJsonResponse = new Response(JSON.stringify({ success: true, sessionId: 'session-123' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await handleResponse<{ success: boolean; sessionId: string }>(mockJsonResponse);
+      expect(data.success).toBe(true);
+      expect(data.sessionId).toBe('session-123');
+    });
+
+    it('extracts backend JSON error message on 503 or 404 instead of failing on JSON parsing', async () => {
+      const mockErrorResponse = new Response(
+        JSON.stringify({ message: 'Obsidian Code backend server is unavailable on port 5000' }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      await expect(handleResponse(mockErrorResponse)).rejects.toThrow(
+        'Obsidian Code backend server is unavailable on port 5000'
+      );
+    });
+
+    it('handles HTML 404/500 pages with clean status-based messages', async () => {
+      const mockHtml404Response = new Response('<!DOCTYPE html><h1>404 Not Found</h1>', {
+        status: 404,
+        headers: { 'Content-Type': 'text/html' },
+      });
+
+      await expect(handleResponse(mockHtml404Response)).rejects.toThrow(
+        /unexpected HTML error page \(status 404\)/
+      );
     });
   });
 });

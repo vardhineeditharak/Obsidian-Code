@@ -150,13 +150,21 @@ export const DesktopAuthCallbackPage: React.FC = () => {
   const { isLoaded, isSignedIn, user: clerkUser } = useUser();
   const [synced, setSynced] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const sessionId = searchParams.get('sessionId') || sessionStorage.getItem('obsidian_desktop_session_id') || '';
   const protocolUrl = `obsidian-code://auth-callback?sessionId=${encodeURIComponent(sessionId)}`;
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !clerkUser || synced) return;
+  const performSync = async () => {
+    if (!sessionId) {
+      setSyncError('Missing desktop session ID. Please restart sign-in from the Obsidian Code desktop app.');
+      return;
+    }
+    if (!clerkUser) return;
+
+    setSyncError(null);
+    setIsSyncing(true);
 
     const email = clerkUser.primaryEmailAddress?.emailAddress || '';
     const name =
@@ -167,28 +175,35 @@ export const DesktopAuthCallbackPage: React.FC = () => {
       'Obsidian Developer';
     const avatar = clerkUser.imageUrl;
 
-    api
-      .completeDesktopAuth({
+    try {
+      await api.completeDesktopAuth({
         sessionId,
         clerkId: clerkUser.id,
         email,
         name,
         avatar,
-      })
-      .then(() => {
-        setSynced(true);
-        // Attempt immediate deep link redirect to bring the desktop app to the front
-        try {
-          window.location.href = protocolUrl;
-        } catch (e) {
-          console.warn('Protocol launch notice:', e);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to complete desktop authentication:', err);
-        setSyncError(err?.message || 'Failed to sync authentication with desktop app');
       });
-  }, [isLoaded, isSignedIn, clerkUser, sessionId, synced, protocolUrl]);
+
+      setSynced(true);
+      setIsSyncing(false);
+
+      // Attempt immediate deep link redirect to bring the desktop app to the front
+      try {
+        window.location.href = protocolUrl;
+      } catch (e) {
+        console.warn('Protocol launch notice:', e);
+      }
+    } catch (err: any) {
+      console.error('Failed to complete desktop authentication:', err);
+      setIsSyncing(false);
+      setSyncError(err?.message || 'Failed to sync authentication with desktop app');
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !clerkUser || synced) return;
+    performSync();
+  }, [isLoaded, isSignedIn, clerkUser, sessionId, synced]);
 
   const handleOpenApp = () => {
     window.location.href = protocolUrl;
@@ -246,11 +261,18 @@ export const DesktopAuthCallbackPage: React.FC = () => {
             <p className="text-xs text-driftwood">{syncError}</p>
             <button
               type="button"
-              onClick={() => window.location.reload()}
-              className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-2"
+              disabled={isSyncing}
+              onClick={() => {
+                if (!sessionId) {
+                  window.location.reload();
+                } else {
+                  performSync();
+                }
+              }}
+              className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <RotateCw className="w-3.5 h-3.5" />
-              <span>Retry</span>
+              <RotateCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Retrying…' : 'Retry'}</span>
             </button>
           </div>
         ) : synced ? (
