@@ -24,6 +24,8 @@ export const Modal: React.FC<ModalProps> = ({
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const autoTitleId = useId();
   const titleId = title ? autoTitleId : undefined;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,6 +36,23 @@ export const Modal: React.FC<ModalProps> = ({
     // Move focus into the dialog on open (A11Y-1)
     const focusTimer = setTimeout(() => {
       if (!dialogRef.current) return;
+      // Never steal or move focus if focus is already within the dialog
+      if (dialogRef.current.contains(document.activeElement)) return;
+
+      const autoFocusEl = dialogRef.current.querySelector<HTMLElement>('[autofocus]');
+      if (autoFocusEl) {
+        autoFocusEl.focus();
+        return;
+      }
+
+      const firstInput = dialogRef.current.querySelector<HTMLElement>(
+        'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
+      );
+      if (firstInput) {
+        firstInput.focus();
+        return;
+      }
+
       const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
@@ -48,7 +67,7 @@ export const Modal: React.FC<ModalProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -89,9 +108,10 @@ export const Modal: React.FC<ModalProps> = ({
       // Restore focus to previously focused trigger element on unmount/close (A11Y-1)
       if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.focus === 'function') {
         previouslyFocusedRef.current.focus();
+        previouslyFocusedRef.current = null;
       }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -99,7 +119,7 @@ export const Modal: React.FC<ModalProps> = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-scrim"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onCloseRef.current();
       }}
       role="dialog"
       aria-modal="true"
@@ -119,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => onCloseRef.current()}
               aria-label="Close dialog"
               className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
             >
@@ -240,17 +260,19 @@ export const PromptDialog: React.FC<PromptDialogProps> = ({
   const [formValues, setFormValues] = React.useState<Record<string, string>>({});
   const firstInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const msgId = useId();
+  const fieldsRef = useRef(fields);
+  fieldsRef.current = fields;
 
   React.useEffect(() => {
     if (isOpen) {
       const initial: Record<string, string> = {};
-      fields.forEach((f) => {
+      fieldsRef.current.forEach((f) => {
         initial[f.id] = f.defaultValue || '';
       });
       setFormValues(initial);
       setTimeout(() => firstInputRef.current?.focus(), 50);
     }
-  }, [isOpen, fields]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

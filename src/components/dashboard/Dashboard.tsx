@@ -330,6 +330,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 id="project-name-input"
                 type="text"
                 required
+                autoFocus
                 placeholder="e.g. NextGen Web App"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
@@ -427,6 +428,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 id="join-token-input"
                 type="text"
                 required
+                autoFocus
                 placeholder="Paste token or link (e.g. 5a9b...)"
                 value={inviteToken}
                 onChange={(e) => {
