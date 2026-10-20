@@ -62,7 +62,6 @@ app.on('open-url', (event, url) => {
 function resolvePreloadPath(): string {
   const possiblePaths = [
     path.join(__dirname, 'preload.cjs'),
-    path.join(__dirname, 'preload.mjs'),
     path.join(__dirname, 'preload.js'),
   ];
   for (const p of possiblePaths) {
@@ -72,11 +71,87 @@ function resolvePreloadPath(): string {
 }
 
 /**
+ * Robustly launches a URL in the user's default system browser.
+ * On Windows, leverages cmd.exe start to ensure the external browser
+ * launches reliably across all elevation and protocol association states.
+ */
+async function openInExternalBrowser(rawUrl: unknown): Promise<boolean> {
+  const targetUrl = typeof rawUrl === 'string'
+    ? rawUrl.trim()
+    : typeof (rawUrl as any)?.href === 'string'
+    ? (rawUrl as any).href.trim()
+    : String(rawUrl || '').trim();
+
+  if (!targetUrl) {
+    console.warn('[Electron] openInExternalBrowser: empty URL received');
+    return false;
+  }
+
+  try {
+    const parsed = new URL(targetUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      console.warn('[Electron] openInExternalBrowser: disallowed protocol', parsed.protocol);
+      return false;
+    }
+  } catch (err) {
+    console.error('[Electron] openInExternalBrowser: invalid URL format', targetUrl, err);
+    return false;
+  }
+
+  console.log('[Electron] Requesting external system browser for:', targetUrl);
+
+  // 1. Primary: Electron's native shell.openExternal
+  // Uses Windows ShellExecuteExW directly, preserving all '&' query parameters intact without cmd.exe shell splitting
+  try {
+    await shell.openExternal(targetUrl, { activate: true });
+    console.log('[Electron] shell.openExternal succeeded for:', targetUrl);
+    return true;
+  } catch (shellErr) {
+    console.warn('[Electron] shell.openExternal threw error, attempting fallback:', shellErr);
+  }
+
+  // 2. Windows Fallback: safely quote the URL to prevent cmd.exe from splitting on '&'
+  if (process.platform === 'win32') {
+    try {
+      const { exec } = await import('child_process');
+      const safeUrl = targetUrl.replace(/"/g, '""');
+      exec(`start "" "${safeUrl}"`);
+      console.log('[Electron] Fallback Windows start command executed');
+      return true;
+    } catch (cmdErr) {
+      console.warn('[Electron] Fallback Windows start failed:', cmdErr);
+    }
+  }
+
+  // 3. macOS / Linux fallbacks
+  try {
+    const { spawn } = await import('child_process');
+    if (process.platform === 'darwin') {
+      const child = spawn('open', [targetUrl], { detached: true, stdio: 'ignore' });
+      child.unref();
+      return true;
+    } else if (process.platform === 'linux') {
+      const child = spawn('xdg-open', [targetUrl], { detached: true, stdio: 'ignore' });
+      child.unref();
+      return true;
+    }
+  } catch (fallbackErr) {
+    console.error('[Electron] Native fallback execution failed:', fallbackErr);
+  }
+
+  return false;
+}
+
+/**
  * Checks whether a navigation target belongs to the local application.
- * All external services (including OAuth identity providers) are delegated
- * to the user's default system browser for secure authentication.
+ * All external services (including OAuth identity providers and desktop auth routes)
+ * are delegated to the user's default system browser.
  */
 function isAllowedInternalNavigation(url: string, localOrigin?: string): boolean {
+  // Desktop auth endpoints MUST always open in the external system browser!
+  if (url.includes('/desktop-auth') || url.includes('/desktop-callback')) {
+    return false;
+  }
   if (localOrigin && url.startsWith(localOrigin)) return true;
   try {
     const { hostname } = new URL(url);
@@ -283,7 +358,6 @@ function createWindow() {
   // Handle window popups (allow OAuth authentication windows, open external links in browser)
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     try {
-      const parsed = new URL(url);
       if (isAllowedInternalNavigation(url)) {
         return {
           action: 'allow',
@@ -297,25 +371,20 @@ function createWindow() {
           },
         };
       }
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        shell.openExternal(url);
-      }
-    } catch {}
+      openInExternalBrowser(url);
+    } catch (err) {
+      console.warn('[Electron] setWindowOpenHandler error:', err);
+    }
     return { action: 'deny' };
   });
 
-  // Navigation guard: allow app, Clerk, and OAuth identity provider navigations; open external links in default browser
+  // Navigation guard: allow app internal navigations; delegate external links and auth to default browser
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     if (isAllowedInternalNavigation(navigationUrl, currentAppUrl)) {
       return;
     }
     event.preventDefault();
-    try {
-      const parsed = new URL(navigationUrl);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        shell.openExternal(navigationUrl);
-      }
-    } catch {}
+    openInExternalBrowser(navigationUrl);
   });
 
   // Window state notification to renderer
@@ -384,17 +453,8 @@ function registerIpcHandlers() {
     return mainWindow?.isMaximized() ?? false;
   });
 
-  ipcMain.handle('obsidian:open-external', async (_event, targetUrl: string) => {
-    try {
-      const parsed = new URL(targetUrl);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        await shell.openExternal(targetUrl);
-        return true;
-      }
-    } catch {
-      // Disallowed URL
-    }
-    return false;
+  ipcMain.handle('obsidian:open-external', async (_event, targetUrl: unknown) => {
+    return openInExternalBrowser(targetUrl);
   });
 
   ipcMain.handle('obsidian:get-platform', () => {

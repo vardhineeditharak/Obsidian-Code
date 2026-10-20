@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSignIn } from '@clerk/react/legacy';
 import { useUser, AuthenticateWithRedirectCallback } from '@clerk/react';
 import { BrandMark } from '../ui/BrandMark';
 import { api } from '../../lib/api';
-import { CheckCircle2, RotateCw, ExternalLink, ArrowRight } from 'lucide-react';
+import { CheckCircle2, RotateCw, ArrowRight } from 'lucide-react';
 
 /**
  * Page rendered in the external browser to initiate Clerk OAuth for the Desktop App.
@@ -12,6 +12,8 @@ import { CheckCircle2, RotateCw, ExternalLink, ArrowRight } from 'lucide-react';
 export const DesktopAuthInitiatePage: React.FC = () => {
   const { isLoaded, signIn } = useSignIn();
   const [error, setError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const hasTriggeredRef = useRef(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const sessionId = searchParams.get('sessionId') || '';
@@ -27,9 +29,23 @@ export const DesktopAuthInitiatePage: React.FC = () => {
   const triggerRedirect = async () => {
     if (!isLoaded || !signIn) return;
     setError(null);
+    setIsRedirecting(true);
 
     const redirectUrl = `${window.location.origin}/desktop-callback?sessionId=${encodeURIComponent(sessionId)}`;
     try {
+      // 1. First attempt to create OAuth attempt and extract direct OAuth URL
+      const attempt = await signIn.create({
+        strategy,
+        redirectUrl,
+      });
+
+      const directUrl = (attempt as any)?.firstFactorVerification?.externalVerificationRedirectURL;
+      if (directUrl) {
+        window.location.href = directUrl;
+        return;
+      }
+
+      // 2. Standard redirect fallback
       await signIn.authenticateWithRedirect({
         strategy,
         redirectUrl,
@@ -38,12 +54,19 @@ export const DesktopAuthInitiatePage: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Desktop OAuth redirect failed:', err);
-      setError(err?.errors?.[0]?.message || err?.message || 'Failed to start authentication');
+      const msg =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        err?.message ||
+        'Failed to start authentication';
+      setError(msg);
+      setIsRedirecting(false);
     }
   };
 
   useEffect(() => {
-    if (isLoaded && signIn) {
+    if (isLoaded && signIn && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true;
       triggerRedirect();
     }
   }, [isLoaded, signIn]);
@@ -62,27 +85,35 @@ export const DesktopAuthInitiatePage: React.FC = () => {
         </div>
 
         {error ? (
-          <div className="p-4 rounded-lg bg-crimson/10 border border-crimson/20 text-crimson text-xs text-left">
-            <p className="font-semibold mb-1">Redirect Error</p>
+          <div className="p-4 rounded-lg bg-crimson/10 border border-crimson/20 text-crimson text-xs text-left space-y-2">
+            <p className="font-semibold">Sign-in Notice</p>
             <p>{error}</p>
-            <button
-              type="button"
-              onClick={triggerRedirect}
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-crimson text-white rounded-md text-xs font-medium cursor-pointer"
-            >
-              <RotateCw className="w-3.5 h-3.5" />
-              <span>Try Again</span>
-            </button>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  hasTriggeredRef.current = false;
+                  triggerRedirect();
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-crimson text-white rounded-md text-xs font-medium cursor-pointer hover:bg-crimson/90 transition"
+              >
+                <RotateCw className="w-3.5 h-3.5" />
+                <span>Retry Sign In</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-4">
             <RotateCw className="w-6 h-6 animate-spin text-amber" />
             <span className="text-xs font-mono text-ash uppercase tracking-wider">
-              Redirecting to {providerLabel}…
+              {isRedirecting ? `Opening ${providerLabel}…` : 'Preparing authentication…'}
             </span>
             <button
               type="button"
-              onClick={triggerRedirect}
+              onClick={() => {
+                hasTriggeredRef.current = false;
+                triggerRedirect();
+              }}
               className="mt-2 text-xs text-driftwood hover:text-ink underline cursor-pointer"
             >
               Click here if not redirected automatically
@@ -134,33 +165,46 @@ export const DesktopAuthCallbackPage: React.FC = () => {
         try {
           window.location.href = protocolUrl;
         } catch (e) {
-          console.warn('Protocol launch was blocked or delayed:', e);
+          console.warn('Protocol launch notice:', e);
         }
       })
       .catch((err) => {
         console.error('Failed to complete desktop authentication:', err);
         setSyncError(err?.message || 'Failed to sync authentication with desktop app');
       });
-  }, [isLoaded, isSignedIn, clerkUser, sessionId, synced]);
+  }, [isLoaded, isSignedIn, clerkUser, sessionId, synced, protocolUrl]);
 
   const handleOpenApp = () => {
     window.location.href = protocolUrl;
   };
 
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none font-sans">
-      <div className="hidden">
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none font-sans">
         <AuthenticateWithRedirectCallback
           signInUrl="/desktop-auth"
           signUpUrl="/desktop-auth"
-          continueSignUpUrl="/desktop-auth"
+          continueSignUpUrl="/desktop-callback"
           signInForceRedirectUrl="/desktop-callback"
           signUpForceRedirectUrl="/desktop-callback"
           signInFallbackRedirectUrl="/desktop-callback"
           signUpFallbackRedirectUrl="/desktop-callback"
         />
+        <div className="w-full max-w-md bg-bone rounded-xl border border-stone p-8 shadow-xl text-center space-y-4">
+          <RotateCw className="w-8 h-8 animate-spin text-amber mx-auto" />
+          <h1 className="font-brand text-lg font-semibold text-ink">
+            Finalizing Authentication…
+          </h1>
+          <p className="text-xs text-driftwood">
+            Processing OAuth response with Clerk…
+          </p>
+        </div>
       </div>
+    );
+  }
 
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none font-sans">
       <div className="w-full max-w-md bg-bone rounded-xl border border-stone p-8 shadow-xl text-center space-y-6">
         <BrandMark className="w-12 h-12 text-ink mx-auto" />
 
@@ -214,10 +258,10 @@ export const DesktopAuthCallbackPage: React.FC = () => {
           <div className="space-y-4 py-4">
             <RotateCw className="w-8 h-8 animate-spin text-amber mx-auto" />
             <h1 className="font-brand text-lg font-semibold text-ink">
-              Finalizing Authentication…
+              Connecting to Desktop App…
             </h1>
             <p className="text-xs text-driftwood">
-              Connecting your browser session to the Obsidian Code desktop application…
+              Linking your browser session to Obsidian Code…
             </p>
           </div>
         )}

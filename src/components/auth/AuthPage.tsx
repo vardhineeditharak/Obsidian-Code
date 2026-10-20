@@ -44,6 +44,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [desktopAuthActive, setDesktopAuthActive] = useState(false);
   const [desktopProvider, setDesktopProvider] = useState<'Google' | 'GitHub'>('Google');
   const [desktopSessionId, setDesktopSessionId] = useState<string | null>(null);
+  const [desktopTargetUrl, setDesktopTargetUrl] = useState<string | null>(null);
 
   // Listen for desktop authentication completion via polling and protocol deep links
   useEffect(() => {
@@ -276,20 +277,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')
         ? window.location.origin
         : 'http://localhost:3000';
-    const strategy = desktopProvider === 'Google' ? 'oauth_google' : 'oauth_github';
-    const browserAuthUrl = `${browserOrigin}/desktop-auth?sessionId=${encodeURIComponent(
+    const fallbackUrl = `${browserOrigin}/desktop-auth?sessionId=${encodeURIComponent(
       desktopSessionId
-    )}&strategy=${encodeURIComponent(strategy)}`;
+    )}&strategy=${encodeURIComponent(desktopProvider === 'Google' ? 'oauth_google' : 'oauth_github')}`;
+    const urlToOpen = desktopTargetUrl || fallbackUrl;
+
+    console.log('[DesktopAuth] Re-opening in system browser:', urlToOpen);
+    let opened = false;
     if ((window as any).obsidianDesktop?.openExternal) {
-      await (window as any).obsidianDesktop.openExternal(browserAuthUrl);
-      notify.info(`Re-opening ${desktopProvider} sign-in in your browser…`);
+      opened = await (window as any).obsidianDesktop.openExternal(urlToOpen);
     }
+    if (!opened) {
+      window.open(urlToOpen, '_blank');
+    }
+    notify.info(`Re-opening ${desktopProvider} sign-in in your browser…`);
   };
 
   const handleCancelDesktopAuth = () => {
     setDesktopAuthActive(false);
     setLoading(false);
     setDesktopSessionId(null);
+    setDesktopTargetUrl(null);
   };
 
   const handleOAuth = async (strategy: 'oauth_google' | 'oauth_github') => {
@@ -311,12 +319,40 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')
             ? window.location.origin
             : 'http://localhost:3000';
-        const browserAuthUrl = `${browserOrigin}/desktop-auth?sessionId=${encodeURIComponent(
-          sessionId
-        )}&strategy=${encodeURIComponent(strategy)}`;
+        const callbackUrl = `${browserOrigin}/desktop-callback?sessionId=${encodeURIComponent(sessionId)}`;
 
-        await (window as any).obsidianDesktop.openExternal(browserAuthUrl);
-        notify.info(`Opening ${providerName} sign-in in your default browser…`);
+        // Directly create OAuth attempt to retrieve Google/GitHub external authorization URL
+        let targetUrl: string | undefined;
+        if (isSignInLoaded && signIn) {
+          try {
+            const attempt = await signIn.create({
+              strategy,
+              redirectUrl: callbackUrl,
+            });
+            const rawUrl = (attempt as any)?.firstFactorVerification?.externalVerificationRedirectURL;
+            targetUrl = typeof rawUrl === 'string' ? rawUrl : rawUrl?.href || rawUrl?.toString?.();
+          } catch (e: any) {
+            console.warn('[DesktopAuth] Direct OAuth URL attempt:', e);
+          }
+        }
+
+        if (!targetUrl) {
+          targetUrl = `${browserOrigin}/desktop-auth?sessionId=${encodeURIComponent(
+            sessionId
+          )}&strategy=${encodeURIComponent(strategy)}`;
+        }
+
+        setDesktopTargetUrl(targetUrl);
+        console.log('[DesktopAuth] Opening external OAuth URL:', targetUrl);
+
+        let opened = false;
+        if ((window as any).obsidianDesktop?.openExternal) {
+          opened = await (window as any).obsidianDesktop.openExternal(targetUrl);
+        }
+        if (!opened) {
+          window.open(targetUrl, '_blank');
+        }
+        notify.info(`Opening ${providerName} in your default browser…`);
       } catch (err: any) {
         console.error('Failed to initiate desktop OAuth:', err);
         setError(err?.message || `Failed to initiate ${providerName} authentication.`);

@@ -6,8 +6,8 @@ import path from 'path';
 
 const isElectron = process.env.ELECTRON === 'true';
 
-export default defineConfig({
-  base: isElectron ? './' : '/',
+export default defineConfig(({ command }) => ({
+  base: isElectron && command === 'build' ? './' : '/',
   plugins: [
     react(),
     tailwindcss(),
@@ -67,4 +67,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
