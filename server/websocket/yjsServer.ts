@@ -12,6 +12,8 @@ import { dbStore } from '../dbStore';
 const messageSync = 0;
 const messageAwareness = 1;
 
+export const ROOM_NAME_REGEX = /^obsidian-project-(.+?)-file-(.+)$/;
+
 export interface ClientConnection {
   ws: WebSocket;
   userId: string;
@@ -20,6 +22,7 @@ export interface ClientConnection {
   roomName: string;
   projectId: string;
   fileId: string;
+  controlledClients: Set<number>;
 }
 
 export interface Room {
@@ -64,7 +67,7 @@ export class YjsWebSocketServer {
       const roomName = url.pathname.replace(/^\/ws\/?/, '') || url.searchParams.get('room') || '';
 
       // Parse roomName format: obsidian-project-<projectId>-file-<fileId>
-      const match = roomName.match(/^obsidian-project-([^-]+)-file-(.+)$/);
+      const match = roomName.match(ROOM_NAME_REGEX);
       if (!match) {
         socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
         socket.destroy();
@@ -232,6 +235,7 @@ export class YjsWebSocketServer {
       roomName,
       projectId,
       fileId,
+      controlledClients: new Set<number>(),
     };
     room.clients.add(client);
 
@@ -294,10 +298,23 @@ export class YjsWebSocketServer {
             }
           }
         } else if (messageType === messageAwareness) {
+          const rawAwarenessUpdate = decoding.readVarUint8Array(decoder);
+          // Track client IDs introduced by this socket connection
+          try {
+            const updateDecoder = decoding.createDecoder(rawAwarenessUpdate);
+            const len = decoding.readVarUint(updateDecoder);
+            for (let i = 0; i < len; i++) {
+              const clientID = decoding.readVarUint(updateDecoder);
+              decoding.readVarUint(updateDecoder); // clock
+              decoding.readVarString(updateDecoder); // JSON state string
+              client.controlledClients.add(clientID);
+            }
+          } catch {}
+
           // Awareness is permitted for all roles so Viewers can show their presence/cursor and follow others
           awarenessProtocol.applyAwarenessUpdate(
             room.awareness,
-            decoding.readVarUint8Array(decoder),
+            rawAwarenessUpdate,
             ws
           );
         }
@@ -308,6 +325,13 @@ export class YjsWebSocketServer {
 
     ws.on('close', async () => {
       room.clients.delete(client);
+      if (client.controlledClients.size > 0) {
+        awarenessProtocol.removeAwarenessStates(
+          room.awareness,
+          Array.from(client.controlledClients),
+          null
+        );
+      }
       // S8: Clean up room lifecycle and flush snapshots when empty
       if (room.clients.size === 0) {
         if (room.snapshotTimeout) {

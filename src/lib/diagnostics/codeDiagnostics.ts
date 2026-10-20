@@ -14,6 +14,8 @@ export function analyzeCode(
   const stack: { char: string; line: number; col: number }[] = [];
   const pairs: Record<string, string> = { ')': '(', '}': '{', ']': '[' };
   const openers = new Set(['(', '{', '[']);
+  const slashCommentLangs = new Set(['javascript', 'typescript', 'css', 'c', 'cpp', 'java', 'go', 'php', 'rust', 'csharp']);
+  const hashCommentLangs = new Set(['python', 'ruby', 'bash', 'sh', 'yaml', 'toml']);
 
   let inString: string | null = null;
   let inComment = false;
@@ -29,15 +31,15 @@ export function analyzeCode(
       // Skip escaped characters
       if (prevCh === '\\') continue;
 
-      // Handle comments & string literals for JS/TS/Python
+      // Handle comments & string literals
       if (!inComment && !inString) {
-        if ((lowerLang === 'javascript' || lowerLang === 'typescript' || lowerLang === 'css') && ch === '/' && lineText[charIdx + 1] === '/') {
+        if (slashCommentLangs.has(lowerLang) && ch === '/' && lineText[charIdx + 1] === '/') {
           break; // Single line comment
         }
-        if (lowerLang === 'python' && ch === '#') {
-          break; // Python single line comment
+        if (hashCommentLangs.has(lowerLang) && ch === '#') {
+          break; // Hash single line comment
         }
-        if ((lowerLang === 'javascript' || lowerLang === 'typescript' || lowerLang === 'css') && ch === '/' && lineText[charIdx + 1] === '*') {
+        if (slashCommentLangs.has(lowerLang) && ch === '/' && lineText[charIdx + 1] === '*') {
           inComment = true;
           charIdx++;
           continue;
@@ -122,6 +124,11 @@ export function analyzeCode(
           }
         }
       }
+    }
+
+    // Single and double quotes do not span multiple lines unless escaped with a trailing backslash
+    if ((inString === '"' || inString === "'") && !lineText.endsWith('\\')) {
+      inString = null;
     }
   }
 

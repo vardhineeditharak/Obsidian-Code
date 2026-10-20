@@ -414,14 +414,16 @@ export const dbStore = {
   async getProjectMembers(projectId: string) {
     if (isMongoOnline()) {
       const members = await ProjectMember.find({ projectId }).populate('userId', 'name email avatar');
-      return members.map((m: any) => ({
-        userId: m.userId._id,
-        name: m.userId.name,
-        email: m.userId.email,
-        avatar: m.userId.avatar,
-        role: m.role,
-        joinedAt: m.joinedAt,
-      }));
+      return members
+        .filter((m: any) => m.userId != null)
+        .map((m: any) => ({
+          userId: m.userId._id,
+          name: m.userId.name || 'Collaborator',
+          email: m.userId.email || '',
+          avatar: m.userId.avatar,
+          role: m.role,
+          joinedAt: m.joinedAt,
+        }));
     }
     const list: any[] = [];
     for (const m of mem.members.values()) {

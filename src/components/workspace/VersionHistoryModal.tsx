@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { History, RotateCcw, Clock, User as UserIcon } from 'lucide-react';
 import { DiffEditor } from '@monaco-editor/react';
 import { VersionCheckpoint, ProjectFile, ProjectRole } from '../../lib/types';
+import { detectLanguage } from '../../lib/language';
 import { api } from '../../lib/api';
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
@@ -229,7 +230,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
             <DiffEditor
               original={historicalContent}
               modified={selectedFileId === activeFileId ? currentContent : (currentFile?.content || '')}
-              language={currentFile?.language || 'javascript'}
+              language={(currentFile?.name && detectLanguage(currentFile.name)) || currentFile?.language || 'plaintext'}
               theme="obsidian-crystalline"
               beforeMount={(monaco) => {
                 monaco.editor.defineTheme('obsidian-crystalline', {

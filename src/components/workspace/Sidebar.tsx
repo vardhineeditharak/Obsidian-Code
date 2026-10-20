@@ -83,20 +83,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
     switch (ext) {
       case 'ts':
       case 'tsx':
-        return 'text-amber'; // Lavender
+        return 'text-amber';
       case 'js':
       case 'jsx':
-        return 'text-yellow-400'; // Warning yellow
+      case 'mjs':
+      case 'cjs':
+        return 'text-amber';
       case 'py':
-        return 'text-verdant'; // Success green
+      case 'go':
+      case 'rs':
+        return 'text-verdant';
       case 'json':
-        return 'text-amber'; // Lavender
+      case 'yaml':
+      case 'yml':
+        return 'text-amber';
       case 'html':
-        return 'text-orange-400';
+      case 'xml':
+        return 'text-ember';
       case 'css':
-        return 'text-sky-400';
-      case 'md':
+      case 'scss':
+      case 'less':
         return 'text-driftwood';
+      case 'c':
+      case 'cpp':
+      case 'h':
+      case 'hpp':
+      case 'java':
+        return 'text-forest';
+      case 'md':
+      case 'txt':
+        return 'text-driftwood';
+      case 'sh':
+      case 'bash':
+      case 'zsh':
+        return 'text-verdant';
+      case 'sql':
+        return 'text-amber';
       default:
         return 'text-ash';
     }

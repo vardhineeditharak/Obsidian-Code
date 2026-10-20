@@ -187,11 +187,24 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
     setCollapsedFiles((prev) => ({ ...prev, [fileId]: !prev[fileId] }));
   };
 
-  const renderHighlightedLine = (lineText: string, matchText: string) => {
+  const renderHighlightedLine = (lineText: string, matchText: string, column?: number) => {
     if (!matchText) return lineText;
     const lowerLine = lineText.toLowerCase();
     const lowerMatch = matchText.toLowerCase();
-    const idx = caseSensitive ? lineText.indexOf(matchText) : lowerLine.indexOf(lowerMatch);
+    let idx = -1;
+    if (column !== undefined && column > 0) {
+      const candidateIdx = column - 1;
+      const candidateSegment = lineText.slice(candidateIdx, candidateIdx + matchText.length);
+      const isCandidateMatch = caseSensitive
+        ? candidateSegment === matchText
+        : candidateSegment.toLowerCase() === lowerMatch;
+      if (isCandidateMatch) {
+        idx = candidateIdx;
+      }
+    }
+    if (idx === -1) {
+      idx = caseSensitive ? lineText.indexOf(matchText) : lowerLine.indexOf(lowerMatch);
+    }
     if (idx === -1) return lineText;
 
     const before = lineText.slice(0, idx);
@@ -383,7 +396,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                       >
                         <span className="text-mist text-[11px] w-6 shrink-0">{m.line}:</span>
                         <span className="text-driftwood truncate group-hover:text-ink">
-                          {renderHighlightedLine(m.lineText, m.matchText)}
+                          {renderHighlightedLine(m.lineText, m.matchText, m.column)}
                         </span>
                       </button>
                     ))}

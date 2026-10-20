@@ -167,7 +167,7 @@ export const ThemeToggle: React.FC<{
       type="button"
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      className={`p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-black/5 dark:hover:bg-white/8 active:scale-90 transition-all flex items-center justify-center cursor-pointer ${className}`}
+      className={`p-1.5 rounded-md text-ash hover:text-ink hover:bg-linen/60 active:scale-95 transition-all flex items-center justify-center cursor-pointer ${className}`}
     >
       <MorphIcon
         icon={isDark ? ICON_PATHS.sun : ICON_PATHS.moon}
