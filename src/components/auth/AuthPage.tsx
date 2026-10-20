@@ -18,6 +18,7 @@ import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
 import { ThemeToggle } from '../ui/AnimatedIcon';
 import { BrandMark } from '../ui/BrandMark';
+import { LatticeLoader } from '../ui/LatticeLoader';
 
 interface AuthPageProps {
   onAuthSuccess?: (user: any, token: string) => void;
@@ -420,9 +421,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         {/* Desktop Browser Waiting Screen */}
         {desktopAuthActive ? (
           <div className="space-y-5 text-center py-4">
-            <div className="relative inline-flex items-center justify-center">
-              <div className="w-12 h-12 rounded-xl bg-linen text-amber flex items-center justify-center border border-stone shadow-inner">
-                <RotateCw className="w-6 h-6 animate-spin text-amber" />
+            <div className="flex flex-col items-center justify-center py-2">
+              <div className="px-5 py-3.5 rounded-2xl bg-linen/60 border border-stone shadow-sm inline-flex items-center justify-center">
+                <LatticeLoader
+                  label="Awaiting browser sign-in"
+                  doneLabel="Authorized in"
+                  errorLabel="Failed after"
+                  status={error ? 'error' : 'working'}
+                  pattern="orbit"
+                  grid={3}
+                  shape="round"
+                  color="var(--color-amber, #d97736)"
+                  doneColor="#4ade80"
+                  errorColor="#f87171"
+                  cellSize={7}
+                  gap={3}
+                  fontSize={13}
+                  glow={true}
+                  glowColor="rgba(217, 119, 54, 0.45)"
+                  showTimer
+                />
               </div>
             </div>
 

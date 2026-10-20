@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSignIn } from '@clerk/react/legacy';
 import { useUser, AuthenticateWithRedirectCallback } from '@clerk/react';
 import { BrandMark } from '../ui/BrandMark';
+import { LatticeLoader } from '../ui/LatticeLoader';
 import { api } from '../../lib/api';
 import { CheckCircle2, RotateCw, ArrowRight } from 'lucide-react';
 
@@ -103,18 +104,33 @@ export const DesktopAuthInitiatePage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 py-4">
-            <RotateCw className="w-6 h-6 animate-spin text-amber" />
-            <span className="text-xs font-mono text-ash uppercase tracking-wider">
-              {isRedirecting ? `Opening ${providerLabel}…` : 'Preparing authentication…'}
-            </span>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="p-4 rounded-xl bg-linen/50 border border-stone inline-flex items-center justify-center">
+              <LatticeLoader
+                label={isRedirecting ? `Opening ${providerLabel}` : 'Preparing OAuth'}
+                doneLabel="Redirecting in"
+                errorLabel="Failed after"
+                pattern="orbit"
+                grid={3}
+                shape="round"
+                color="var(--color-amber, #d97736)"
+                doneColor="#4ade80"
+                errorColor="#f87171"
+                cellSize={6}
+                gap={2.5}
+                fontSize={13}
+                glow
+                glowColor="rgba(217, 119, 54, 0.4)"
+                showTimer
+              />
+            </div>
             <button
               type="button"
               onClick={() => {
                 hasTriggeredRef.current = false;
                 triggerRedirect();
               }}
-              className="mt-2 text-xs text-driftwood hover:text-ink underline cursor-pointer"
+              className="text-xs text-driftwood hover:text-ink underline cursor-pointer"
             >
               Click here if not redirected automatically
             </button>
@@ -191,10 +207,24 @@ export const DesktopAuthCallbackPage: React.FC = () => {
           signUpFallbackRedirectUrl="/desktop-callback"
         />
         <div className="w-full max-w-md bg-bone rounded-xl border border-stone p-8 shadow-xl text-center space-y-4">
-          <RotateCw className="w-8 h-8 animate-spin text-amber mx-auto" />
-          <h1 className="font-brand text-lg font-semibold text-ink">
-            Finalizing Authentication…
-          </h1>
+          <div className="py-2 inline-flex justify-center">
+            <LatticeLoader
+              label="Finalizing authentication"
+              doneLabel="Verified in"
+              errorLabel="Failed after"
+              pattern="sweep"
+              grid={4}
+              shape="round"
+              color="var(--color-amber, #d97736)"
+              doneColor="#4ade80"
+              errorColor="#f87171"
+              cellSize={6}
+              gap={2}
+              fontSize={14}
+              glow
+              showTimer
+            />
+          </div>
           <p className="text-xs text-driftwood">
             Processing OAuth response with Clerk…
           </p>
@@ -255,11 +285,25 @@ export const DesktopAuthCallbackPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-4 py-4">
-            <RotateCw className="w-8 h-8 animate-spin text-amber mx-auto" />
-            <h1 className="font-brand text-lg font-semibold text-ink">
-              Connecting to Desktop App…
-            </h1>
+          <div className="space-y-4 py-4 flex flex-col items-center">
+            <div className="p-4 rounded-xl bg-linen/50 border border-stone inline-flex items-center justify-center">
+              <LatticeLoader
+                label="Connecting to Desktop App"
+                doneLabel="Connected in"
+                errorLabel="Failed after"
+                pattern="pulse"
+                grid={4}
+                shape="round"
+                color="var(--color-amber, #d97736)"
+                doneColor="#4ade80"
+                errorColor="#f87171"
+                cellSize={6}
+                gap={2}
+                fontSize={13}
+                glow
+                showTimer
+              />
+            </div>
             <p className="text-xs text-driftwood">
               Linking your browser session to Obsidian Code…
             </p>

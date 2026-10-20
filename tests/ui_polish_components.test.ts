@@ -27,6 +27,13 @@ describe('UI/UX Polish Pass & Accessible Components', () => {
       expect(html).toContain('fixed inset-0');
       expect(html).toContain('z-50');
     });
+
+    it('renders LatticeLoader when variant="lattice"', () => {
+      const html = renderToString(React.createElement(LoadingState, { variant: 'lattice', label: 'Compiling project…' }));
+      expect(html).toContain('lattice-loader');
+      expect(html).toContain('Compiling project…');
+      expect(html).toContain('data-status="working"');
+    });
   });
 
   describe('Skeleton Primitives (POLISH-4)', () => {
