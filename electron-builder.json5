@@ -56,10 +56,6 @@
       {
         "target": "nsis",
         "arch": ["x64"]
-      },
-      {
-        "target": "portable",
-        "arch": ["x64"]
       }
     ],
     "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
@@ -73,7 +69,8 @@
     "createDesktopShortcut": "always",
     "createStartMenuShortcut": true,
     "shortcutName": "Obsidian Code",
-    "runAfterFinish": true
+    "runAfterFinish": true,
+    "differentialPackage": false
   },
   "mac": {
     "category": "public.app-category.developer-tools",
@@ -81,11 +78,7 @@
     "target": [
       {
         "target": "dmg",
-        "arch": ["x64", "arm64"]
-      },
-      {
-        "target": "zip",
-        "arch": ["x64", "arm64"]
+        "arch": ["arm64", "x64"]
       }
     ],
     "artifactName": "${productName}-${version}-${arch}.${ext}",

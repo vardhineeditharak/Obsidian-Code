@@ -185,7 +185,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     try {
       const { project: p, userRole: role } = await api.getProject(projectId);
       if (p) {
-        p.name = typeof p.name === 'string' ? p.name : '';
+        const rawName = p.name ?? (p as any)._doc?.name;
+        p.name = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : (p.name || '');
       }
       setProject(p);
       setUserRole(role);
@@ -415,8 +416,9 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     try {
       const updated = await api.updateProject(projectId, { name: newName });
       if (updated) {
-        updated.name = typeof updated.name === 'string' ? updated.name : '';
-        setProject(updated);
+        const rawName = updated.name ?? (updated as any)._doc?.name ?? newName;
+        const finalName = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : newName;
+        setProject((prev) => (prev ? { ...prev, ...updated, name: finalName } : { ...updated, name: finalName }));
       }
       notify.success(`Workspace renamed to "${newName}"`);
     } catch (err: any) {

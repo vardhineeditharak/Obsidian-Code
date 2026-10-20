@@ -268,7 +268,8 @@ export const dbStore = {
 
   async findProjectById(id: string) {
     if (isMongoOnline()) {
-      return Project.findById(id);
+      const doc = await Project.findById(id);
+      return doc ? (typeof doc.toObject === 'function' ? doc.toObject() : doc) : null;
     }
     return mem.projects.get(id) || null;
   },
@@ -277,7 +278,7 @@ export const dbStore = {
     if (isMongoOnline()) {
       const p = await Project.create({ name, ownerId, description });
       await ProjectMember.create({ projectId: p._id, userId: ownerId, role: 'owner' });
-      return p;
+      return typeof p.toObject === 'function' ? p.toObject() : p;
     }
     const p: MemProject = {
       _id: genId(),
@@ -305,7 +306,8 @@ export const dbStore = {
       Object.entries(update).filter(([_, v]) => v !== undefined)
     );
     if (isMongoOnline()) {
-      return Project.findByIdAndUpdate(id, { ...cleanUpdate, updatedAt: new Date() }, { new: true });
+      const doc = await Project.findByIdAndUpdate(id, { ...cleanUpdate, updatedAt: new Date() }, { new: true });
+      return doc ? (typeof doc.toObject === 'function' ? doc.toObject() : doc) : null;
     }
     const p = mem.projects.get(id);
     if (!p) return null;

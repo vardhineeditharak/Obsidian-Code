@@ -192,7 +192,13 @@ Start editing files, collaborate in real time, and share your project.
     });
   }
 
-  return res.status(201).json(project);
+  const projectObj = project && typeof (project as any).toObject === 'function'
+    ? (project as any).toObject()
+    : project && (project as any)._doc
+      ? { ...(project as any)._doc }
+      : project;
+
+  return res.status(201).json(projectObj);
 });
 
 // Get project details + user's role + members
@@ -204,9 +210,15 @@ router.get('/:projectId', authenticateJWT, requireProjectRole(['owner', 'editor'
 
   const members = await dbStore.getProjectMembers(param(req.params.projectId));
 
+  const rawProject = typeof (project as any).toObject === 'function'
+    ? (project as any).toObject()
+    : (project as any)._doc
+      ? { ...(project as any)._doc }
+      : project;
+
   return res.json({
     project: {
-      ...project,
+      ...rawProject,
       members,
     },
     userRole: req.projectRole,
@@ -221,7 +233,12 @@ router.patch('/:projectId', authenticateJWT, requireProjectRole(['owner']), asyn
   if (req.body.isPublic !== undefined) updateData.isPublic = req.body.isPublic;
 
   const updated = await dbStore.updateProject(param(req.params.projectId), updateData);
-  return res.json(updated);
+  const updatedObj = updated && typeof (updated as any).toObject === 'function'
+    ? (updated as any).toObject()
+    : updated && (updated as any)._doc
+      ? { ...(updated as any)._doc }
+      : updated;
+  return res.json(updatedObj);
 });
 
 // Delete project (Owner only)

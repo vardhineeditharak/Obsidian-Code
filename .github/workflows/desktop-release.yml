@@ -77,8 +77,8 @@ jobs:
             Automated multi-platform desktop release for Windows and macOS.
             
             ### Package Artifacts:
-            - **Windows**: NSIS Setup Installer (`.exe`) & Standalone Portable (`.exe`)
-            - **macOS**: Apple Silicon (`arm64`) & Intel (`x64`) Disk Images (`.dmg`) & Archives (`.zip`)
+            - **Windows**: `Obsidian.Code-Setup-*.exe` (NSIS Setup Wizard)
+            - **macOS**: `Obsidian.Code-*-arm64.dmg` (Apple Silicon) & `Obsidian.Code-*-x64.dmg` (Intel)
           draft: false
           prerelease: false
         env:
@@ -97,11 +97,9 @@ jobs:
           - os: windows-latest
             os_name: Windows
             build_script: desktop:build:win
-            artifact_name: obsidian-code-windows
           - os: macos-latest
             os_name: macOS
             build_script: desktop:build:mac
-            artifact_name: obsidian-code-macos
 
     steps:
       - name: Checkout repository at version tag
@@ -129,19 +127,6 @@ jobs:
           VITE_API_URL: ${{ secrets['VITE_API_URL'] || '' }}
           VITE_WS_URL: ${{ secrets['VITE_WS_URL'] || '' }}
 
-      - name: Upload Artifacts to Action Run
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}-${{ needs.bump-version.outputs.new_version }}
-          path: |
-            dist/desktop/*.exe
-            dist/desktop/*.dmg
-            dist/desktop/*.zip
-            dist/desktop/*.blockmap
-            dist/desktop/*.yml
-          retention-days: 14
-          overwrite: true
-
       - name: Upload Binaries to GitHub Release
         shell: bash
         env:
@@ -149,10 +134,12 @@ jobs:
           TAG_NAME: ${{ needs.bump-version.outputs.tag_name }}
         run: |
           shopt -s nullglob
-          FILES=(dist/desktop/*.exe dist/desktop/*.dmg dist/desktop/*.zip dist/desktop/*.blockmap dist/desktop/*.yml)
+          # Explicitly upload only clean distribution binaries and auto-updater channel manifests
+          # Specifically excludes builder-debug.yml and temporary build artifacts
+          FILES=(dist/desktop/*.exe dist/desktop/*.dmg dist/desktop/latest*.yml)
           if [ ${#FILES[@]} -gt 0 ]; then
-            echo "Uploading ${#FILES[@]} binary assets to release $TAG_NAME (with --clobber for retries)..."
+            echo "Uploading ${#FILES[@]} clean production assets to release $TAG_NAME (with --clobber)..."
             gh release upload "$TAG_NAME" "${FILES[@]}" --clobber
           else
-            echo "No matching binary files found to upload."
+            echo "No matching production binary files found to upload."
           fi

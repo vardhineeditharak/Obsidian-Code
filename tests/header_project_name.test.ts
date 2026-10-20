@@ -95,4 +95,20 @@ describe('Workspace Header Project Name & Role Badge (Step 1)', () => {
     const htmlOffline = renderToString(React.createElement(Header, propsOffline));
     expect(htmlOffline).toContain('Saved locally · will sync');
   });
+
+  it('renders project name even when provided through Mongoose-style _doc property', () => {
+    const mongooseLikeProject: any = {
+      _id: 'proj-mongoose-1',
+      ownerId: 'user-1',
+      _doc: { name: 'Mongoose Preserved Project' },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const resolvedName = mongooseLikeProject.name ?? mongooseLikeProject._doc?.name;
+    const props = createProps({ projectName: resolvedName, role: 'owner' });
+    const html = renderToString(React.createElement(Header, props));
+    expect(html).toContain('Mongoose Preserved Project');
+    expect(html).not.toContain('Untitled Project');
+  });
 });
+
