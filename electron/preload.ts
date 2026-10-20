@@ -9,6 +9,8 @@ export interface ObsidianDesktopAPI {
   isMaximized: () => Promise<boolean>;
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void;
   openExternal: (url: string) => Promise<boolean>;
+  onProtocolUrl: (callback: (url: string) => void) => () => void;
+  focusWindow: () => void;
 }
 
 const desktopAPI: ObsidianDesktopAPI = {
@@ -35,6 +37,16 @@ const desktopAPI: ObsidianDesktopAPI = {
   },
   openExternal: (url: string) => {
     return ipcRenderer.invoke('obsidian:open-external', url);
+  },
+  onProtocolUrl: (callback: (url: string) => void) => {
+    const listener = (_event: any, url: string) => callback(url);
+    ipcRenderer.on('obsidian:protocol-url', listener);
+    return () => {
+      ipcRenderer.removeListener('obsidian:protocol-url', listener);
+    };
+  },
+  focusWindow: () => {
+    ipcRenderer.send('obsidian:window:focus');
   },
 };
 

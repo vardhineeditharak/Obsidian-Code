@@ -11,19 +11,53 @@ let mainWindow: BrowserWindow | null = null;
 let localServer: http.Server | null = null;
 let currentAppUrl = '';
 
+// Register custom protocol client for deep linking (obsidian-code:// and obsidian://)
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    try {
+      app.setAsDefaultProtocolClient('obsidian-code', process.execPath, [path.resolve(process.argv[1])]);
+      app.setAsDefaultProtocolClient('obsidian', process.execPath, [path.resolve(process.argv[1])]);
+    } catch {}
+  }
+} else {
+  try {
+    app.setAsDefaultProtocolClient('obsidian-code');
+    app.setAsDefaultProtocolClient('obsidian');
+  } catch {}
+}
+
 // Enforce single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, commandLine) => {
     if (mainWindow) {
       if (!mainWindow.isVisible()) mainWindow.show();
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
+
+      // Check for deep link protocol URL in arguments (Windows/Linux)
+      const protocolUrl = commandLine.find(
+        (arg) => arg.startsWith('obsidian-code://') || arg.startsWith('obsidian://')
+      );
+      if (protocolUrl) {
+        mainWindow.webContents.send('obsidian:protocol-url', protocolUrl);
+      }
     }
   });
 }
+
+// macOS deep link protocol handler
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  if (mainWindow) {
+    if (!mainWindow.isVisible()) mainWindow.show();
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    mainWindow.webContents.send('obsidian:protocol-url', url);
+  }
+});
 
 function resolvePreloadPath(): string {
   const possiblePaths = [
@@ -38,32 +72,15 @@ function resolvePreloadPath(): string {
 }
 
 /**
- * Checks whether a navigation target belongs to the local application,
- * Clerk authentication service, or supported OAuth identity providers.
+ * Checks whether a navigation target belongs to the local application.
+ * All external services (including OAuth identity providers) are delegated
+ * to the user's default system browser for secure authentication.
  */
 function isAllowedInternalNavigation(url: string, localOrigin?: string): boolean {
   if (localOrigin && url.startsWith(localOrigin)) return true;
   try {
     const { hostname } = new URL(url);
-    // Allow Clerk authentication service
-    if (
-      hostname.endsWith('.clerk.accounts.dev') ||
-      hostname === 'clerk.com' ||
-      hostname.endsWith('.clerk.com')
-    ) {
-      return true;
-    }
-    // Allow OAuth Identity Providers
-    if (
-      hostname === 'accounts.google.com' ||
-      hostname.endsWith('.google.com') ||
-      hostname === 'github.com' ||
-      hostname.endsWith('.github.com') ||
-      hostname === 'appleid.apple.com' ||
-      hostname.endsWith('.apple.com') ||
-      hostname.endsWith('.live.com') ||
-      hostname.endsWith('.microsoftonline.com')
-    ) {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return true;
     }
   } catch {
@@ -353,6 +370,14 @@ function registerIpcHandlers() {
 
   ipcMain.on('obsidian:window:close', () => {
     mainWindow?.close();
+  });
+
+  ipcMain.on('obsidian:window:focus', () => {
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show();
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
   });
 
   ipcMain.handle('obsidian:window:is-maximized', () => {

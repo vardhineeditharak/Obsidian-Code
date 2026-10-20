@@ -76,6 +76,45 @@ export const api = {
     return data;
   },
 
+  async initiateDesktopAuth(strategy: string = 'oauth_google'): Promise<{ sessionId: string; strategy: string }> {
+    const res = await fetch(`${BASE_URL}/auth/desktop/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ strategy }),
+    });
+    return handleResponse<{ sessionId: string; strategy: string }>(res);
+  },
+
+  async completeDesktopAuth(params: {
+    sessionId: string;
+    clerkId: string;
+    email: string;
+    name: string;
+    avatar?: string;
+  }): Promise<{ success: boolean; sessionId: string }> {
+    const res = await fetch(`${BASE_URL}/auth/desktop/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return handleResponse<{ success: boolean; sessionId: string }>(res);
+  },
+
+  async pollDesktopAuth(sessionId: string): Promise<{
+    status: 'pending' | 'completed' | 'expired';
+    token?: string;
+    user?: User;
+    ticket?: string;
+  }> {
+    const res = await fetch(`${BASE_URL}/auth/desktop/poll?sessionId=${encodeURIComponent(sessionId)}`);
+    return handleResponse<{
+      status: 'pending' | 'completed' | 'expired';
+      token?: string;
+      user?: User;
+      ticket?: string;
+    }>(res);
+  },
+
   async getMe(): Promise<User> {
     const res = await fetch(`${BASE_URL}/auth/me`, {
       headers: getAuthHeaders(),

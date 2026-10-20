@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser, useClerk, AuthenticateWithRedirectCallback } from '@clerk/react';
 import { AuthPage } from './components/auth/AuthPage';
+import { DesktopAuthInitiatePage, DesktopAuthCallbackPage } from './components/auth/DesktopAuthPages';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { WorkspacePage } from './components/workspace/WorkspacePage';
 import { User } from './lib/types';
@@ -94,6 +95,20 @@ export const App: React.FC = () => {
         })
         .finally(() => setLoading(false));
     } else {
+      // If Clerk is not signed in, check if a desktop session exists in localStorage
+      const savedUser = typeof window !== 'undefined' ? localStorage.getItem('obsidian_user') : null;
+      const savedToken = typeof window !== 'undefined' ? localStorage.getItem('obsidian_token') : null;
+      if (savedUser && savedToken) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          updateUser(parsed);
+          setToken(savedToken);
+          setCurrentRoute('dashboard');
+          setLoading(false);
+          return;
+        } catch {}
+      }
+
       updateUser(null);
       setToken(null);
       setLoading(false);
@@ -155,6 +170,15 @@ export const App: React.FC = () => {
     notify.info('Logged out');
   };
 
+  // Handle Desktop OAuth routes
+  if (typeof window !== 'undefined' && window.location.pathname === '/desktop-auth') {
+    return <DesktopAuthInitiatePage />;
+  }
+
+  if (typeof window !== 'undefined' && window.location.pathname === '/desktop-callback') {
+    return <DesktopAuthCallbackPage />;
+  }
+
   // Handle SSO Callback route for OAuth
   if (typeof window !== 'undefined' && window.location.pathname === '/sso-callback') {
     return (
@@ -177,7 +201,15 @@ export const App: React.FC = () => {
   }
 
   if (currentRoute === 'auth' || !currentUser) {
-    return <AuthPage />;
+    return (
+      <AuthPage
+        onAuthSuccess={(u, tok) => {
+          updateUser(u);
+          setToken(tok);
+          setCurrentRoute('dashboard');
+        }}
+      />
+    );
   }
 
   if (currentRoute === 'workspace' && activeProjectId) {

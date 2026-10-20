@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSignIn, useSignUp } from '@clerk/react/legacy';
 import {
   Lock,
@@ -11,7 +11,9 @@ import {
   AlertCircle,
   KeyRound,
   RotateCw,
+  ExternalLink,
 } from 'lucide-react';
+import { api } from '../../lib/api';
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
 import { ThemeToggle } from '../ui/AnimatedIcon';
@@ -21,7 +23,7 @@ interface AuthPageProps {
   onAuthSuccess?: (user: any, token: string) => void;
 }
 
-export const AuthPage: React.FC<AuthPageProps> = () => {
+export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
   const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
 
@@ -37,6 +39,103 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
   const [verifying, setVerifying] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [resending, setResending] = useState(false);
+
+  // Desktop browser OAuth state
+  const [desktopAuthActive, setDesktopAuthActive] = useState(false);
+  const [desktopProvider, setDesktopProvider] = useState<'Google' | 'GitHub'>('Google');
+  const [desktopSessionId, setDesktopSessionId] = useState<string | null>(null);
+
+  // Listen for desktop authentication completion via polling and protocol deep links
+  useEffect(() => {
+    if (!desktopAuthActive || !desktopSessionId) return;
+
+    let cancelled = false;
+    let pollTimer: any = null;
+
+    const handleSuccessfulSession = async (sessionData: { token?: string; user?: any; ticket?: string }) => {
+      cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
+      setDesktopAuthActive(false);
+      setLoading(false);
+
+      if (sessionData.user && sessionData.token) {
+        if (sessionData.ticket && signIn) {
+          try {
+            const ticketRes = await signIn.create({
+              strategy: 'ticket',
+              ticket: sessionData.ticket,
+            });
+            if (ticketRes.status === 'complete' && ticketRes.createdSessionId) {
+              await setSignInActive({ session: ticketRes.createdSessionId });
+            }
+          } catch (ticketErr) {
+            console.warn('[DesktopAuth] Clerk ticket sign-in notice:', ticketErr);
+          }
+        }
+
+        localStorage.setItem('obsidian_token', sessionData.token);
+        localStorage.setItem('obsidian_user', JSON.stringify(sessionData.user));
+
+        if ((window as any).obsidianDesktop?.focusWindow) {
+          (window as any).obsidianDesktop.focusWindow();
+        }
+
+        notify.success(`Welcome to Obsidian Code, ${sessionData.user.name}!`);
+        sound.checkpointSaved();
+
+        if (onAuthSuccess) {
+          onAuthSuccess(sessionData.user, sessionData.token);
+        }
+      }
+    };
+
+    // Deep-link protocol listener (obsidian-code://auth-callback?sessionId=...)
+    let unsubProtocol: (() => void) | undefined;
+    if ((window as any).obsidianDesktop?.onProtocolUrl) {
+      unsubProtocol = (window as any).obsidianDesktop.onProtocolUrl((url: string) => {
+        try {
+          const parsed = new URL(url);
+          const protoSessionId = parsed.searchParams.get('sessionId');
+          if (protoSessionId === desktopSessionId) {
+            api.pollDesktopAuth(desktopSessionId).then((res) => {
+              if (res.status === 'completed') {
+                handleSuccessfulSession(res);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Protocol URL parse notice:', e);
+        }
+      });
+    }
+
+    // Polling channel as fallback / direct loopback communication
+    pollTimer = setInterval(async () => {
+      if (cancelled) return;
+      try {
+        const res = await api.pollDesktopAuth(desktopSessionId);
+        if (cancelled) return;
+
+        if (res.status === 'completed') {
+          handleSuccessfulSession(res);
+        } else if (res.status === 'expired') {
+          cancelled = true;
+          clearInterval(pollTimer);
+          setDesktopAuthActive(false);
+          setLoading(false);
+          setError('Authentication session expired in browser. Please try again.');
+        }
+      } catch (err) {
+        // Retry next interval
+      }
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
+      if (unsubProtocol) unsubProtocol();
+    };
+  }, [desktopAuthActive, desktopSessionId, signIn, setSignInActive, onAuthSuccess]);
 
   // Reset errors when switching mode
   const switchMode = (login: boolean) => {
@@ -171,10 +270,62 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
     }
   };
 
+  const handleReopenBrowser = async () => {
+    if (!desktopSessionId) return;
+    const browserOrigin =
+      typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')
+        ? window.location.origin
+        : 'http://localhost:3000';
+    const strategy = desktopProvider === 'Google' ? 'oauth_google' : 'oauth_github';
+    const browserAuthUrl = `${browserOrigin}/desktop-auth?sessionId=${encodeURIComponent(
+      desktopSessionId
+    )}&strategy=${encodeURIComponent(strategy)}`;
+    if ((window as any).obsidianDesktop?.openExternal) {
+      await (window as any).obsidianDesktop.openExternal(browserAuthUrl);
+      notify.info(`Re-opening ${desktopProvider} sign-in in your browser…`);
+    }
+  };
+
+  const handleCancelDesktopAuth = () => {
+    setDesktopAuthActive(false);
+    setLoading(false);
+    setDesktopSessionId(null);
+  };
+
   const handleOAuth = async (strategy: 'oauth_google' | 'oauth_github') => {
     setError(null);
     setLoading(true);
     const providerName = strategy === 'oauth_google' ? 'Google' : 'GitHub';
+
+    const isDesktop = Boolean(typeof window !== 'undefined' && (window as any).obsidianDesktop?.isDesktop);
+
+    if (isDesktop) {
+      try {
+        setDesktopProvider(providerName);
+        setDesktopAuthActive(true);
+
+        const { sessionId } = await api.initiateDesktopAuth(strategy);
+        setDesktopSessionId(sessionId);
+
+        const browserOrigin =
+          typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http')
+            ? window.location.origin
+            : 'http://localhost:3000';
+        const browserAuthUrl = `${browserOrigin}/desktop-auth?sessionId=${encodeURIComponent(
+          sessionId
+        )}&strategy=${encodeURIComponent(strategy)}`;
+
+        await (window as any).obsidianDesktop.openExternal(browserAuthUrl);
+        notify.info(`Opening ${providerName} sign-in in your default browser…`);
+      } catch (err: any) {
+        console.error('Failed to initiate desktop OAuth:', err);
+        setError(err?.message || `Failed to initiate ${providerName} authentication.`);
+        setDesktopAuthActive(false);
+        setLoading(false);
+      }
+      return;
+    }
+
     const origin = (typeof window !== 'undefined' && window.location.origin && window.location.origin.startsWith('http'))
       ? window.location.origin
       : 'http://localhost:3000';
@@ -230,8 +381,56 @@ export const AuthPage: React.FC<AuthPageProps> = () => {
           </p>
         </div>
 
-        {/* Verification View */}
-        {verifying ? (
+        {/* Desktop Browser Waiting Screen */}
+        {desktopAuthActive ? (
+          <div className="space-y-5 text-center py-4">
+            <div className="relative inline-flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-linen text-amber flex items-center justify-center border border-stone shadow-inner">
+                <RotateCw className="w-6 h-6 animate-spin text-amber" />
+              </div>
+            </div>
+
+            <div>
+              <h2 className="headline-sm text-lg font-semibold text-ink">
+                Authenticating in Browser…
+              </h2>
+              <p className="text-sm text-driftwood mt-1.5 leading-relaxed">
+                We opened your default browser to sign in with{' '}
+                <span className="text-ink font-medium">{desktopProvider}</span>.
+              </p>
+              <p className="text-xs text-ash mt-1">
+                Once authorized, Obsidian Code will automatically resume.
+              </p>
+            </div>
+
+            {error && (
+              <div
+                role="alert"
+                className="text-xs text-crimson p-3 bg-crimson/10 border border-crimson/20 rounded-md text-left"
+              >
+                {error}
+              </div>
+            )}
+
+            <div className="pt-2 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleReopenBrowser}
+                className="btn-primary w-full py-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Re-open Browser</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelDesktopAuth}
+                className="w-full py-2 text-xs font-medium text-driftwood hover:text-ink cursor-pointer transition"
+              >
+                <span>Cancel and Return</span>
+              </button>
+            </div>
+          </div>
+        ) : verifying ? (
           <form onSubmit={handleVerifyCode} className="space-y-4">
             <div className="text-center mb-4">
               <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-linen text-amber mb-2 inset-glow">

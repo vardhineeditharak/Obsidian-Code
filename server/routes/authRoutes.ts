@@ -173,6 +173,143 @@ router.post('/clerk-sync', async (req: Request, res: Response) => {
   });
 });
 
+// ----------------------------------------------------------------------------
+// Desktop Application OAuth Flow (Loopback Session Store & Polling)
+// ----------------------------------------------------------------------------
+interface DesktopAuthSession {
+  id: string;
+  strategy: string;
+  status: 'pending' | 'completed' | 'expired';
+  token?: string;
+  user?: any;
+  ticket?: string;
+  createdAt: number;
+}
+
+const desktopAuthSessions = new Map<string, DesktopAuthSession>();
+
+function cleanOldDesktopSessions() {
+  const now = Date.now();
+  for (const [id, session] of desktopAuthSessions.entries()) {
+    if (now - session.createdAt > 10 * 60 * 1000) {
+      desktopAuthSessions.delete(id);
+    }
+  }
+}
+
+// 1. Initiate desktop authentication request
+router.post('/desktop/initiate', (req: Request, res: Response) => {
+  cleanOldDesktopSessions();
+  const sessionId = crypto.randomBytes(24).toString('hex');
+  const strategy = typeof req.body?.strategy === 'string' ? req.body.strategy : 'oauth_google';
+
+  desktopAuthSessions.set(sessionId, {
+    id: sessionId,
+    strategy,
+    status: 'pending',
+    createdAt: Date.now(),
+  });
+
+  return res.json({ sessionId, strategy });
+});
+
+// 2. Complete desktop authentication from the external browser callback
+const desktopCompleteSchema = z.object({
+  sessionId: z.string().min(1),
+  clerkId: z.string().min(1),
+  email: z.string().email(),
+  name: z.string().min(1),
+  avatar: z.string().optional(),
+});
+
+router.post('/desktop/complete', async (req: Request, res: Response) => {
+  cleanOldDesktopSessions();
+  const result = desktopCompleteSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ message: 'Validation failed', errors: result.error.issues });
+  }
+
+  const { sessionId, clerkId, email, name, avatar } = result.data;
+  const session = desktopAuthSessions.get(sessionId);
+  if (!session) {
+    return res.status(404).json({ message: 'Desktop authentication session not found or expired' });
+  }
+
+  const user = await dbStore.upsertClerkUser({ clerkId, email, name, avatar });
+
+  const token = jwt.sign(
+    { userId: user._id.toString(), email: user.email, name: user.name },
+    config.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  let ticket: string | undefined;
+  if (config.CLERK_SECRET_KEY) {
+    try {
+      const ticketRes = await fetch('https://api.clerk.com/v1/sign_in_tokens', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.CLERK_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: clerkId }),
+      });
+      if (ticketRes.ok) {
+        const ticketData = (await ticketRes.json()) as any;
+        if (ticketData?.token) {
+          ticket = ticketData.token;
+        }
+      }
+    } catch (ticketErr) {
+      console.warn('[DesktopAuth] Failed to generate Clerk sign-in ticket:', ticketErr);
+    }
+  }
+
+  session.status = 'completed';
+  session.token = token;
+  session.ticket = ticket;
+  session.user = {
+    _id: user._id,
+    email: user.email,
+    name: user.name,
+    avatar: user.avatar,
+  };
+
+  return res.json({
+    success: true,
+    message: 'Desktop authentication completed successfully',
+    sessionId,
+  });
+});
+
+// 3. Poll status of desktop authentication session
+router.get('/desktop/poll', (req: Request, res: Response) => {
+  cleanOldDesktopSessions();
+  const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
+  if (!sessionId) {
+    return res.status(400).json({ message: 'Missing sessionId parameter' });
+  }
+
+  const session = desktopAuthSessions.get(sessionId);
+  if (!session) {
+    return res.status(404).json({ status: 'expired', message: 'Session not found or expired' });
+  }
+
+  if (session.status === 'completed') {
+    const payload = {
+      status: 'completed',
+      token: session.token,
+      user: session.user,
+      ticket: session.ticket,
+    };
+    // Once polled after completion, remove session so it cannot be replayed
+    desktopAuthSessions.delete(sessionId);
+    return res.json(payload);
+  }
+
+  return res.json({ status: 'pending' });
+});
+
 // OAuth Providers check (S4.2)
 router.get('/oauth/providers', (_req: Request, res: Response) => {
   const github = Boolean(config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET);
