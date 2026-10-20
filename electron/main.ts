@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import http from 'http';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { appUpdater } from './updater';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -240,6 +241,12 @@ function createApplicationMenu() {
             label: app.name,
             submenu: [
               { role: 'about' as const },
+              {
+                label: 'Check for Updates...',
+                click: () => {
+                  appUpdater.checkForUpdates(true);
+                },
+              },
               { type: 'separator' as const },
               { role: 'services' as const },
               { type: 'separator' as const },
@@ -302,6 +309,13 @@ function createApplicationMenu() {
     {
       role: 'help' as const,
       submenu: [
+        {
+          label: 'Check for Updates...',
+          click: () => {
+            appUpdater.checkForUpdates(true);
+          },
+        },
+        { type: 'separator' as const },
         {
           label: 'Obsidian Code Documentation',
           click: async () => {
@@ -420,7 +434,16 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+    appUpdater.setWindow(null);
   });
+
+  // Attach window to updater and perform silent background update check after launch
+  appUpdater.setWindow(mainWindow);
+  setTimeout(() => {
+    appUpdater.checkForUpdates(false).catch((err) => {
+      console.warn('[AutoUpdater] Startup update check notice:', err);
+    });
+  }, 3500);
 }
 
 // IPC Handlers for renderer controls
@@ -459,6 +482,18 @@ function registerIpcHandlers() {
 
   ipcMain.handle('obsidian:get-platform', () => {
     return process.platform;
+  });
+
+  ipcMain.handle('obsidian:check-for-updates', () => {
+    return appUpdater.checkForUpdates(true);
+  });
+
+  ipcMain.on('obsidian:restart-and-install-update', () => {
+    appUpdater.quitAndInstall();
+  });
+
+  ipcMain.handle('obsidian:get-version', () => {
+    return app.getVersion();
   });
 }
 

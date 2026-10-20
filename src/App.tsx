@@ -8,6 +8,7 @@ import { User } from './lib/types';
 import { api } from './lib/api';
 import { notify } from './lib/notifications';
 import { LoadingState } from './components/ui/LoadingState';
+import { UpdateAlertBanner } from './components/ui/UpdateAlertBanner';
 
 export const App: React.FC = () => {
   const { isLoaded: isClerkLoaded, isSignedIn, user: clerkUser } = useUser();
@@ -200,37 +201,36 @@ export const App: React.FC = () => {
     return <LoadingState fullscreen label="Initializing Obsidian Code…" />;
   }
 
-  if (currentRoute === 'auth' || !currentUser) {
-    return (
-      <AuthPage
-        onAuthSuccess={(u, tok) => {
-          updateUser(u);
-          setToken(tok);
-          setCurrentRoute('dashboard');
-        }}
-      />
-    );
-  }
-
-  if (currentRoute === 'workspace' && activeProjectId) {
-    return (
-      <WorkspacePage
-        projectId={activeProjectId}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onBackToDashboard={handleBackToDashboard}
-      />
-    );
-  }
-
   return (
-    <Dashboard
-      user={currentUser}
-      onOpenProject={handleOpenProject}
-      onLogout={handleLogout}
-      initialInviteToken={pendingInviteToken}
-      onClearInviteToken={() => setPendingInviteToken(null)}
-    />
+    <div className="min-h-screen flex flex-col bg-parchment">
+      <UpdateAlertBanner />
+      <div className="flex-1 flex flex-col min-h-0">
+        {currentRoute === 'auth' || !currentUser ? (
+          <AuthPage
+            onAuthSuccess={(u, tok) => {
+              updateUser(u);
+              setToken(tok);
+              setCurrentRoute('dashboard');
+            }}
+          />
+        ) : currentRoute === 'workspace' && activeProjectId ? (
+          <WorkspacePage
+            projectId={activeProjectId}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onBackToDashboard={handleBackToDashboard}
+          />
+        ) : (
+          <Dashboard
+            user={currentUser}
+            onOpenProject={handleOpenProject}
+            onLogout={handleLogout}
+            initialInviteToken={pendingInviteToken}
+            onClearInviteToken={() => setPendingInviteToken(null)}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

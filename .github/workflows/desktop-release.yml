@@ -138,6 +138,7 @@ jobs:
             dist/desktop/*.dmg
             dist/desktop/*.zip
             dist/desktop/*.blockmap
+            dist/desktop/*.yml
           retention-days: 14
           overwrite: true
 
@@ -148,7 +149,7 @@ jobs:
           TAG_NAME: ${{ needs.bump-version.outputs.tag_name }}
         run: |
           shopt -s nullglob
-          FILES=(dist/desktop/*.exe dist/desktop/*.dmg dist/desktop/*.zip dist/desktop/*.blockmap)
+          FILES=(dist/desktop/*.exe dist/desktop/*.dmg dist/desktop/*.zip dist/desktop/*.blockmap dist/desktop/*.yml)
           if [ ${#FILES[@]} -gt 0 ]; then
             echo "Uploading ${#FILES[@]} binary assets to release $TAG_NAME (with --clobber for retries)..."
             gh release upload "$TAG_NAME" "${FILES[@]}" --clobber

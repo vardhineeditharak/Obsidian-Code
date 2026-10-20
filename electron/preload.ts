@@ -11,6 +11,16 @@ export interface ObsidianDesktopAPI {
   openExternal: (url: string) => Promise<boolean>;
   onProtocolUrl: (callback: (url: string) => void) => () => void;
   focusWindow: () => void;
+  checkForUpdates: () => Promise<{
+    updateAvailable: boolean;
+    currentVersion: string;
+    latestVersion?: string;
+    releaseUrl?: string;
+    releaseNotes?: string;
+  }>;
+  restartAndInstallUpdate: () => void;
+  onUpdateStatus: (callback: (status: { type: string; version?: string; percent?: number; error?: string }) => void) => () => void;
+  getVersion: () => Promise<string>;
 }
 
 const desktopAPI: ObsidianDesktopAPI = {
@@ -47,6 +57,38 @@ const desktopAPI: ObsidianDesktopAPI = {
   },
   focusWindow: () => {
     ipcRenderer.send('obsidian:window:focus');
+  },
+  checkForUpdates: () => {
+    return ipcRenderer.invoke('obsidian:check-for-updates');
+  },
+  restartAndInstallUpdate: () => {
+    ipcRenderer.send('obsidian:restart-and-install-update');
+  },
+  onUpdateStatus: (callback: (status: { type: string; version?: string; percent?: number; error?: string }) => void) => {
+    const eventTypes = [
+      'update-available',
+      'update-not-available',
+      'download-starting',
+      'download-progress',
+      'update-downloaded',
+      'update-error',
+    ];
+
+    const cleanups = eventTypes.map((evt) => {
+      const channel = `obsidian:update:${evt}`;
+      const listener = (_e: any, data: any) => callback({ type: evt, ...data });
+      ipcRenderer.on(channel, listener);
+      return () => {
+        ipcRenderer.removeListener(channel, listener);
+      };
+    });
+
+    return () => {
+      cleanups.forEach((cleanup) => cleanup());
+    };
+  },
+  getVersion: () => {
+    return ipcRenderer.invoke('obsidian:get-version');
   },
 };
 
