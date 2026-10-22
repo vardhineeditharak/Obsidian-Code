@@ -31,6 +31,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 }) => {
   const [selectedRole, setSelectedRole] = useState<'editor' | 'viewer'>('editor');
   const [inviteUrl, setInviteUrl] = useState<string>('');
+  const [generatedRole, setGeneratedRole] = useState<'editor' | 'viewer' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string; isSelf: boolean } | null>(null);
@@ -44,6 +45,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     try {
       const res = await api.createInvitation(projectId, selectedRole);
       setInviteUrl(res.inviteUrl);
+      setGeneratedRole(selectedRole);
       notify.success('Invite link generated', `Anyone with this link can join as ${selectedRole}`);
     } catch (err: any) {
       notify.error('Failed to create invite', err.message);
@@ -126,7 +128,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <select
                 aria-label="Invite collaborator role"
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as any)}
+                onChange={(e) => {
+                  const newRole = e.target.value as 'editor' | 'viewer';
+                  setSelectedRole(newRole);
+                  if (generatedRole && generatedRole !== newRole) {
+                    setInviteUrl('');
+                  }
+                }}
                 className="bg-surface border border-stone rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
               >
                 <option value="editor">Editor (Can edit)</option>
@@ -135,14 +143,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             )}
 
             {inviteUrl ? (
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="btn-primary text-xs px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-verdant" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="btn-primary text-xs px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-verdant" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </button>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateLink}
+                    disabled={isLoading}
+                    title="Regenerate Share Link"
+                    aria-label="Regenerate Share Link"
+                    className="btn-secondary text-xs px-2.5 py-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    <span>{isLoading ? '...' : 'Regenerate'}</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <button
                 type="button"

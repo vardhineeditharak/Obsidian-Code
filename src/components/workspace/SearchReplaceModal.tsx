@@ -105,7 +105,15 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
         capped = true;
         break;
       }
-      const content = await getFileContent(file._id);
+      let content = '';
+      try {
+        const raw = await getFileContent(file._id);
+        content = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+      } catch (err) {
+        console.warn(`Failed to read file ${file.name} for search:`, err);
+        continue;
+      }
+
       const lines = content.split('\n');
 
       for (let lIdx = 0; lIdx < lines.length; lIdx++) {
@@ -169,18 +177,23 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       return;
     }
 
-    const batch: { fileId: string; newContent: string }[] = [];
-    for (const fileId of groupedResults.keys()) {
-      const content = await getFileContent(fileId);
-      const replaced = content.replace(regex, replacement);
-      batch.push({ fileId, newContent: replaced });
-    }
+    try {
+      const batch: { fileId: string; newContent: string }[] = [];
+      for (const fileId of groupedResults.keys()) {
+        const raw = await getFileContent(fileId);
+        const content = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+        const replaced = content.replace(regex, replacement);
+        batch.push({ fileId, newContent: replaced });
+      }
 
-    await onBatchReplace(batch);
-    notify.success(`Replaced occurrences across ${groupedResults.size} files`);
-    setResults([]);
-    setIsCapped(false);
-    onClose();
+      await onBatchReplace(batch);
+      notify.success(`Replaced occurrences across ${groupedResults.size} files`);
+      setResults([]);
+      setIsCapped(false);
+      onClose();
+    } catch (err: any) {
+      notify.error('Batch Replace Error', err.message || 'Failed to replace occurrences');
+    }
   };
 
   const toggleCollapse = (fileId: string) => {

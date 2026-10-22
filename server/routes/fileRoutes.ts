@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { dbStore } from '../dbStore';
 import { authenticateJWT, requireProjectRole, AuthRequest, param } from '../middleware/auth';
+import { YjsWebSocketServer } from '../websocket/yjsServer';
 
 const router = Router();
 
@@ -99,6 +100,11 @@ router.post('/projects/:projectId/files', authenticateJWT, requireProjectRole(['
     content: content || '',
   });
 
+  YjsWebSocketServer.getInstance()?.broadcastProjectEvent(projectId, {
+    type: 'file:created',
+    file,
+  });
+
   return res.status(201).json(file);
 });
 
@@ -134,6 +140,12 @@ router.patch('/files/:fileId', authenticateJWT, async (req: AuthRequest, res: Re
   }
 
   const updated = await dbStore.updateFile(fileId, updateData);
+
+  YjsWebSocketServer.getInstance()?.broadcastProjectEvent(file.projectId.toString(), {
+    type: 'file:updated',
+    file: updated,
+  });
+
   return res.json(updated);
 });
 
@@ -151,6 +163,12 @@ router.delete('/files/:fileId', authenticateJWT, async (req: AuthRequest, res: R
   }
 
   await dbStore.deleteFile(fileId);
+
+  YjsWebSocketServer.getInstance()?.broadcastProjectEvent(file.projectId.toString(), {
+    type: 'file:deleted',
+    fileId,
+  });
+
   return res.json({ message: 'File deleted successfully' });
 });
 

@@ -201,17 +201,174 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         }
       });
 
-      // Open first non-folder file by default
-      const firstFile = fList.find((f) => !f.isFolder);
-      if (firstFile) {
-        setOpenFileIds([firstFile._id]);
-        setActiveFileId(firstFile._id);
-        setActiveContent(firstFile.content || '');
+      // Restore persisted open tabs & active file if available (Issue #5)
+      let restoredTabs: string[] = [];
+      let restoredActive: string | null = null;
+      try {
+        const savedTabs = localStorage.getItem(`obsidian.tabs.${projectId}`);
+        if (savedTabs) {
+          const parsed = JSON.parse(savedTabs);
+          if (Array.isArray(parsed)) {
+            restoredTabs = parsed.filter((id) => fList.some((f) => f._id === id && !f.isFolder));
+          }
+        }
+        const savedActive = localStorage.getItem(`obsidian.activeTab.${projectId}`);
+        if (savedActive && fList.some((f) => f._id === savedActive && !f.isFolder)) {
+          restoredActive = savedActive;
+        }
+      } catch {}
+
+      if (restoredTabs.length > 0) {
+        const activeId = restoredActive && restoredTabs.includes(restoredActive)
+          ? restoredActive
+          : restoredTabs[0];
+        setOpenFileIds(restoredTabs);
+        setActiveFileId(activeId);
+        const activeFileObj = fList.find((f) => f._id === activeId);
+        setActiveContent(activeFileObj?.content || '');
+      } else {
+        // Fall back to first non-folder file
+        const firstFile = fList.find((f) => !f.isFolder);
+        if (firstFile) {
+          setOpenFileIds([firstFile._id]);
+          setActiveFileId(firstFile._id);
+          setActiveContent(firstFile.content || '');
+        }
       }
     } catch (err: any) {
       notify.error('Failed to load workspace', err.message);
     }
   };
+
+  // Persist open tabs and active file to localStorage (Issue #5)
+  useEffect(() => {
+    if (!projectId) return;
+    try {
+      if (openFileIds.length > 0) {
+        localStorage.setItem(`obsidian.tabs.${projectId}`, JSON.stringify(openFileIds));
+      } else {
+        localStorage.removeItem(`obsidian.tabs.${projectId}`);
+      }
+      if (activeFileId) {
+        localStorage.setItem(`obsidian.activeTab.${projectId}`, activeFileId);
+      } else {
+        localStorage.removeItem(`obsidian.activeTab.${projectId}`);
+      }
+    } catch {}
+  }, [openFileIds, activeFileId, projectId]);
+
+  // Real-time project events listener (Issues #7, #8, #11)
+  useEffect(() => {
+    if (!projectId) return;
+
+    let isCancelled = false;
+    let ws: WebSocket | null = null;
+    let pingInterval: any = null;
+    let reconnectTimeout: any = null;
+
+    const connectEvents = () => {
+      try {
+        const isDesktopPackaged = typeof window !== 'undefined' && (window.location.protocol === 'file:' || window.location.protocol === 'app:');
+        const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const wsProto = isHttps ? 'wss:' : 'ws:';
+        const defaultHost = (isDesktopPackaged || (typeof window !== 'undefined' && !window.location.host))
+          ? 'localhost:5000'
+          : (typeof window !== 'undefined' ? window.location.host : 'localhost:5000');
+        const rawWs = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_WS_URL)
+          ? String((import.meta as any).env.VITE_WS_URL).trim()
+          : '';
+        const wsHost = rawWs
+          ? (rawWs.endsWith('/ws') ? rawWs : `${rawWs.replace(/\/+$/, '')}/ws`)
+          : `${wsProto}//${defaultHost}/ws`;
+
+        const token = typeof window !== 'undefined' ? localStorage.getItem('obsidian_token') || '' : '';
+        const eventsUrl = `${wsHost}/obsidian-project-${projectId}-events?token=${token}`;
+
+        ws = new WebSocket(eventsUrl);
+
+        ws.onopen = () => {
+          pingInterval = setInterval(() => {
+            if (ws?.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 25000);
+        };
+
+        ws.onmessage = (e) => {
+          if (isCancelled) return;
+          try {
+            const ev = JSON.parse(e.data);
+            if (ev.type === 'file:created' && ev.file) {
+              setFiles((prev) => {
+                if (prev.some((f) => f._id === ev.file._id)) return prev;
+                return [...prev, ev.file];
+              });
+              lastSavedContentMapRef.current.set(ev.file._id, ev.file.content || '');
+            } else if (ev.type === 'file:updated' && ev.file) {
+              setFiles((prev) =>
+                prev.map((f) => (f._id === ev.file._id ? { ...f, ...ev.file } : f))
+              );
+              if (ev.file.content !== undefined) {
+                lastSavedContentMapRef.current.set(ev.file._id, ev.file.content);
+              }
+            } else if (ev.type === 'file:deleted' && ev.fileId) {
+              setFiles((prev) => prev.filter((f) => f._id !== ev.fileId));
+              handleCloseTab(ev.fileId);
+            } else if (ev.type === 'role:updated' && ev.userId) {
+              if (ev.userId === currentUser._id) {
+                setUserRole(ev.role);
+                notify.info('Role Updated', `Your workspace role was updated to ${ev.role}`);
+              }
+              setProject((prev: any) => {
+                if (!prev) return prev;
+                const members = (prev.members || []).map((m: any) =>
+                  m.userId === ev.userId ? { ...m, role: ev.role } : m
+                );
+                return { ...prev, members };
+              });
+            } else if (ev.type === 'member:removed' && ev.userId) {
+              if (ev.userId === currentUser._id) {
+                notify.error('Access Revoked', 'You were removed from this workspace');
+                onBackToDashboard();
+              } else {
+                setProject((prev: any) => {
+                  if (!prev) return prev;
+                  const members = (prev.members || []).filter((m: any) => m.userId !== ev.userId);
+                  return { ...prev, members };
+                });
+              }
+            }
+          } catch {}
+        };
+
+        ws.onclose = () => {
+          clearInterval(pingInterval);
+          if (!isCancelled) {
+            reconnectTimeout = setTimeout(connectEvents, 3000);
+          }
+        };
+
+        ws.onerror = () => {
+          try {
+            ws?.close();
+          } catch {}
+        };
+      } catch {}
+    };
+
+    connectEvents();
+
+    return () => {
+      isCancelled = true;
+      clearInterval(pingInterval);
+      clearTimeout(reconnectTimeout);
+      if (ws) {
+        try {
+          ws.close();
+        } catch {}
+      }
+    };
+  }, [projectId, currentUser._id, onBackToDashboard]);
 
   // Subscribe to real Yjs awareness presence for the active file
   useEffect(() => {
@@ -927,11 +1084,12 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         files={files}
         onBeforeSearch={handleRefreshFiles}
         getFileContent={async (fileId) => {
-          if (fileId === activeFileId) return activeContent;
+          if (fileId === activeFileId) return activeContent ?? '';
           const session = docManager.getSession(projectId, fileId);
-          if (session) return session.ytext.toString();
+          if (session) return session.ytext.toString() ?? '';
           const f = files.find((file) => file._id === fileId);
-          return f?.content || '';
+          if (f && typeof f.content === 'string') return f.content;
+          return '';
         }}
         onSelectResult={(fileId, line, col, matchLength) => {
           handleSelectFile(fileId);

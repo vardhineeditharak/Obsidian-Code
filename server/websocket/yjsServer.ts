@@ -13,6 +13,7 @@ const messageSync = 0;
 const messageAwareness = 1;
 
 export const ROOM_NAME_REGEX = /^obsidian-project-(.+?)-file-(.+)$/;
+export const PROJECT_EVENTS_ROOM_REGEX = /^obsidian-project-(.+?)-events$/;
 
 export interface ClientConnection {
   ws: WebSocket;
@@ -38,16 +39,73 @@ export interface Room {
 }
 
 export class YjsWebSocketServer {
+  private static instance: YjsWebSocketServer | null = null;
   private wss: WebSocketServer;
   private rooms = new Map<string, Room>();
+  private projectEventClients = new Map<string, Set<ClientConnection>>();
 
   constructor(server: any) {
+    YjsWebSocketServer.instance = this;
     this.wss = new WebSocketServer({ noServer: true });
     this.init();
   }
 
+  public static getInstance(): YjsWebSocketServer | null {
+    return YjsWebSocketServer.instance;
+  }
+
   public getWss(): WebSocketServer {
     return this.wss;
+  }
+
+  public broadcastProjectEvent(projectId: string, event: any, excludeWs?: WebSocket): void {
+    const payload = JSON.stringify(event);
+
+    // 1. Send to dedicated project events clients
+    const eventClients = this.projectEventClients.get(projectId);
+    if (eventClients) {
+      for (const client of eventClients) {
+        if (client.ws !== excludeWs && client.ws.readyState === WebSocket.OPEN) {
+          try {
+            client.ws.send(payload);
+          } catch {}
+        }
+      }
+    }
+
+    // 2. Also send to all clients in active file rooms for this project
+    for (const room of this.rooms.values()) {
+      if (room.projectId === projectId) {
+        for (const client of room.clients) {
+          if (client.ws !== excludeWs && client.ws.readyState === WebSocket.OPEN) {
+            try {
+              client.ws.send(payload);
+            } catch {}
+          }
+        }
+      }
+    }
+  }
+
+  public updateClientRole(projectId: string, userId: string, newRole: 'owner' | 'editor' | 'viewer'): void {
+    const eventClients = this.projectEventClients.get(projectId);
+    if (eventClients) {
+      for (const client of eventClients) {
+        if (client.userId === userId) {
+          client.role = newRole;
+        }
+      }
+    }
+
+    for (const room of this.rooms.values()) {
+      if (room.projectId === projectId) {
+        for (const client of room.clients) {
+          if (client.userId === userId) {
+            client.role = newRole;
+          }
+        }
+      }
+    }
   }
 
   private init() {
@@ -66,16 +124,26 @@ export class YjsWebSocketServer {
       const token = url.searchParams.get('token') || '';
       const roomName = url.pathname.replace(/^\/ws\/?/, '') || url.searchParams.get('room') || '';
 
-      // Parse roomName format: obsidian-project-<projectId>-file-<fileId>
-      const match = roomName.match(ROOM_NAME_REGEX);
-      if (!match) {
+      // Check if file room or project events room
+      let projectId: string;
+      let fileId: string;
+
+      const fileMatch = roomName.match(ROOM_NAME_REGEX);
+      const eventsMatch = roomName.match(PROJECT_EVENTS_ROOM_REGEX) || (
+        url.pathname.includes('/events') ? [null, url.searchParams.get('projectId')] : null
+      );
+
+      if (fileMatch) {
+        projectId = fileMatch[1];
+        fileId = fileMatch[2];
+      } else if (eventsMatch && eventsMatch[1]) {
+        projectId = eventsMatch[1];
+        fileId = '__events__';
+      } else {
         socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
         socket.destroy();
         return;
       }
-
-      const projectId = match[1];
-      const fileId = match[2];
 
       if (!token) {
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
@@ -225,6 +293,51 @@ export class YjsWebSocketServer {
 
   private async handleConnection(ws: WebSocket, req: IncomingMessage, clientInfo: any) {
     const { userId, userName, role, roomName, projectId, fileId } = clientInfo;
+
+    // Handle dedicated project events connection
+    if (fileId === '__events__') {
+      const client: ClientConnection = {
+        ws,
+        userId,
+        userName,
+        role,
+        roomName,
+        projectId,
+        fileId,
+        controlledClients: new Set<number>(),
+      };
+      if (!this.projectEventClients.has(projectId)) {
+        this.projectEventClients.set(projectId, new Set());
+      }
+      this.projectEventClients.get(projectId)!.add(client);
+
+      // Send initial connection acknowledgement
+      try {
+        ws.send(JSON.stringify({ type: 'connected', projectId, role, userId }));
+      } catch {}
+
+      ws.on('message', (data: Buffer | ArrayBuffer | string) => {
+        try {
+          const str = data.toString();
+          const parsed = JSON.parse(str);
+          if (parsed.type === 'ping') {
+            ws.send(JSON.stringify({ type: 'pong' }));
+          }
+        } catch {}
+      });
+
+      ws.on('close', () => {
+        const clients = this.projectEventClients.get(projectId);
+        if (clients) {
+          clients.delete(client);
+          if (clients.size === 0) {
+            this.projectEventClients.delete(projectId);
+          }
+        }
+      });
+      return;
+    }
+
     const room = await this.getOrCreateRoom(roomName, projectId, fileId);
 
     const client: ClientConnection = {
@@ -261,8 +374,18 @@ export class YjsWebSocketServer {
     }
 
     // 3. Handle incoming binary messages
-    ws.on('message', (data: Buffer | ArrayBuffer) => {
+    ws.on('message', (data: Buffer | ArrayBuffer | string) => {
       try {
+        if (typeof data === 'string' || (data instanceof Buffer && data.length > 0 && data[0] === 123)) {
+          try {
+            const parsed = JSON.parse(data.toString());
+            if (parsed.type === 'ping') {
+              ws.send(JSON.stringify({ type: 'pong' }));
+            }
+          } catch {}
+          return;
+        }
+
         const buf = data instanceof Buffer ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : new Uint8Array(data);
         const decoder = decoding.createDecoder(buf);
         const messageType = decoding.readVarUint(decoder);

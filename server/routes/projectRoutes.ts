@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { dbStore } from '../dbStore';
 import { authenticateJWT, requireProjectRole, AuthRequest, param } from '../middleware/auth';
+import { YjsWebSocketServer } from '../websocket/yjsServer';
 
 const router = Router();
 
@@ -277,6 +278,14 @@ router.patch('/:projectId/members/:userId', authenticateJWT, requireProjectRole(
   }
 
   const updated = await dbStore.updateMemberRole(projectId, targetUserId, role);
+
+  YjsWebSocketServer.getInstance()?.updateClientRole(projectId, targetUserId, role);
+  YjsWebSocketServer.getInstance()?.broadcastProjectEvent(projectId, {
+    type: 'role:updated',
+    userId: targetUserId,
+    role,
+  });
+
   return res.json({ message: 'Member role updated successfully', member: updated });
 });
 
@@ -305,6 +314,12 @@ router.delete('/:projectId/members/:userId', authenticateJWT, requireProjectRole
   }
 
   await dbStore.removeMember(projectId, targetUserId);
+
+  YjsWebSocketServer.getInstance()?.broadcastProjectEvent(projectId, {
+    type: 'member:removed',
+    userId: targetUserId,
+  });
+
   return res.json({ message: 'Member removed successfully' });
 });
 

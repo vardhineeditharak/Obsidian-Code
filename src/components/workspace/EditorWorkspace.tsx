@@ -121,6 +121,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     };
   }, []);
   const [splitMode, setSplitMode] = useState<'single' | 'vertical' | 'horizontal'>('single');
+  const [splitFileId, setSplitFileId] = useState<string | null>(null);
   const [splitRatio, setSplitRatio] = useState<number>(() => {
     if (typeof window === 'undefined') return 50;
     try {
@@ -188,6 +189,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   }, [userRole]);
 
   const activeFile = files.find((f) => f._id === activeFileId);
+  const resolvedSplitFileId =
+    splitFileId && files.some((f) => f._id === splitFileId && !f.isFolder)
+      ? splitFileId
+      : openFileIds.find((id) => id !== activeFileId) || activeFileId;
+  const splitFile = files.find((f) => f._id === resolvedSplitFileId) || activeFile;
 
   // Set up Monaco markers when diagnostics change
   useEffect(() => {
@@ -253,10 +259,15 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     }
   }, [revealTarget, activeFileId]);
 
-  // Authoritative Monaco model registry helper
+  // Authoritative Monaco model registry helper with file extension awareness (Issue #12)
   const getOrCreateModel = (monaco: typeof Monaco, file: ProjectFile): Monaco.editor.ITextModel => {
-    const uri = monaco.Uri.parse(`file://${file._id}`);
+    const cleanPath = (file.path || file.name).replace(/^\/+/, '');
+    const uri = monaco.Uri.parse(`file:///${file._id}/${cleanPath}`);
     let model = monaco.editor.getModel(uri);
+    if (!model) {
+      const legacyUri = monaco.Uri.parse(`file://${file._id}`);
+      model = monaco.editor.getModel(legacyUri);
+    }
     const lang = detectLanguage(file.name) || file.language || 'plaintext';
     if (!model) {
       const session = docManager.getSession(projectId, file._id);
@@ -310,6 +321,30 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     // Remeasure fonts immediately upon mount to ensure caret geometry matches loaded webfont metrics (Task 1.1)
     try {
       monaco.editor.remeasureFonts();
+    } catch {}
+
+    // Configure Monaco language services for accurate autocomplete & TypeScript IntelliSense (Issue #12)
+    try {
+      const monacoLanguages = monaco.languages as any;
+      const tsDefaults = monacoLanguages.typescript?.typescriptDefaults;
+      const jsDefaults = monacoLanguages.typescript?.javascriptDefaults;
+
+      if (tsDefaults && jsDefaults) {
+        const compilerOptions = {
+          target: monacoLanguages.typescript?.ScriptTarget?.ESNext ?? 99,
+          allowNonTsExtensions: true,
+          moduleResolution: monacoLanguages.typescript?.ModuleResolutionKind?.NodeJs ?? 2,
+          module: monacoLanguages.typescript?.ModuleKind?.CommonJS ?? 1,
+          noEmit: true,
+          esModuleInterop: true,
+          jsx: monacoLanguages.typescript?.JsxEmit?.React ?? 2,
+          reactNamespace: 'React',
+          allowJs: true,
+        };
+
+        tsDefaults.setCompilerOptions(compilerOptions);
+        jsDefaults.setCompilerOptions(compilerOptions);
+      }
     } catch {}
 
     // Define Obsidian Crystalline themes
@@ -384,13 +419,80 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     }
   };
 
-  const handleMirrorEditorMount: OnMount = (editor, monaco) => {
-    mirrorEditorRef.current = editor;
-    if (activeFile) {
-      const model = getOrCreateModel(monaco, activeFile);
-      editor.setModel(model);
+  const bindSplitFile = async (
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    file: ProjectFile,
+    model: Monaco.editor.ITextModel
+  ) => {
+    try {
+      await docManager.getOrCreateSession(
+        projectId,
+        file._id,
+        file.content || '',
+        undefined,
+        isPublic
+      );
+      if (activeFileIdRef.current !== file._id) {
+        docManager.bindMonaco(
+          projectId,
+          file._id,
+          editor,
+          {
+            id: user.id,
+            name: user.name,
+            color: '#c08532',
+            avatar: user.avatar,
+            role: userRole,
+            fileId: file._id,
+          },
+          model
+        );
+      }
+    } catch (err) {
+      console.warn('Split file binding notice:', err);
     }
   };
+
+  const handleSplitEditorMount: OnMount = (editor, monaco) => {
+    mirrorEditorRef.current = editor;
+    if (splitFile) {
+      const model = getOrCreateModel(monaco, splitFile);
+      editor.setModel(model);
+      bindSplitFile(editor, splitFile, model);
+    }
+
+    editor.onDidChangeCursorPosition((e) => {
+      if (splitFile) {
+        docManager.updateCursorAwareness(
+          projectId,
+          splitFile._id,
+          { line: e.position.lineNumber, column: e.position.column }
+        );
+      }
+    });
+
+    editor.onDidChangeModelContent(() => {
+      if (splitFile) {
+        const val = editor.getValue();
+        if (splitFile._id === activeFileId) {
+          onContentChange(val);
+        }
+      }
+    });
+  };
+
+  const handleMirrorEditorMount = handleSplitEditorMount;
+
+  useEffect(() => {
+    if (!mirrorEditorRef.current || !monacoRef.current || !splitFile) return;
+    const model = getOrCreateModel(monacoRef.current, splitFile);
+    const lang = detectLanguage(splitFile.name) || splitFile.language || 'plaintext';
+    monacoRef.current.editor.setModelLanguage(model, lang);
+    if (mirrorEditorRef.current.getModel() !== model) {
+      mirrorEditorRef.current.setModel(model);
+    }
+    bindSplitFile(mirrorEditorRef.current, splitFile, model);
+  }, [splitFile?._id]);
 
   useEffect(() => {
     if (monacoRef.current) {
@@ -485,8 +587,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       editorRef.current.restoreViewState(savedVs);
     }
 
-    // 5. Update mirror editor
-    if (mirrorEditorRef.current && mirrorEditorRef.current.getModel() !== model) {
+    // 5. Update split editor if viewing same file
+    if (mirrorEditorRef.current && splitFile?._id === activeFile._id && mirrorEditorRef.current.getModel() !== model) {
       mirrorEditorRef.current.setModel(model);
     }
 
@@ -684,7 +786,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               />
             )}
 
-            {/* Split Pane Mirror */}
+            {/* Split Pane (Issues #9 & #10: Editable & Independent File Display) */}
             {splitMode !== 'single' && (
               <div
                 style={
@@ -692,22 +794,62 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     ? { flexBasis: `${100 - splitRatio}%`, width: `${100 - splitRatio}%` }
                     : { flexBasis: `${100 - splitRatio}%`, height: `${100 - splitRatio}%` }
                 }
-                className="relative h-full overflow-hidden"
+                className="relative h-full overflow-hidden flex flex-col border-l border-stone/30"
               >
-                {!fontsReady ? (
-                  <div className="w-full h-full bg-parchment flex items-center justify-center text-ash">
-                    <span className="text-xs font-mono text-mist">Loading editor...</span>
+                {/* Secondary Pane File Switcher Bar */}
+                <div className="h-8 border-b border-stone/40 bg-parchment/80 flex items-center justify-between px-2 shrink-0">
+                  <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-mono text-driftwood">
+                    <span className="text-[10px] uppercase tracking-wider text-ash mr-1">Split View:</span>
+                    <select
+                      aria-label="Select split pane file"
+                      value={splitFile?._id || ''}
+                      onChange={(e) => setSplitFileId(e.target.value)}
+                      className="bg-bone border border-stone/60 rounded px-2 py-0.5 text-xs font-mono text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer"
+                    >
+                      {files
+                        .filter((f) => !f.isFolder)
+                        .map((f) => (
+                          <option key={f._id} value={f._id}>
+                            {f.name} {f._id === activeFileId ? '(Left Pane)' : ''}
+                          </option>
+                        ))}
+                    </select>
                   </div>
-                ) : (
-                  <Editor
-                    height="100%"
-                    language={detectLanguage(activeFile.name) || activeFile.language || 'plaintext'}
-                    theme="obsidian-crystalline"
-                    options={mirrorEditorOptions}
-                    keepCurrentModel={true}
-                    onMount={handleMirrorEditorMount}
-                  />
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setSplitMode('single')}
+                    title="Close Split View"
+                    aria-label="Close Split View"
+                    className="p-1 rounded hover:bg-stone/40 text-ash hover:text-ink cursor-pointer transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="flex-1 relative overflow-hidden">
+                  {!fontsReady ? (
+                    <div className="w-full h-full bg-parchment flex items-center justify-center text-ash">
+                      <span className="text-xs font-mono text-mist">Loading editor...</span>
+                    </div>
+                  ) : splitFile ? (
+                    <Editor
+                      height="100%"
+                      language={detectLanguage(splitFile.name) || splitFile.language || 'plaintext'}
+                      theme="obsidian-crystalline"
+                      options={{
+                        ...editorOptions,
+                        readOnly: isViewer,
+                        minimap: { enabled: false },
+                      }}
+                      keepCurrentModel={true}
+                      onMount={handleSplitEditorMount}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-parchment flex items-center justify-center text-ash text-xs font-mono">
+                      No file selected for split view
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>
