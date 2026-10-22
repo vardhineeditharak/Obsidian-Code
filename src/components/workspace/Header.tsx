@@ -105,22 +105,22 @@ export const Header: React.FC<HeaderProps> = ({
   const isDesktop = typeof window !== 'undefined' && Boolean(window.obsidianDesktop?.isDesktop);
 
   return (
-    <header className={`h-13 border-b border-stone bg-parchment px-3 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2 ${isDesktop ? 'app-drag-region' : ''} ${isMacDesktop ? 'pl-20' : ''}`}>
+    <header className={`h-12 border-b border-stone bg-parchment/95 backdrop-blur-md px-3.5 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2 ${isDesktop ? 'app-drag-region' : ''} ${isMacDesktop ? 'pl-20' : ''}`}>
       {/* Left: Brand, Project Name & Sync Pill */}
-      <div className="flex items-center gap-2 min-w-0 shrink app-no-drag">
+      <div className="flex items-center gap-2.5 min-w-0 shrink app-no-drag">
         <button
           onClick={onBackToDashboard}
           title="Back to Dashboard"
           aria-label="Back to Projects Dashboard"
-          className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-linen text-ink transition group cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-linen/80 text-ink transition group cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.97]"
         >
-          <BrandMark className="w-6 h-6 text-ink shrink-0" />
-          <span className="font-brand text-lg font-medium tracking-tight text-ink hidden sm:inline">
+          <BrandMark className="w-5.5 h-5.5 text-ink shrink-0 group-hover:scale-105 transition-transform" />
+          <span className="font-brand text-[15px] font-semibold tracking-tight text-ink hidden sm:inline">
             Obsidian
           </span>
         </button>
 
-        <span className="text-stone text-xs font-light shrink-0">/</span>
+        <span className="text-mist text-xs font-light shrink-0">/</span>
 
         {/* Project name with 'Untitled Project' fallback and separate role badge */}
         {isEditingName ? (
@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsEditingName(true)}
                 title="Click to rename"
                 aria-label={`Rename project ${displayName}`}
-                className="text-xs font-medium text-ink px-2 py-0.5 rounded-md hover:bg-linen transition flex items-center cursor-pointer truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="text-xs font-medium text-ink px-2 py-0.5 rounded-md hover:bg-linen/80 transition flex items-center cursor-pointer truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.98]"
               >
                 <span className="truncate">{displayName}</span>
               </button>
@@ -159,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Google Docs-style Save-State Indicator */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-surface border border-stone inset-glow text-micro font-mono shrink-0">
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-bone/80 border border-stone/80 inset-glow text-micro font-mono shrink-0 shadow-2xs">
           {effectiveSaveState === 'saving' ? (
             <>
               <RotateCw className="w-3 h-3 animate-spin text-ash" />
@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           ) : (
             <>
-              <span className="w-1.5 h-1.5 rounded-full bg-verdant" />
+              <span className="w-1.5 h-1.5 rounded-full bg-verdant animate-pulse" />
               <span className="text-verdant text-micro">Up to date</span>
             </>
           )}
@@ -187,18 +187,18 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Center: Action Controls (Run Code, Search, Version Diff, Export) */}
-      <div className="flex items-center gap-1 bg-surface border border-stone inset-glow p-0.5 rounded-lg shrink-0">
+      <div className="flex items-center gap-0.5 bg-bone/90 border border-stone/90 inset-glow p-0.5 rounded-lg shrink-0 shadow-2xs">
         <button
           onClick={onRunCode}
           disabled={isRunningCode || userRole === 'viewer'}
-          title={userRole === 'viewer' ? 'Viewers cannot execute code' : 'Execute Code (Sandbox)'}
+          title={userRole === 'viewer' ? 'Viewers cannot execute code' : 'Execute Code (Sandbox) · Ctrl+Enter'}
           aria-label={isRunningCode ? 'Running Code' : 'Execute Code (Sandbox)'}
-          className="btn-amber text-xs py-1 px-3 rounded-md font-medium disabled:opacity-40 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-amber text-xs py-1 px-3.5 rounded-md font-medium disabled:opacity-40 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber shadow-xs"
         >
           {isRunningCode ? (
             <RotateCw className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Play size={13} color="currentColor" strokeWidth={2} />
+            <Play size={13} color="currentColor" strokeWidth={2.2} />
           )}
           <span>Run</span>
         </button>
@@ -209,27 +209,27 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenSearch}
           title="Search in Project (Ctrl+Shift+F)"
           aria-label="Search in Project (Ctrl+Shift+F)"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost p-1.5 rounded-md text-driftwood hover:text-ink hover:bg-linen/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <Search size={15} />
+          <Search size={14} />
         </button>
 
         <button
           onClick={onOpenHistory}
           title="Version History & Diff"
           aria-label="Version History & Diff"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost p-1.5 rounded-md text-driftwood hover:text-ink hover:bg-linen/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <History size={15} />
+          <History size={14} />
         </button>
 
         <button
           onClick={onExportZip}
           title="Export Workspace as ZIP"
           aria-label="Export Workspace as ZIP"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost p-1.5 rounded-md text-driftwood hover:text-ink hover:bg-linen/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <Download size={15} />
+          <Download size={14} />
         </button>
       </div>
 
@@ -267,7 +267,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Select Transport Mode"
             aria-haspopup="true"
             aria-expanded={showTransportMenu}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface hover:bg-linen border border-stone inset-glow text-micro font-mono text-driftwood transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-bone/80 hover:bg-linen border border-stone/80 inset-glow text-micro font-mono text-driftwood transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.97]"
           >
             {isOnline ? (
               <Wifi size={13} color="var(--color-verdant)" strokeWidth={2} />
@@ -304,12 +304,12 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onToggleAudio}
           title={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
           aria-label={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost p-1.5 rounded-md text-driftwood hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.95]"
         >
           {isAudioMuted ? (
-            <VolumeMute size={15} strokeWidth={2} />
+            <VolumeMute size={14} strokeWidth={2} />
           ) : (
-            <VolumeHigh size={15} strokeWidth={2} />
+            <VolumeHigh size={14} strokeWidth={2} />
           )}
         </button>
 
@@ -322,9 +322,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onOpenShare}
           aria-label="Share workspace"
-          className="btn-primary text-xs py-1 px-3 rounded-lg font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-primary text-xs py-1 px-3.5 rounded-md font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.97]"
         >
-          <Share size={13} color="currentColor" strokeWidth={2} />
+          <Share size={12} color="currentColor" strokeWidth={2.2} />
           <span>Share</span>
         </button>
 
@@ -335,7 +335,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="User Account Menu"
             aria-haspopup="true"
             aria-expanded={showUserMenu}
-            className="w-6 h-6 rounded-full overflow-hidden border border-(--border-subtle) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment hover:border-(--border-active) transition cursor-pointer"
+            className="w-6.5 h-6.5 rounded-full overflow-hidden ring-1 ring-stone/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber hover:ring-amber/50 transition cursor-pointer active:scale-[0.95]"
           >
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${user.name}`}

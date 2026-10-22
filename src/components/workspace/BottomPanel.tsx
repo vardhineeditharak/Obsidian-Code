@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RefreshCw, AlertCircle, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertCircle, AlertTriangle, Play, Check } from 'lucide-react';
 import { Trash, ChevronUp, ChevronDown } from '../ui/AnimatedIcon';
 import { BottomTab, DiagnosticsItem, ExecutionResult } from '../../lib/types';
 import { useResizable } from '../../lib/useResizable';
@@ -219,8 +219,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       )}
 
       {/* Panel Header Bar */}
-      <div className="h-8 px-3 flex items-center justify-between border-b border-stone bg-parchment">
-        <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-2">
+      <div className="h-8.5 px-3 flex items-center justify-between border-b border-stone/80 bg-bone/80 backdrop-blur-md">
+        <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-1">
           {/* Tabs */}
           {(['OUTPUT', 'TERMINAL', 'PROBLEMS', 'PREVIEW'] as BottomTab[]).map((tab) => {
             const isActive = activeTab === tab;
@@ -234,16 +234,16 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   onTabChange(tab);
                   if (!isOpen) onToggle();
                 }}
-                className={`px-2 py-0.5 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer border-b-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber ${
+                className={`relative px-2.5 py-1 text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer rounded-sm focus:outline-none focus-visible:ring-1 focus-visible:ring-amber active:scale-95 ${
                   isActive
-                    ? 'text-ink border-amber font-medium'
-                    : 'text-ash border-transparent hover:text-ink'
+                    ? 'text-ink font-medium after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-amber after:rounded-full'
+                    : 'text-driftwood hover:text-ink hover:bg-linen/40'
                 }`}
               >
                 <span>{tab}</span>
                 {tab === 'PROBLEMS' && diagnostics.length > 0 && (
-                  <span className="text-[10px] font-mono text-mist">
-                    ({diagnostics.length})
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${errorCount > 0 ? 'bg-crimson/20 text-crimson' : 'bg-warning-yellow/20 text-warning-yellow'}`}>
+                    {diagnostics.length}
                   </span>
                 )}
               </button>
@@ -252,14 +252,14 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         </div>
 
         {/* Panel Actions & Toggle */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {activeTab === 'OUTPUT' && (
             <button
               type="button"
               onClick={onClearOutput}
               title="Clear Output"
               aria-label="Clear Output"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="p-1 rounded text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-90"
             >
               <Trash size={13} />
             </button>
@@ -271,7 +271,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               onClick={() => setTerminalLog([])}
               title="Clear Terminal Console"
               aria-label="Clear Terminal Console"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="p-1 rounded text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-90"
             >
               <Trash size={13} />
             </button>
@@ -283,7 +283,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               onClick={onRefreshPreview}
               title="Refresh Preview"
               aria-label="Refresh Preview"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="p-1 rounded text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-90"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -294,7 +294,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
             onClick={onToggle}
             title={isOpen ? 'Collapse Panel' : 'Expand Panel'}
             aria-label={isOpen ? 'Collapse Bottom Panel' : 'Expand Bottom Panel'}
-            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+            className="p-1 rounded text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-90"
           >
             {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
@@ -346,7 +346,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   )}
                 </>
               ) : (
-                <p className="text-mist italic">No execution output yet. Click 'Run' to test your code.</p>
+                <div className="h-full flex flex-col items-center justify-center text-center py-6 select-none">
+                  <div className="w-8 h-8 rounded-full bg-surface border border-stone/80 flex items-center justify-center text-amber mb-2 shadow-2xs">
+                    <Play size={13} className="ml-0.5" />
+                  </div>
+                  <p className="text-ink font-medium text-xs mb-0.5">Ready to execute</p>
+                  <p className="text-mist text-[11px] max-w-xs">
+                    Click <span className="text-amber font-mono font-medium">Run</span> or press <kbd className="px-1.5 py-0.5 bg-surface border border-stone/80 rounded text-[10px] text-driftwood">Ctrl+Enter</kbd> to test your code in the sandbox.
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -375,9 +383,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               </div>
               <form
                 onSubmit={handleTermSubmit}
-                className="flex items-center gap-2 border border-stone pt-2 mt-1 bg-parchment px-3 py-1.5 rounded-md focus-within:ring-1 focus-within:ring-amber"
+                className="flex items-center gap-2 border border-stone/80 pt-1.5 pb-1.5 mt-1 bg-surface px-3 rounded-md focus-within:border-amber/80 focus-within:ring-1 focus-within:ring-amber/80 shadow-2xs"
               >
-                <span className="text-ash font-mono whitespace-nowrap select-none font-medium">
+                <span className="text-amber font-mono whitespace-nowrap select-none font-medium text-xs">
                   {promptLanguage} ❯
                 </span>
                 <input
@@ -396,17 +404,23 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {/* 3. PROBLEMS TAB */}
           {activeTab === 'PROBLEMS' && (
             <div className="h-full overflow-y-auto space-y-1">
-              <div className="flex items-center gap-4 text-[11px] text-driftwood mb-2 border-b border-stone pb-1">
-                <span className="flex items-center gap-1 text-crimson">
+              <div className="flex items-center gap-4 text-[11px] text-driftwood mb-2 border-b border-stone/80 pb-1">
+                <span className="flex items-center gap-1 text-crimson font-medium">
                   <AlertCircle className="w-3.5 h-3.5" /> {errorCount} Errors
                 </span>
-                <span className="flex items-center gap-1 text-warning-yellow">
+                <span className="flex items-center gap-1 text-warning-yellow font-medium">
                   <AlertTriangle className="w-3.5 h-3.5" /> {warnCount} Warnings
                 </span>
               </div>
 
               {diagnostics.length === 0 ? (
-                <p className="text-mist italic">No syntax issues or lint warnings detected in workspace files.</p>
+                <div className="h-full flex flex-col items-center justify-center text-center py-6 select-none">
+                  <div className="w-8 h-8 rounded-full bg-surface border border-stone/80 flex items-center justify-center text-verdant mb-2 shadow-2xs">
+                    <Check size={14} />
+                  </div>
+                  <p className="text-ink font-medium text-xs mb-0.5">No problems detected</p>
+                  <p className="text-mist text-[11px]">All workspace files passed syntax diagnostics.</p>
+                </div>
               ) : (
                 diagnostics.map((diag) => (
                   <div

@@ -43,21 +43,21 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const tabSize = editorOptions.tabSize ?? 2;
 
   return (
-    <footer className="h-6 border-t border-stone bg-parchment px-3 flex items-center justify-between text-[11px] font-sans font-medium text-ash select-none z-20 overflow-hidden transition-colors duration-200">
+    <footer className="h-6.5 border-t border-stone/80 bg-bone/95 backdrop-blur-md px-3 flex items-center justify-between text-[11px] font-mono text-driftwood select-none z-20 overflow-hidden transition-colors duration-200">
       {/* Left Status: Connection, Save State, Problems, Transport */}
       <div className="flex items-center gap-2.5 min-w-0 truncate">
         <div className="flex items-center gap-1.5 shrink-0">
           {isOnline ? (
-            <Wifi size={11} color="currentColor" className="text-verdant" />
+            <span className="w-1.5 h-1.5 rounded-full bg-verdant shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
           ) : (
-            <WifiOff size={11} color="currentColor" className="text-warning-yellow" />
+            <span className="w-1.5 h-1.5 rounded-full bg-warning-yellow" />
           )}
           <span className={isOnline ? 'text-verdant font-medium' : 'text-warning-yellow font-medium'}>
             {isOnline ? 'Connected' : 'Offline'}
           </span>
         </div>
 
-        <span className="text-stone shrink-0">|</span>
+        <span className="w-px h-3 bg-stone/80 shrink-0" aria-hidden="true" />
 
         {/* Save State Indicator */}
         <div className="flex items-center gap-1.5 font-mono text-[10px] shrink-0">
@@ -86,11 +86,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           )}
         </div>
 
-        <span className="text-stone shrink-0 hidden sm:inline">|</span>
+        <span className="w-px h-3 bg-stone/80 shrink-0 hidden sm:inline" aria-hidden="true" />
 
-        <span className="font-mono text-[11px] text-ash uppercase shrink-0 hidden sm:inline">{transportMode}</span>
+        <span className="font-mono text-[10px] text-ash uppercase shrink-0 hidden sm:inline">{transportMode}</span>
 
-        <span className="text-stone shrink-0 hidden sm:inline">|</span>
+        <span className="w-px h-3 bg-stone/80 shrink-0 hidden sm:inline" aria-hidden="true" />
 
         <div className="flex items-center gap-2 font-mono shrink-0">
           <span className="flex items-center gap-1 text-crimson" title={`${errorCount} Errors`}>
@@ -112,17 +112,19 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span>Ln {cursorLine}, Col {cursorColumn}</span>
 
-        <span className="text-stone hidden sm:inline">|</span>
+        <span className="w-px h-3 bg-stone/80 shrink-0 hidden sm:inline" aria-hidden="true" />
 
         <span className="hidden sm:inline">Spaces: {tabSize}</span>
 
-        <span className="text-stone hidden sm:inline">|</span>
+        <span className="w-px h-3 bg-stone/80 shrink-0 hidden sm:inline" aria-hidden="true" />
 
         <span className="hidden sm:inline">UTF-8</span>
 
-        <span className="text-stone">|</span>
+        <span className="w-px h-3 bg-stone/80 shrink-0" aria-hidden="true" />
 
-        <span className="uppercase text-ink font-medium">{currentLanguage || 'plaintext'}</span>
+        <span className="uppercase text-ink font-medium tracking-wide px-1.5 py-0.5 rounded bg-surface border border-stone/60 text-[10px] shadow-2xs">
+          {currentLanguage || 'plaintext'}
+        </span>
       </div>
     </footer>
   );

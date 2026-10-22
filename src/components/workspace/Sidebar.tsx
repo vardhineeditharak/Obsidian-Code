@@ -83,42 +83,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
     switch (ext) {
       case 'ts':
       case 'tsx':
-        return 'text-amber';
+        return 'text-sky-400';
       case 'js':
       case 'jsx':
       case 'mjs':
       case 'cjs':
-        return 'text-amber';
+        return 'text-amber-300';
       case 'py':
+        return 'text-sky-400';
       case 'go':
       case 'rs':
-        return 'text-verdant';
+        return 'text-orange-400';
       case 'json':
       case 'yaml':
       case 'yml':
-        return 'text-amber';
+        return 'text-amber-400';
       case 'html':
       case 'xml':
-        return 'text-ember';
+        return 'text-rose-400';
       case 'css':
       case 'scss':
       case 'less':
-        return 'text-driftwood';
+        return 'text-violet-400';
       case 'c':
       case 'cpp':
       case 'h':
       case 'hpp':
       case 'java':
-        return 'text-forest';
+        return 'text-emerald-400';
       case 'md':
+        return 'text-stone-300';
       case 'txt':
-        return 'text-driftwood';
+        return 'text-stone-400';
       case 'sh':
       case 'bash':
       case 'zsh':
-        return 'text-verdant';
+        return 'text-emerald-400';
       case 'sql':
-        return 'text-amber';
+        return 'text-amber-400';
       default:
         return 'text-ash';
     }
@@ -127,22 +129,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       style={{ width: `${size}px` }}
-      className="relative border-r border-stone bg-bone flex flex-col select-none h-full shrink-0 transition-colors duration-150"
+      className="relative border-r border-stone bg-bone/95 flex flex-col select-none h-full shrink-0 transition-colors duration-150"
     >
       {/* Right-Edge Drag Handle */}
       <div
         {...dragHandleProps}
         title="Drag to resize sidebar (double-click to reset)"
-        className="absolute -right-1 top-0 w-2 h-full cursor-col-resize hover:bg-stone transition z-30 group"
+        className="absolute -right-1 top-0 w-2 h-full cursor-col-resize hover:bg-amber/40 transition z-30 group"
       />
 
       {/* Explorer Header */}
-      <div className="px-3.5 py-2.5 border-b border-(--border-subtle) flex items-center justify-between">
-        <span className="font-mono text-xs font-normal text-ash uppercase tracking-wider">
+      <div className="px-3.5 py-2.5 border-b border-stone/80 flex items-center justify-between">
+        <span className="font-mono text-[11px] font-medium text-ash uppercase tracking-wider">
           Explorer
         </span>
         {canEdit && (
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => {
@@ -151,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               title="New File"
               aria-label="New File"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-surface/80 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-95"
             >
               <FilePlus size={14} />
             </button>
@@ -163,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               title="New Folder"
               aria-label="New Folder"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="p-1 rounded-md text-ash hover:text-ink hover:bg-surface/80 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-95"
             >
               <FolderPlus size={14} />
             </button>
@@ -172,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Filter / Search Input */}
-      <div className="px-2.5 py-2 border-b border-(--border-subtle)">
+      <div className="px-2.5 py-2 border-b border-stone/80">
         <div className="relative flex items-center">
           <Search size={12} className="text-ash absolute left-2.5 pointer-events-none" />
           <input
@@ -181,14 +183,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-label="Filter files"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-parchment border border-stone rounded-md pl-7 pr-2 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus-visible:ring-1 focus-visible:ring-amber font-mono"
+            className="w-full bg-parchment/90 border border-stone/90 rounded-md pl-7 pr-12 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus-visible:ring-1 focus-visible:ring-amber font-mono shadow-2xs"
           />
+          <span className="absolute right-2 text-[9px] font-mono text-mist bg-surface px-1 py-0.5 rounded border border-stone/50 pointer-events-none hidden sm:inline">
+            Ctrl+P
+          </span>
         </div>
       </div>
 
       {/* Inline Create Input */}
       {(isCreatingFile || isCreatingFolder) && (
-        <div className="p-2 border-b border-stone bg-linen">
+        <div className="p-2 border-b border-stone/80 bg-linen/60">
           <input
             type="text"
             placeholder={isCreatingFolder ? 'folder-name' : 'filename.js'}
@@ -204,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onBlur={() => handleCreateSubmit(isCreatingFolder)}
             autoFocus
             aria-label={isCreatingFolder ? "Folder name" : "File name"}
-            className="w-full bg-parchment border border-stone rounded-md px-2 py-1 text-xs font-mono text-ink focus-visible:outline-none focus-visible:border-amber focus-visible:ring-1 focus-visible:ring-amber"
+            className="w-full bg-surface border border-amber/70 rounded-md px-2 py-1 text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber shadow-2xs"
           />
         </div>
       )}
@@ -225,10 +230,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           return (
             <div
               key={file._id}
-              className={`group flex items-center justify-between px-2.5 py-1.5 rounded-sm text-[13px] font-normal transition cursor-pointer ${
+              className={`group relative flex items-center justify-between px-2.5 py-1.5 rounded-md text-[13px] font-normal transition-all duration-150 cursor-pointer ${
                 isSelected
-                  ? 'bg-linen text-ink border-l-2 border-amber'
-                  : 'text-ink hover:bg-linen'
+                  ? 'bg-surface text-ink border border-stone/80 shadow-2xs font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-0.75 before:rounded-r before:bg-amber'
+                  : 'text-driftwood hover:text-ink hover:bg-linen/60'
               }`}
             >
               <div
@@ -260,7 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onBlur={() => handleRenameSubmit(file._id)}
                     autoFocus
                     aria-label="Rename file"
-                    className="bg-parchment border border-stone rounded-md px-1.5 py-0.5 text-xs font-mono text-ink focus-visible:outline-none focus-visible:border-amber focus-visible:ring-1 focus-visible:ring-amber w-28"
+                    className="bg-surface border border-amber/80 rounded-md px-1.5 py-0.5 text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber w-28"
                   />
                 ) : (
                   <span className="truncate">{file.name}</span>
@@ -279,7 +284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }}
                     title={`Rename ${file.name}`}
                     aria-label={`Rename ${file.name}`}
-                    className="p-1 rounded-md text-ash hover:text-ink hover:bg-bone focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
+                    className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen/80 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer active:scale-90"
                   >
                     <Edit size={12} />
                   </button>
@@ -291,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }}
                     title={`Delete ${file.name}`}
                     aria-label={`Delete ${file.name}`}
-                    className="p-1 rounded-md text-ash hover:text-crimson hover:bg-bone focus:outline-none focus-visible:ring-1 focus-visible:ring-crimson transition cursor-pointer"
+                    className="p-1 rounded-md text-ash hover:text-crimson hover:bg-linen/80 focus:outline-none focus-visible:ring-1 focus-visible:ring-crimson transition cursor-pointer active:scale-90"
                   >
                     <Trash size={12} />
                   </button>

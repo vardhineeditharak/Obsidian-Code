@@ -347,33 +347,33 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       }
     } catch {}
 
-    // Define Obsidian Crystalline themes
+    // Define Obsidian Crystalline themes (Warm Atelier Palette)
     const crystallineTheme: Monaco.editor.IStandaloneThemeData = {
       base: 'vs-dark',
       inherit: true,
       rules: [
-        { token: '', foreground: 'eeeeee', background: '171717' },
-        { token: 'comment', foreground: '6b6b6b', fontStyle: 'italic' },
-        { token: 'keyword', foreground: 'a78bfa', fontStyle: 'bold' },
-        { token: 'string', foreground: '4ade80' },
-        { token: 'number', foreground: 'facc15' },
-        { token: 'function', foreground: 'eeeeee' },
-        { token: 'type', foreground: 'bcbcbc' },
-        { token: 'variable', foreground: 'eeeeee' },
-        { token: 'delimiter', foreground: 'a3a3a3' },
+        { token: '', foreground: 'f5f4ef', background: '141311' },
+        { token: 'comment', foreground: '78716c', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'f59e0b', fontStyle: 'bold' },
+        { token: 'string', foreground: '34d399' },
+        { token: 'number', foreground: 'fbbf24' },
+        { token: 'function', foreground: 'f5f4ef' },
+        { token: 'type', foreground: '93c5fd' },
+        { token: 'variable', foreground: 'f5f4ef' },
+        { token: 'delimiter', foreground: '8f8b82' },
       ],
       colors: {
-        'editor.background': '#171717',
-        'editor.foreground': '#eeeeee',
-        'editorLineNumber.foreground': '#6b6b6b',
-        'editorLineNumber.activeForeground': '#eeeeee',
-        'editorCursor.foreground': '#a78bfa',
-        'editor.selectionBackground': '#7c3aed59',
-        'editor.inactiveSelectionBackground': '#7c3aed26',
-        'editor.lineHighlightBackground': '#1e1e1e',
-        'editorIndentGuide.background': '#2a2a2a',
-        'editorIndentGuide.activeBackground': '#3f3f3f',
-        'editorGutter.background': '#171717',
+        'editor.background': '#141311',
+        'editor.foreground': '#f5f4ef',
+        'editorLineNumber.foreground': '#5c5952',
+        'editorLineNumber.activeForeground': '#f5f4ef',
+        'editorCursor.foreground': '#f59e0b',
+        'editor.selectionBackground': '#d9770638',
+        'editor.inactiveSelectionBackground': '#d977061f',
+        'editor.lineHighlightBackground': '#1c1b17',
+        'editorIndentGuide.background': '#26241f',
+        'editorIndentGuide.activeBackground': '#3f3c34',
+        'editorGutter.background': '#141311',
       },
     };
 
@@ -640,7 +640,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-parchment overflow-hidden select-none transition-colors duration-200">
       {/* Editor Tabs Header Bar */}
-      <div className="h-9 border-b border-stone bg-parchment flex items-center justify-between px-2">
+      <div className="h-9 border-b border-stone/80 bg-bone/70 flex items-center justify-between px-2">
         {/* Open Tabs */}
         <div role="tablist" aria-label="Open editor tabs" className="flex items-center gap-1 overflow-x-auto max-w-[80vw]">
           {openFileIds.map((fileId) => {
@@ -662,12 +662,13 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     onSelectFile(fileId);
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-t-lg border-t-2 cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
+                className={`group flex items-center gap-2 px-3 py-1 text-xs font-mono rounded-t-md border-t-2 cursor-pointer transition-all duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber ${
                   isActive
-                    ? 'bg-bone border-amber text-ink'
+                    ? 'bg-parchment border-amber text-ink font-medium shadow-xs'
                     : 'border-transparent text-driftwood hover:text-ink hover:bg-linen/40'
                 }`}
               >
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${file.name.endsWith('.py') ? 'bg-sky-400' : file.name.endsWith('.ts') || file.name.endsWith('.tsx') ? 'bg-blue-400' : file.name.endsWith('.js') ? 'bg-amber-300' : 'bg-stone-400'}`} />
                 <span>{file.name}</span>
                 <button
                   type="button"
@@ -676,7 +677,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     e.stopPropagation();
                     handleTabClose(fileId);
                   }}
-                  className="p-0.5 rounded-sm hover:bg-stone/50 text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
+                  className="p-0.5 rounded hover:bg-stone text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition active:scale-90 cursor-pointer ml-0.5"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -694,15 +695,15 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             </span>
           )}
 
-          <div className="flex items-center bg-bone rounded-lg p-0.5 border border-stone inset-glow" role="group" aria-label="Editor split options">
+          <div className="flex items-center bg-surface rounded-md p-0.5 border border-stone/80 inset-glow" role="group" aria-label="Editor split options">
             <button
               type="button"
               onClick={() => setSplitMode(splitMode === 'vertical' ? 'single' : 'vertical')}
               title="Split Editor Right"
               aria-label="Split Editor Right"
               aria-pressed={splitMode === 'vertical'}
-              className={`p-1 rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
-                splitMode === 'vertical' ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
+              className={`p-1 rounded transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer active:scale-90 ${
+                splitMode === 'vertical' ? 'bg-linen text-ink border border-stone/50 shadow-2xs' : 'text-ash hover:text-ink'
               }`}
             >
               <Columns2 className="w-3.5 h-3.5" />
@@ -713,8 +714,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               title="Split Editor Down"
               aria-label="Split Editor Down"
               aria-pressed={splitMode === 'horizontal'}
-              className={`p-1 rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
-                splitMode === 'horizontal' ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
+              className={`p-1 rounded transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer active:scale-90 ${
+                splitMode === 'horizontal' ? 'bg-linen text-ink border border-stone/50 shadow-2xs' : 'text-ash hover:text-ink'
               }`}
             >
               <Rows2 className="w-3.5 h-3.5" />
@@ -722,6 +723,21 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Breadcrumb Path Bar */}
+      {activeFile && (
+        <div className="h-6 px-3 border-b border-stone/60 bg-bone/30 flex items-center justify-between text-[11px] font-mono text-driftwood select-none">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="text-mist">workspace</span>
+            <span className="text-mist/70">/</span>
+            <span className="text-ink font-medium flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${activeFile.name.endsWith('.py') ? 'bg-sky-400' : activeFile.name.endsWith('.ts') || activeFile.name.endsWith('.tsx') ? 'bg-blue-400' : 'bg-amber'}`} />
+              {activeFile.name}
+            </span>
+          </div>
+          <span className="text-mist text-[10px] uppercase">{detectLanguage(activeFile.name) || activeFile.language || 'plaintext'}</span>
+        </div>
+      )}
 
       {/* Main Monaco Container */}
       <div
