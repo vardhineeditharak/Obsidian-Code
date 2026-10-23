@@ -13,11 +13,27 @@ import { invitationRoutes } from './routes/invitationRoutes';
 import { executeRoutes } from './routes/executeRoutes';
 import { YjsWebSocketServer } from './websocket/yjsServer';
 
+import { logRuntimeSecurityAudit, checkNodeRuntimeSecurity } from './security/runtimeAudit';
+
 const app = express();
 const server = http.createServer(app);
 
+// Run runtime security check on boot
+logRuntimeSecurityAudit();
+
 // Initialize Yjs WebSocket Server attached to HTTP server
 const yjsServer = new YjsWebSocketServer(server);
+
+// Mandatory HTTP Security Headers (CWE-693 / Clickjacking & MIME-Sniffing Defense)
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-XSS-Protection', '0');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  next();
+});
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -58,13 +74,15 @@ app.use(
 // Health Check Endpoint for Render & Uptime Monitors
 app.get('/healthz', async (_req, res) => {
   const dbStatus = await pingDB();
-  const isHealthy = dbStatus.connected || config.NODE_ENV !== 'production';
+  const securityStatus = checkNodeRuntimeSecurity();
+  const isHealthy = (dbStatus.connected || config.NODE_ENV !== 'production') && securityStatus.secure;
   return res.status(isHealthy ? 200 : 503).json({
     status: dbStatus.connected ? 'ok' : 'degraded',
     service: 'Obsidian Code',
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
     database: dbStatus,
+    runtimeSecurity: securityStatus,
   });
 });
 

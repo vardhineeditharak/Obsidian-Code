@@ -169,7 +169,7 @@ export const LANGUAGE_DEFINITIONS: Record<string, LanguageDefinition> = {
     defaultFileName: 'main.rb',
     run: (targetFile) => ({
       command: 'ruby',
-      args: [targetFile],
+      args: ['--', targetFile],
     }),
     probeCandidates: [{ command: 'ruby', args: ['--version'] }],
     hint: 'Ruby runtime (optional)',
@@ -181,10 +181,16 @@ export const LANGUAGE_DEFINITIONS: Record<string, LanguageDefinition> = {
     defaultFileName: 'main.php',
     run: (targetFile) => ({
       command: 'php',
-      args: [targetFile],
+      // Defense-in-depth against PHP2Shell & memory/env leakage:
+      // -n: ignore php.ini to prevent arbitrary extension loading
+      // -d open_basedir=.: restrict file access strictly to execution directory
+      // -d max_execution_time=5: enforce runtime execution ceiling
+      // -d memory_limit=128M: cap memory to prevent resource exhaustion
+      // --: terminate CLI option parsing to prevent argument injection
+      args: ['-n', '-d', 'open_basedir=.', '-d', 'max_execution_time=5', '-d', 'memory_limit=128M', '--', targetFile],
     }),
     probeCandidates: [{ command: 'php', args: ['--version'] }],
-    hint: 'PHP CLI runtime (optional)',
+    hint: 'PHP CLI runtime (isolated open_basedir & capped memory)',
   },
   bash: {
     language: 'bash',
@@ -193,7 +199,7 @@ export const LANGUAGE_DEFINITIONS: Record<string, LanguageDefinition> = {
     defaultFileName: 'script.sh',
     run: (targetFile) => ({
       command: 'bash',
-      args: [targetFile],
+      args: ['--', targetFile],
     }),
     probeCandidates: [{ command: 'bash', args: ['--version'] }],
     hint: 'Bash shell interpreter (optional)',
@@ -295,6 +301,23 @@ export async function probe(): Promise<RuntimeProbeResult[]> {
 }
 
 /**
+ * Sanitizes arbitrary user-supplied fileName inputs to prevent Path Traversal (CWE-22)
+ * and CLI Option/Argument Injection (CWE-88).
+ */
+export function sanitizeExecutionFileName(raw: string, defaultName: string): string {
+  if (!raw) return defaultName;
+  // Strip null bytes and directory paths
+  const base = path.basename(raw).replace(/\0/g, '').trim();
+  // Strip dangerous path separators or traversal characters
+  const clean = base.replace(/^[.\/\\]+/, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+  // Disallow leading hyphen (prevents CLI argument injection) or leading dots
+  if (!clean || clean.startsWith('-') || clean.startsWith('.')) {
+    return defaultName;
+  }
+  return clean;
+}
+
+/**
  * Maps fileName or language key to resolved language definition & toolchain availability
  */
 export async function resolveLanguage(fileNameOrLang: string, code?: string): Promise<ResolvedLanguage | null> {
@@ -319,7 +342,9 @@ export async function resolveLanguage(fileNameOrLang: string, code?: string): Pr
   const version = probeStatus?.version;
   const resolvedCmd = probeStatus?.command;
 
-  const resolvedFileName = lower.includes('.') ? lower : def.defaultFileName;
+  // Sanitize filename to prevent directory traversal outside execution sandbox
+  const sanitized = sanitizeExecutionFileName(lower, def.defaultFileName);
+  const resolvedFileName = sanitized.includes('.') ? sanitized : def.defaultFileName;
   const targetExt = resolvedFileName.split('.').pop() || def.extensions[0];
   const baseName = path.basename(resolvedFileName, `.${targetExt}`);
   const outFileName = isWin ? `${baseName}.exe` : baseName;

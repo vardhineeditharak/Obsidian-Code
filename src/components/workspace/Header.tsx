@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
             onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
             autoFocus
             aria-label="Project Name"
-            className="input-atelier text-xs px-2 py-0.5 rounded-md min-w-[120px] max-w-[200px]"
+            className="input-atelier text-xs px-2 py-0.5 rounded-md min-w-30 max-w-50"
           />
         ) : (
           <div className="flex items-center gap-2 min-w-0">
@@ -141,12 +141,12 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setIsEditingName(true)}
                 title="Click to rename"
                 aria-label={`Rename project ${displayName}`}
-                className="text-xs font-medium text-ink px-2 py-0.5 rounded-md hover:bg-linen/80 transition flex items-center cursor-pointer truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.98]"
+                className="text-xs font-medium text-ink px-2 py-0.5 rounded-md hover:bg-linen/80 transition flex items-center cursor-pointer truncate max-w-32.5 sm:max-w-50 md:max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber active:scale-[0.98]"
               >
                 <span className="truncate">{displayName}</span>
               </button>
             ) : (
-              <span className="text-xs font-medium text-ink px-2 py-0.5 cursor-default truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs">
+              <span className="text-xs font-medium text-ink px-2 py-0.5 cursor-default truncate max-w-32.5 sm:max-w-50 md:max-w-xs">
                 {displayName}
               </span>
             )}

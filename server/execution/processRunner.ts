@@ -254,6 +254,19 @@ export async function runProcessCode({
 
   try {
     const srcFilePath = path.join(workDir, resolved.fileName);
+    const resolvedSrc = path.resolve(srcFilePath);
+    const resolvedWorkDir = path.resolve(workDir);
+    if (!resolvedSrc.startsWith(resolvedWorkDir + path.sep)) {
+      return {
+        stdout: [],
+        stderr: ['Security Exception: Path traversal attempt blocked.'],
+        error: 'Path traversal attempt blocked',
+        exitCode: 1,
+        executionTimeMs: 1,
+        timestamp,
+        language: resolved.language,
+      };
+    }
     await fs.writeFile(srcFilePath, code, 'utf-8');
 
     // 1. Optional compilation step

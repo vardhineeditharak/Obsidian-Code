@@ -62,10 +62,18 @@ router.get('/projects/:projectId/files', authenticateJWT, requireProjectRole(['o
   return res.json(files);
 });
 
+export const fileNameSchema = z
+  .string()
+  .min(1)
+  .max(255)
+  .refine((n) => !n.includes('..') && !n.includes('/') && !n.includes('\\') && !n.includes('\0'), {
+    message: 'File or folder name cannot contain path separators (/, \\), traversal (..), or null bytes.',
+  });
+
 // Create file or folder in project (Owner & Editor only)
 router.post('/projects/:projectId/files', authenticateJWT, requireProjectRole(['owner', 'editor']), async (req: AuthRequest, res: Response) => {
   const schema = z.object({
-    name: z.string().min(1),
+    name: fileNameSchema,
     isFolder: z.boolean().default(false),
     parentId: z.string().nullable().optional(),
     content: z.string().optional(),
@@ -124,6 +132,10 @@ router.patch('/files/:fileId', authenticateJWT, async (req: AuthRequest, res: Re
   const { name, content } = req.body;
   const updateData: any = {};
   if (name !== undefined) {
+    const parsedName = fileNameSchema.safeParse(name);
+    if (!parsedName.success) {
+      return res.status(400).json({ message: 'Validation failed', errors: parsedName.error.issues });
+    }
     let newPath = name;
     if (file.parentId) {
       const parent = await dbStore.getFileById(file.parentId.toString());
