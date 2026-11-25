@@ -123,7 +123,7 @@ describe('YjsDocManager Tab-Switch Isolation & Independent Split Panes', () => {
     docManager.setTransportMode('Hybrid');
   });
 
-  it('deduplicates concurrent getOrCreateSession calls and enforces private vs public P2P security', async () => {
+  it('deduplicates concurrent getOrCreateSession calls and never exposes documents to WebRTC P2P', async () => {
     const projPriv = 'proj-priv-sec';
     const filePriv = 'file-priv-1';
 
@@ -134,25 +134,25 @@ describe('YjsDocManager Tab-Switch Isolation & Independent Split Panes', () => {
     expect(s1).toBe(s2);
     expect(s1.ytext.toString()).toBe('const priv = 1;');
     expect(wsProviderCalls).toHaveLength(1);
-    expect(webrtcProviderCalls).toHaveLength(0); // Private room MUST skip WebRTC P2P
+    expect(webrtcProviderCalls).toHaveLength(0);
 
     const projPub = 'proj-pub-sec';
     const filePub = 'file-pub-1';
     const sPub = await docManager.getOrCreateSession(projPub, filePub, 'const pub = 2;', undefined, true);
-    expect(sPub.webrtcProvider).not.toBeNull();
-    expect(webrtcProviderCalls).toHaveLength(1);
+    // Public signaling peers bypass server RBAC, so P2P is disabled here too.
+    expect(sPub.webrtcProvider).toBeNull();
+    expect(webrtcProviderCalls).toHaveLength(0);
 
-    // WebSocket Only skips WebRTC even on public project
     docManager.setTransportMode('WebSocket Only');
     const sWsOnly = await docManager.getOrCreateSession(projPub, 'file-ws-only', 'ws', undefined, true);
     expect(sWsOnly.wsProvider).not.toBeNull();
     expect(sWsOnly.webrtcProvider).toBeNull();
 
-    // P2P Mesh Only skips WebSocket
+    // P2P Mesh Only still uses the server-backed relay (P2P is unavailable).
     docManager.setTransportMode('P2P Mesh Only');
     const sP2pOnly = await docManager.getOrCreateSession(projPub, 'file-p2p-only', 'p2p', undefined, true);
-    expect(sP2pOnly.wsProvider).toBeNull();
-    expect(sP2pOnly.webrtcProvider).not.toBeNull();
+    expect(sP2pOnly.wsProvider).not.toBeNull();
+    expect(sP2pOnly.webrtcProvider).toBeNull();
 
     docManager.destroySession(projPriv, filePriv);
     docManager.destroySession(projPub, filePub);
