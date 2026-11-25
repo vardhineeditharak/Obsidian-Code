@@ -74,16 +74,22 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
     }
   }, [projectId]);
 
+  // Checkpoints are loaded only when the modal opens (or the project changes). Autosaves
+  // replace `files` every few seconds and must not reset the selected checkpoint.
   useEffect(() => {
     if (!isOpen) return;
     loadVersions();
+  }, [isOpen, projectId, loadVersions]);
+
+  useEffect(() => {
+    if (!isOpen || selectedFileId) return;
     if (activeFileId) {
       setSelectedFileId(activeFileId);
     } else {
       const firstNonFolder = files.find((f) => !f.isFolder);
       if (firstNonFolder) setSelectedFileId(firstNonFolder._id);
     }
-  }, [isOpen, projectId, activeFileId, files, loadVersions]);
+  }, [isOpen, activeFileId, files, selectedFileId]);
 
   if (!isOpen) return null;
 
