@@ -51,7 +51,10 @@ export async function exportWorkspaceAsZip(
       link.parentNode.removeChild(link);
     }
     if (objectUrl) {
-      URL.revokeObjectURL(objectUrl);
+      // Some browsers resolve the download asynchronously; revoking in this tick can
+      // cancel it before it starts.
+      const urlToRevoke = objectUrl;
+      setTimeout(() => URL.revokeObjectURL(urlToRevoke), 1000);
     }
   }
 }
