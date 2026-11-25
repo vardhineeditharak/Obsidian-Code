@@ -24,10 +24,12 @@ function getWorkspaceIdFromPath(): string | null {
 
 export function App() {
   const { isLoaded: isClerkLoaded, isSignedIn, user: clerkUser } = useUser();
-  const { signOut } = useClerk();
+  const { signOut, session: clerkSession } = useClerk();
 
   const clerkUserRef = useRef(clerkUser);
   clerkUserRef.current = clerkUser;
+  const clerkSessionRef = useRef(clerkSession);
+  clerkSessionRef.current = clerkSession;
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const currentUserRef = useRef<User | null>(null);
@@ -70,13 +72,21 @@ export function App() {
         'Obsidian Developer';
       const avatar = userSnapshot.imageUrl;
 
-      api
-        .syncClerkUser({
+      const syncSession = async () => {
+        const sessionToken = await clerkSessionRef.current?.getToken();
+        if (!sessionToken) {
+          throw new Error('No active Clerk session token is available.');
+        }
+        return api.syncClerkUser({
           clerkId: userSnapshot.id,
           email,
           name,
           avatar,
-        })
+          sessionToken,
+        });
+      };
+
+      syncSession()
         .then(({ user }) => {
           if (cancelled) return;
           updateUser(user);
@@ -210,6 +220,7 @@ export function App() {
   if (currentRoute === 'workspace' && activeProjectId) {
     return (
       <WorkspacePage
+        key={activeProjectId}
         projectId={activeProjectId}
         currentUser={currentUser}
         onLogout={handleLogout}
