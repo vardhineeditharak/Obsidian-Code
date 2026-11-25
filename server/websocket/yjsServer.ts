@@ -61,11 +61,13 @@ export interface Room {
   ) => void;
   docUpdateHandler: (update: Uint8Array, origin: unknown) => void;
   snapshotTimeout: NodeJS.Timeout | null;
+  closing?: boolean;
 }
 
 export class YjsWebSocketServer {
   private wss: WebSocketServer;
   private rooms = new Map<string, Room>();
+  private pendingRooms = new Map<string, Promise<Room>>();
   private eventClients = new Map<string, Set<EventClientConnection>>();
   private eventListener: (event: ProjectRealtimeEvent) => void;
   private heartbeatInterval: NodeJS.Timeout;
@@ -118,13 +120,27 @@ export class YjsWebSocketServer {
       }
     });
 
-    this.wss.on('close', () => {
+    this.wss.on('close', async () => {
       clearInterval(this.heartbeatInterval);
       projectEventBus.off('project-event', this.eventListener);
-      for (const room of this.rooms.values()) {
+
+      // Flush debounced snapshots before destroying documents, otherwise edits made in
+      // the final debounce window are lost on shutdown.
+      for (const room of Array.from(this.rooms.values())) {
+        if (room.snapshotTimeout) {
+          clearTimeout(room.snapshotTimeout);
+          room.snapshotTimeout = null;
+        }
+        try {
+          const state = Buffer.from(Y.encodeStateAsUpdate(room.doc));
+          await dbStore.saveDocSnapshot(room.projectId, room.fileId, state);
+        } catch (err) {
+          console.error('Failed to save snapshot during shutdown:', err);
+        }
         this.cleanupRoomResources(room);
       }
       this.rooms.clear();
+      this.pendingRooms.clear();
       this.eventClients.clear();
     });
   }
@@ -309,7 +325,27 @@ export class YjsWebSocketServer {
     }
   }
 
+  /**
+   * Deduplicates concurrent room creation. The snapshot read is async, so publishing the
+   * in-flight promise before awaiting prevents two connections from building separate docs.
+   */
   private async getOrCreateRoom(roomName: string, projectId: string, fileId: string): Promise<Room> {
+    const existing = this.rooms.get(roomName);
+    if (existing && !existing.closing) return existing;
+
+    const inFlight = this.pendingRooms.get(roomName);
+    if (inFlight) return inFlight;
+
+    const creation = this.createRoomInternal(roomName, projectId, fileId);
+    this.pendingRooms.set(roomName, creation);
+    try {
+      return await creation;
+    } finally {
+      this.pendingRooms.delete(roomName);
+    }
+  }
+
+  private async createRoomInternal(roomName: string, projectId: string, fileId: string): Promise<Room> {
     let room = this.rooms.get(roomName);
     if (!room) {
       const doc = new Y.Doc();
@@ -534,7 +570,11 @@ export class YjsWebSocketServer {
         client.controlledIds.clear();
       }
 
-      if (room.clients.size === 0) {
+      if (room.clients.size === 0 && !room.closing) {
+        // Detach the room before the async save so a new connection cannot join a room
+        // that is about to be destroyed.
+        room.closing = true;
+        this.rooms.delete(roomName);
         if (room.snapshotTimeout) {
           clearTimeout(room.snapshotTimeout);
           room.snapshotTimeout = null;
@@ -547,7 +587,6 @@ export class YjsWebSocketServer {
         }
 
         this.cleanupRoomResources(room);
-        this.rooms.delete(roomName);
       }
     });
   }
