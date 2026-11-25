@@ -369,6 +369,8 @@ export function Dashboard({
                     tabIndex={0}
                     onClick={() => onOpenProject(project._id)}
                     onKeyDown={(e) => {
+                      // Ignore Enter/Space bubbling from the nested delete button.
+                      if (e.target !== e.currentTarget) return;
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         onOpenProject(project._id);
