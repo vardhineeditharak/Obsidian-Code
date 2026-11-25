@@ -188,6 +188,42 @@ describe('Files Validation, Folder Cascades, Versions & Snapshot Flushing', () =
       expect(await dbStore.getDocSnapshot(pid, leaf._id)).toBeNull();
     });
 
+    it('rejects a folder rename whose descendant paths would collide with existing files', async () => {
+      const proj = await dbStore.createProject('Rename Collision Project', ownerId);
+      const pid = String(proj._id);
+
+      const folder = await dbStore.createFile({
+        projectId: pid,
+        name: 'src',
+        path: 'src',
+        isFolder: true,
+      });
+      const child = await dbStore.createFile({
+        projectId: pid,
+        name: 'a.txt',
+        path: 'src/a.txt',
+        isFolder: false,
+        parentId: String(folder._id),
+        content: 'original',
+      });
+      await dbStore.createFile({
+        projectId: pid,
+        name: 'a.txt',
+        path: 'dest/a.txt',
+        isFolder: false,
+        content: 'other',
+      });
+
+      const renameRes = await fetch(`${baseUrl}/api/files/${folder._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ownerToken}` },
+        body: JSON.stringify({ name: 'dest' }),
+      });
+      expect(renameRes.status).toBe(409);
+      expect((await dbStore.getFileById(folder._id))?.path).toBe('src');
+      expect((await dbStore.getFileById(child._id))?.path).toBe('src/a.txt');
+    });
+
     it('enforces file/version RBAC and prevents IDOR across viewer, editor, owner, and outsider', async () => {
       const proj = await dbStore.createProject('RBAC Mutations Proj', ownerId);
       const pid = String(proj._id);
