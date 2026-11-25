@@ -127,6 +127,7 @@ export const api = {
     email: string;
     name: string;
     avatar?: string;
+    sessionToken: string;
   }): Promise<{ user: User; token: string }> {
     const data = await requestJson<{ user: User; token: string }>(
       '/auth/clerk-sync',
