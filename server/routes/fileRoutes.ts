@@ -168,6 +168,7 @@ router.patch('/files/:fileId', authenticateJWT, async (req: AuthRequest, res: Re
   } = {};
 
   const oldPath = file.path;
+  let descendantPathUpdates: Array<{ id: string; path: string }> = [];
   if (name !== undefined) {
     let newPath = name;
     if (file.parentId) {
@@ -179,7 +180,39 @@ router.patch('/files/:fileId', authenticateJWT, async (req: AuthRequest, res: Re
 
     if (newPath !== oldPath) {
       const existingFiles = await dbStore.getProjectFiles(projectId);
-      if (existingFiles.some((f) => String(f._id) !== fileId && f.path === newPath)) {
+
+      // A folder rename also rewrites every descendant path. Validate those paths up front
+      // so a collision cannot leave a partially renamed subtree.
+      let takenPaths: Set<string>;
+      if (file.isFolder) {
+        const subtreeIds = new Set<string>([fileId]);
+        const oldPrefix = `${oldPath}/`;
+        const newPrefix = `${newPath}/`;
+        for (const entry of existingFiles) {
+          if (entry.path.startsWith(oldPrefix)) subtreeIds.add(String(entry._id));
+        }
+        takenPaths = new Set(
+          existingFiles
+            .filter((entry) => !subtreeIds.has(String(entry._id)))
+            .map((entry) => entry.path)
+        );
+        descendantPathUpdates = existingFiles
+          .filter((entry) => String(entry._id) !== fileId && entry.path.startsWith(oldPrefix))
+          .map((entry) => ({
+            id: String(entry._id),
+            path: `${newPrefix}${entry.path.slice(oldPrefix.length)}`,
+          }));
+      } else {
+        takenPaths = new Set(
+          existingFiles.filter((f) => String(f._id) !== fileId).map((f) => f.path)
+        );
+      }
+
+      const conflictingPath =
+        takenPaths.has(newPath) ||
+        descendantPathUpdates.some((update) => takenPaths.has(update.path)) ||
+        new Set(descendantPathUpdates.map((update) => update.path)).size !== descendantPathUpdates.length;
+      if (conflictingPath) {
         return res.status(409).json({ message: `A file or folder already exists at '${newPath}'.` });
       }
     }
@@ -202,24 +235,15 @@ router.patch('/files/:fileId', authenticateJWT, async (req: AuthRequest, res: Re
       file: updated,
     });
 
-    // Cascade path updates to descendants when renaming a folder
-    if (file.isFolder && updateData.path && updateData.path !== oldPath) {
-      const allFiles = await dbStore.getProjectFiles(projectId);
-      const oldPrefix = `${oldPath}/`;
-      const newPrefix = `${updateData.path}/`;
-      for (const child of allFiles) {
-        const childId = String(child._id);
-        if (childId !== fileId && child.path.startsWith(oldPrefix)) {
-          const updatedChildPath = `${newPrefix}${child.path.slice(oldPrefix.length)}`;
-          const updatedChild = await dbStore.updateFile(childId, { path: updatedChildPath });
-          if (updatedChild) {
-            emitProjectEvent({
-              type: 'file:updated',
-              projectId,
-              file: updatedChild,
-            });
-          }
-        }
+    // Cascade path updates to descendants when renaming a folder (paths validated above)
+    for (const update of descendantPathUpdates) {
+      const updatedChild = await dbStore.updateFile(update.id, { path: update.path });
+      if (updatedChild) {
+        emitProjectEvent({
+          type: 'file:updated',
+          projectId,
+          file: updatedChild,
+        });
       }
     }
   }
