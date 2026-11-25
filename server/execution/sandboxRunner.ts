@@ -1,4 +1,14 @@
-import vm from 'node:vm';
+/**
+ * Lightweight runner used for editor previews.
+ *
+ * This module deliberately does NOT use `node:vm` as a security boundary. A vm context
+ * shares the host realm through objects such as `console.log.constructor` and does not
+ * bound work scheduled via promises, so it is trivially escapable. JavaScript is instead
+ * executed by the child-process runner, which enforces timeouts, output caps, an
+ * ephemeral working directory and a whitelisted environment.
+ */
+
+import { runProcessCode } from './processRunner';
 
 export interface RunOptions {
   code: string;
@@ -14,25 +24,11 @@ export interface RunResult {
   timestamp: string;
 }
 
-function formatSandboxValue(val: unknown): string {
-  if (typeof val === 'object' && val !== null) {
-    try {
-      return JSON.stringify(val, null, 2);
-    } catch {
-      return String(val);
-    }
-  }
-  return String(val);
-}
-
 export async function executeSandboxCode({
   code,
   language,
   timeoutMs = 3000,
 }: RunOptions): Promise<RunResult> {
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-  const start = performance.now();
   const lowerLang = language.toLowerCase();
 
   if (lowerLang === 'html' || lowerLang === 'css') {
@@ -57,82 +53,29 @@ export async function executeSandboxCode({
     };
   }
 
-  try {
-    const sandboxConsole = {
-      log: (...args: unknown[]) => {
-        stdout.push(args.map((a) => formatSandboxValue(a)).join(' '));
-      },
-      info: (...args: unknown[]) => {
-        stdout.push(args.map((a) => formatSandboxValue(a)).join(' '));
-      },
-      warn: (...args: unknown[]) => {
-        stderr.push(`[WARN] ${args.map((a) => formatSandboxValue(a)).join(' ')}`);
-      },
-      error: (...args: unknown[]) => {
-        stderr.push(`[ERROR] ${args.map((a) => formatSandboxValue(a)).join(' ')}`);
-      },
-    };
-
-    const context = vm.createContext(
-      {
-        console: sandboxConsole,
-        Math,
-        Date,
-        JSON,
-        parseInt,
-        parseFloat,
-        isNaN,
-        isFinite,
-        Array,
-        Object,
-        String,
-        Number,
-        Boolean,
-        RegExp,
-        Map,
-        Set,
-        Promise,
-        setTimeout: undefined,
-        setInterval: undefined,
-        process: undefined,
-        require: undefined,
-        module: undefined,
-        __dirname: undefined,
-        __filename: undefined,
-        global: undefined,
-        globalThis: undefined,
-      },
-      {
-        codeGeneration: {
-          strings: false,
-          wasm: false,
-        },
-      }
-    );
-
-    const script = new vm.Script(code);
-    const result = script.runInContext(context, {
-      timeout: timeoutMs,
-      displayErrors: true,
-    });
-
-    if (result !== undefined && stdout.length === 0) {
-      stdout.push(formatSandboxValue(result));
-    }
-
+  if (lowerLang !== 'javascript' && lowerLang !== 'typescript') {
     return {
-      stdout,
-      stderr,
-      executionTimeMs: Math.round(performance.now() - start),
-      timestamp: new Date().toISOString(),
-    };
-  } catch (err: any) {
-    return {
-      stdout,
-      stderr,
-      error: err?.message || String(err),
-      executionTimeMs: Math.round(performance.now() - start),
+      stdout: [],
+      stderr: [`Language '${language}' is not supported by the preview runner.`],
+      error: `Unsupported preview language '${language}'`,
+      executionTimeMs: 0,
       timestamp: new Date().toISOString(),
     };
   }
+
+  const result = await runProcessCode({
+    code,
+    language: lowerLang,
+    fileName: lowerLang === 'typescript' ? 'sandbox.ts' : 'sandbox.js',
+    runTimeoutMs: timeoutMs,
+    compileTimeoutMs: timeoutMs,
+  });
+
+  return {
+    stdout: result.stdout,
+    stderr: result.stderr,
+    error: result.error,
+    executionTimeMs: result.executionTimeMs,
+    timestamp: result.timestamp,
+  };
 }
