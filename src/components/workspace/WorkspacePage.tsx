@@ -151,6 +151,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const activeFileIdRef = useRef<string | null>(activeFileId);
   const activeContentRef = useRef<string>(activeContent);
   const filesRef = useRef<ProjectFile[]>(files);
+  const openFileIdsRef = useRef<string[]>(openFileIds);
 
   userRoleRef.current = userRole;
   transportModeRef.current = transportMode;
@@ -158,6 +159,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   activeFileIdRef.current = activeFileId;
   activeContentRef.current = activeContent;
   filesRef.current = files;
+  openFileIdsRef.current = openFileIds;
 
   const getLiveFileContent = useCallback(
     (fileId: string): string => {
@@ -241,6 +243,16 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       const msg = err instanceof Error ? err.message : 'Unable to load project';
       setLoadError(msg);
       notify.error('Failed to load workspace', msg);
+    }
+  }, [projectId]);
+
+  // Membership changes must not reload files or reset live editor state.
+  const refreshProjectMembers = useCallback(async () => {
+    try {
+      const { project: p } = await api.getProject(projectId);
+      if (p) setProject(p);
+    } catch (err) {
+      console.warn('Failed to refresh project members:', err);
     }
   }, [projectId]);
 
@@ -345,6 +357,29 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       Object.values(secondarySaveTimersRef.current).forEach((t) => clearTimeout(t));
       secondarySaveTimersRef.current = {};
 
+      // Flush pending edits before tearing down sessions. Every other exit path flushes;
+      // without this, edits made inside the debounce window are lost on navigation.
+      if (userRoleRef.current !== 'viewer') {
+        const activeId = activeFileIdRef.current;
+        const activeText = activeContentRef.current;
+        if (activeId && activeText !== lastSavedContentMapRef.current.get(activeId)) {
+          if (navigator.onLine) {
+            void api.updateFile(activeId, { content: activeText }).catch((err) => {
+              console.warn('Flush on unmount failed:', err);
+            });
+          } else {
+            pendingOfflineSavesRef.current.set(activeId, activeText);
+          }
+        }
+        if (navigator.onLine) {
+          for (const [fileId, content] of pendingOfflineSavesRef.current.entries()) {
+            void api.updateFile(fileId, { content }).catch((err) => {
+              console.warn('Offline flush on unmount failed:', err);
+            });
+          }
+        }
+      }
+
       // Tear down Yjs sessions for this project on navigation away / unmount
       filesRef.current.forEach((f) => {
         if (!f.isFolder) {
@@ -380,18 +415,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
           docManager.destroyBinding(id);
         });
         setFiles((prev) => prev.filter((f) => !removedIds.has(f._id)));
-        setOpenFileIds((prev) => {
-          const next = prev.filter((id) => !removedIds.has(id));
-          setActiveFileId((currActive) => {
-            if (currActive && removedIds.has(currActive)) {
-              const fallbackId = next.length > 0 ? next[next.length - 1] : null;
-              setActiveContent(fallbackId ? getLiveFileContent(fallbackId) : '');
-              return fallbackId;
-            }
-            return currActive;
-          });
-          return next;
-        });
+        const nextTabs = openFileIdsRef.current.filter((id) => !removedIds.has(id));
+        setOpenFileIds(nextTabs);
+        const currentActive = activeFileIdRef.current;
+        if (currentActive && removedIds.has(currentActive)) {
+          const fallbackId = nextTabs.length > 0 ? nextTabs[nextTabs.length - 1] : null;
+          setActiveFileId(fallbackId);
+          setActiveContent(fallbackId ? getLiveFileContent(fallbackId) : '');
+        }
       } else if (event.type === 'project:updated') {
         setProject((prev) => (prev ? { ...prev, ...event.project } : prev));
       } else if (event.type === 'member:role-updated') {
@@ -593,8 +624,11 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
     const session = docManager.getSession(projectId, fileId);
     const file = files.find((f) => f._id === fileId);
-    const nextContent =
-      session && session.ytext.length > 0 ? session.ytext.toString() : file?.content || '';
+    const nextContent = session
+      ? session.ytext.toString()
+      : activeFileId === fileId
+        ? activeContent
+        : file?.content || '';
     setActiveContent(nextContent);
   };
 
@@ -913,12 +947,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
     return () => clearInterval(interval);
   }, [projectId, userRole, createAutoCheckpointIfNeeded]);
 
-  const handleRefreshFiles = async () => {
+  const handleRefreshFiles = async (): Promise<ProjectFile[]> => {
     try {
       const fresh = await api.getProjectFiles(projectId);
       setFiles(fresh);
+      return fresh;
     } catch (err) {
       console.warn('Failed to refresh project files:', err);
+      return filesRef.current;
     }
   };
 
@@ -1286,7 +1322,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
         members={project.members || []}
         userRole={userRole}
         currentUserId={currentUser._id}
-        onMembersChanged={loadWorkspace}
+        onMembersChanged={refreshProjectMembers}
         onLeaveWorkspace={onBackToDashboard}
       />
 
