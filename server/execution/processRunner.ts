@@ -135,6 +135,8 @@ function runSpawnCommand(
     }
 
     const timer = setTimeout(() => {
+      // A process that exited just as the timer fired must not be reported as timed out.
+      if (child.exitCode !== null) return;
       timedOut = true;
       if (child.pid) {
         void killProcessTree(child.pid);
@@ -182,7 +184,7 @@ function runSpawnCommand(
       }
     });
 
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       if (!settled) {
         settled = true;
         clearTimeout(timer);
@@ -194,11 +196,20 @@ function runSpawnCommand(
           stderrLines.push(`[Process execution timed out after ${timeoutMs}ms]`);
         }
 
+        let error: string | undefined;
+        let exitCode = timedOut ? 124 : code;
+        if (code === null && signal) {
+          error = `Terminated by signal ${signal}`;
+          stderrLines.push(error);
+          exitCode = 1;
+        }
+
         resolve({
           stdout: stdoutLines,
           stderr: stderrLines,
-          exitCode: timedOut ? 124 : code,
+          exitCode,
           timedOut,
+          error,
         });
       }
     });
@@ -215,7 +226,8 @@ export async function runProcessCode({
   const start = performance.now();
   const timestamp = new Date().toISOString();
 
-  const resolved = await resolveLanguage(fileName || language, code);
+  // The validated `language` field is authoritative; `fileName` may only name the file.
+  let resolved = await resolveLanguage(language, code);
   if (!resolved) {
     return {
       stdout: [],
@@ -226,6 +238,22 @@ export async function runProcessCode({
       timestamp,
       language,
     };
+  }
+
+  if (fileName) {
+    const byFileName = await resolveLanguage(fileName, code);
+    if (!byFileName || byFileName.language !== resolved.language) {
+      return {
+        stdout: [],
+        stderr: [`Filename '${fileName}' does not match the requested language '${language}'.`],
+        error: 'Filename does not match the requested language',
+        exitCode: 1,
+        executionTimeMs: Math.round(performance.now() - start),
+        timestamp,
+        language: resolved.language,
+      };
+    }
+    resolved = byFileName;
   }
 
   if (!resolved.available) {
