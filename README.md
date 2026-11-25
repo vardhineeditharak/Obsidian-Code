@@ -28,7 +28,7 @@
 ## Key Features
 
 - **Real-Time CRDT Collaboration (`yjs` + `y-monaco`)**:
-  - Multi-transport sync (`Hybrid`, `WebSocket Only`, `P2P Mesh Only` for public rooms) and offline-first `y-indexeddb` persistence.
+  - Server-backed sync (`Hybrid`, `WebSocket Only`) with offline-first `y-indexeddb` persistence. WebRTC P2P is disabled because public signaling peers cannot be subjected to server-side RBAC.
   - Real-time collaborator presence, cursors, and **Follow Mode** with a live tracking banner.
   - Project-wide real-time event stream (`/ws/obsidian-project-events-<projectId>`) broadcasting file creations, renames, deletions, and live member role changes with immediate WebSocket RBAC enforcement.
 - **VS Code-Grade Workspace**:
@@ -82,7 +82,7 @@ npm run dev
 
 ## Testing & Verification
 
-Obsidian Code ships with **11 modular Vitest test suites (90 tests)** under [`tests/`](tests/) covering backend security, WebSocket/Yjs CRDT collaboration, research evaluation benchmarks, and frontend/UI modules:
+Obsidian Code ships with **11 modular Vitest test suites (93 tests)** under [`tests/`](tests/) covering backend security, WebSocket/Yjs CRDT collaboration, research evaluation benchmarks, and frontend/UI modules:
 
 - **Backend & Security**:
   - [`tests/auth_security.test.ts`](tests/auth_security.test.ts) — JWT/cookie auth, `param()`, `requireProjectRole`, Zod v4 validation formatting, Clerk Backend API verification (`/api/auth/clerk-sync`), GitHub OAuth CSRF/callback flow, and CORS origin allowlisting.
