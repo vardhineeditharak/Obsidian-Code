@@ -29,6 +29,26 @@ export function subscribeProjectEvents(
   let ws: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let attempt = 0;
+  let consecutiveFailedUpgrades = 0;
+
+  const readToken = (): string => {
+    try {
+      return localStorage.getItem('obsidian_token') || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const tokenIsExpired = (token: string): boolean => {
+    try {
+      const payloadSegment = token.split('.')[1];
+      const json = atob(payloadSegment.replace(/-/g, '+').replace(/_/g, '/'));
+      const payload = JSON.parse(json) as { exp?: number };
+      return typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now();
+    } catch {
+      return true;
+    }
+  };
 
   const scheduleReconnect = () => {
     if (closedByCaller) return;
@@ -40,17 +60,17 @@ export function subscribeProjectEvents(
   const connect = () => {
     if (closedByCaller) return;
 
+    const token = readToken();
+    // A failed upgrade is reported by browsers as close code 1006 (no close frame). Never
+    // reconnect forever when we have no usable credential to present to the server.
+    if (!token || tokenIsExpired(token)) return;
+
     const isHttps = window.location.protocol === 'https:';
     const wsProto = isHttps ? 'wss:' : 'ws:';
-    let token = '';
-    try {
-      token = localStorage.getItem('obsidian_token') || '';
-    } catch {
-      token = '';
-    }
 
     const url = `${wsProto}//${window.location.host}/ws/obsidian-project-events-${encodeURIComponent(projectId)}?token=${encodeURIComponent(token)}`;
 
+    let opened = false;
     try {
       ws = new WebSocket(url);
     } catch {
@@ -59,7 +79,9 @@ export function subscribeProjectEvents(
     }
 
     ws.onopen = () => {
+      opened = true;
       attempt = 0;
+      consecutiveFailedUpgrades = 0;
     };
 
     ws.onmessage = (msgEvent) => {
@@ -75,10 +97,14 @@ export function subscribeProjectEvents(
 
     ws.onclose = (closeEvent) => {
       ws = null;
-      // Do not reconnect when rejected due to authorization/removal
-      if (!closedByCaller && closeEvent.code !== 4003 && closeEvent.code !== 1008) {
-        scheduleReconnect();
+      // Do not reconnect when rejected due to authorization/removal.
+      if (closedByCaller || closeEvent.code === 4003 || closeEvent.code === 1008) return;
+
+      if (!opened && closeEvent.code === 1006) {
+        consecutiveFailedUpgrades += 1;
+        if (consecutiveFailedUpgrades >= 2) return;
       }
+      scheduleReconnect();
     };
   };
 
