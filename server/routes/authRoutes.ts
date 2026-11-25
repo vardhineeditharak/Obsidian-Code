@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'node:crypto';
+import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from 'jose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
@@ -75,11 +76,44 @@ const clerkSyncSchema = z.object({
   email: z.string().email(),
   name: z.string().trim().min(1).max(100),
   avatar: z.string().optional(),
+  sessionToken: z.string().min(1),
 });
 
 function hasConfiguredClerkSecret(): boolean {
   const key = config.CLERK_SECRET_KEY;
   return Boolean(key && !key.includes('your_clerk_secret_key') && key.startsWith('sk_'));
+}
+
+type ClerkJwksCacheEntry = { jwks: ReturnType<typeof createLocalJWKSet>; fetchedAt: number };
+const clerkJwksCache = new Map<string, ClerkJwksCacheEntry>();
+const CLERK_JWKS_CACHE_MS = 30_000;
+
+/** Resolves the Clerk Frontend API issuer embedded in the publishable key. */
+function getClerkIssuer(): string | null {
+  const publishableKey = config.CLERK_PUBLISHABLE_KEY || config.VITE_CLERK_PUBLISHABLE_KEY;
+  if (!publishableKey || !/^pk_(test|live)_/.test(publishableKey)) return null;
+  try {
+    const encoded = publishableKey.replace(/^pk_(test|live)_/, '');
+    const frontendApi = Buffer.from(encoded, 'base64').toString('utf8').replace(/\$$/, '');
+    return /^[a-z0-9.-]+$/i.test(frontendApi) ? `https://${frontendApi}` : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Fetches and caches Clerk's JWKS so session signatures can be verified locally. */
+async function getClerkJwks(issuer: string): Promise<ReturnType<typeof createLocalJWKSet>> {
+  const cached = clerkJwksCache.get(issuer);
+  if (cached && Date.now() - cached.fetchedAt < CLERK_JWKS_CACHE_MS) return cached.jwks;
+
+  const response = await fetch(`${issuer}/.well-known/jwks.json`, {
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error(`Clerk JWKS request failed with ${response.status}`);
+  const body = (await response.json()) as JSONWebKeySet;
+  const jwks = createLocalJWKSet(body);
+  clerkJwksCache.set(issuer, { jwks, fetchedAt: Date.now() });
+  return jwks;
 }
 
 // Register
@@ -174,46 +208,82 @@ router.post('/clerk-sync', async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Validation failed', errors: result.error.issues });
   }
 
-  const { clerkId, email, name, avatar } = result.data;
+  const { clerkId, email, name, avatar, sessionToken } = result.data;
+  let verifiedEmail = email;
 
-  // Verify Clerk identity against Clerk Backend API when a real CLERK_SECRET_KEY is configured
-  if (hasConfiguredClerkSecret()) {
-    try {
-      const clerkRes = await fetch(
-        `https://api.clerk.com/v1/users/${encodeURIComponent(clerkId)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${config.CLERK_SECRET_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          signal: AbortSignal.timeout(8000),
-        }
-      );
-      if (!clerkRes.ok) {
-        return res.status(401).json({ message: 'Unable to verify Clerk user identity.' });
-      }
-      const clerkUserData = (await clerkRes.json()) as {
-        id?: string;
-        email_addresses?: Array<{ email_address?: string }>;
-      };
-      if (clerkUserData.id !== clerkId) {
-        return res.status(401).json({ message: 'Clerk user ID mismatch.' });
-      }
-      const verifiedEmails = (clerkUserData.email_addresses || [])
-        .map((e) => e.email_address?.toLowerCase())
-        .filter((e): e is string => Boolean(e));
-      if (verifiedEmails.length > 0 && !verifiedEmails.includes(email.toLowerCase())) {
-        return res.status(403).json({ message: 'Clerk email verification mismatch.' });
-      }
-    } catch (err) {
-      console.error('Clerk verification error:', err);
-      return res.status(502).json({
-        message: 'Failed to verify Clerk session with identity provider.',
-      });
-    }
+  // Clerk sync must never be reachable without a configured server-side identity provider.
+  if (!hasConfiguredClerkSecret()) {
+    return res.status(503).json({ message: 'Clerk authentication is not configured on this server.' });
+  }
+  const issuer = getClerkIssuer();
+  if (!issuer) {
+    return res.status(503).json({ message: 'Clerk publishable key is not configured on this server.' });
   }
 
-  const user = await dbStore.upsertClerkUser({ clerkId, email, name, avatar });
+  // Identity comes exclusively from a cryptographically verified Clerk session token.
+  let verifiedClerkId: string;
+  try {
+    const jwks = await getClerkJwks(issuer);
+    const { payload } = await jwtVerify(sessionToken, jwks, {
+      issuer,
+      algorithms: ['RS256'],
+    });
+    if (!payload.sub) {
+      return res.status(401).json({ message: 'Clerk session token is missing a subject.' });
+    }
+    verifiedClerkId = payload.sub;
+  } catch {
+    return res.status(401).json({ message: 'Invalid or expired Clerk session token.' });
+  }
+
+  if (clerkId !== verifiedClerkId) {
+    return res.status(401).json({ message: 'Clerk user ID does not match the verified session.' });
+  }
+
+  try {
+    const clerkRes = await fetch(
+      `https://api.clerk.com/v1/users/${encodeURIComponent(verifiedClerkId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${config.CLERK_SECRET_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(8000),
+      }
+    );
+    if (!clerkRes.ok) {
+      return res.status(401).json({ message: 'Unable to verify Clerk user identity.' });
+    }
+    const clerkUserData = (await clerkRes.json()) as {
+      id?: string;
+      email_addresses?: Array<{ email_address?: string }>;
+    };
+    if (clerkUserData.id !== verifiedClerkId) {
+      return res.status(401).json({ message: 'Clerk user ID mismatch.' });
+    }
+    const verifiedEmails = (clerkUserData.email_addresses || [])
+      .map((e) => e.email_address)
+      .filter((e): e is string => Boolean(e));
+    const canonicalEmail = verifiedEmails.find(
+      (candidate) => candidate.toLowerCase() === email.toLowerCase()
+    );
+    if (!canonicalEmail) {
+      return res.status(403).json({ message: 'Clerk email verification mismatch.' });
+    }
+    verifiedEmail = canonicalEmail;
+  } catch (err) {
+    console.error('Clerk verification error:', err);
+    return res.status(502).json({
+      message: 'Failed to verify Clerk session with identity provider.',
+    });
+  }
+
+  const user = await dbStore.upsertClerkUser({
+    clerkId: verifiedClerkId,
+    email: verifiedEmail,
+    name,
+    avatar,
+  });
   const token = signSessionToken(user);
   setAuthCookie(res, token);
 
@@ -256,11 +326,13 @@ router.get('/github/callback', async (req: Request, res: Response) => {
   const cookieState = typeof req.cookies?.gh_oauth_state === 'string' ? req.cookies.gh_oauth_state : '';
   const queryState = typeof req.query?.state === 'string' ? req.query.state : '';
 
+  const cookieStateBuffer = Buffer.from(cookieState);
+  const queryStateBuffer = Buffer.from(queryState);
   if (
     !cookieState ||
     !queryState ||
-    cookieState.length !== queryState.length ||
-    !crypto.timingSafeEqual(Buffer.from(cookieState), Buffer.from(queryState))
+    cookieStateBuffer.length !== queryStateBuffer.length ||
+    !crypto.timingSafeEqual(cookieStateBuffer, queryStateBuffer)
   ) {
     return res.status(400).json({ message: 'Invalid or missing OAuth state parameter.' });
   }
@@ -319,33 +391,33 @@ router.get('/github/callback', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Failed to retrieve user profile from GitHub.' });
     }
 
-    let email = ghUser.email || '';
-    if (!email) {
-      try {
-        const emailsRes = await fetch('https://api.github.com/user/emails', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'User-Agent': 'Obsidian-Code-App',
-          },
-          signal: AbortSignal.timeout(8000),
-        });
+    // Only GitHub-verified addresses may be used for identity linking. A user can set
+    // arbitrary unverified addresses on their own account, so ghUser.email is not trusted.
+    let email = '';
+    try {
+      const emailsRes = await fetch('https://api.github.com/user/emails', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'User-Agent': 'Obsidian-Code-App',
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (emailsRes.ok) {
         const emails = (await emailsRes.json()) as Array<{
           email?: string;
           primary?: boolean;
           verified?: boolean;
         }>;
         if (Array.isArray(emails)) {
-          const primary =
-            emails.find((e) => e.primary && e.verified) ||
-            emails.find((e) => e.verified) ||
-            emails[0];
-          if (primary?.email) {
-            email = primary.email;
-          }
+          const verified = emails.filter(
+            (entry) => entry.verified === true && typeof entry.email === 'string' && entry.email.length > 0
+          );
+          const primary = verified.find((entry) => entry.primary) || verified[0];
+          if (primary?.email) email = primary.email.toLowerCase();
         }
-      } catch {
-        // Fallback to GitHub noreply email below
       }
+    } catch {
+      // Fall back to a non-linking noreply address below
     }
 
     if (!email) {
