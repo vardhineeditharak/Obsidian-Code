@@ -6,6 +6,10 @@ const FOCUSABLE_SELECTOR =
 const INPUT_SELECTOR =
   'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])';
 
+// Only the topmost open dialog should react to Escape/Tab. Listeners on `window` cannot
+// be stopped by stopPropagation(), so nested dialogs need an explicit stack.
+const dialogStack: symbol[] = [];
+
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +40,8 @@ export function Modal({
   useEffect(() => {
     if (!isOpen) return;
 
+    const stackToken = Symbol('dialog');
+    dialogStack.push(stackToken);
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
 
     // Prefer focusing form inputs over the header close button on initial open
@@ -58,6 +64,8 @@ export function Modal({
     }, 25);
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (dialogStack[dialogStack.length - 1] !== stackToken) return;
+
       if (e.key === 'Escape') {
         e.stopPropagation();
         onCloseRef.current();
@@ -94,6 +102,8 @@ export function Modal({
     return () => {
       clearTimeout(focusTimer);
       window.removeEventListener('keydown', handleKeyDown);
+      const stackIndex = dialogStack.indexOf(stackToken);
+      if (stackIndex >= 0) dialogStack.splice(stackIndex, 1);
 
       const prev = previouslyFocusedRef.current;
       if (prev && prev.isConnected && typeof prev.focus === 'function') {
