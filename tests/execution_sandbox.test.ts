@@ -78,6 +78,12 @@ describe('Multi-Language Execution, Sandbox Runner & Route Security', () => {
       const javaRes = await resolveLanguage('java', 'public class HelloWorld { public static void main(String[] a) {} }');
       expect(javaRes?.run.args).toEqual(['-cp', '.', 'HelloWorld']);
 
+      const javaDecoyRes = await resolveLanguage(
+        'java',
+        '// public class Decoy {}\npublic class Real { public static void main(String[] a) {} }'
+      );
+      expect(javaDecoyRes?.run.args).toEqual(['-cp', '.', 'Real']);
+
       expect(await resolveLanguage('unknown.xyz')).toBeNull();
     });
   });
@@ -149,8 +155,19 @@ describe('Multi-Language Execution, Sandbox Runner & Route Security', () => {
     });
   });
 
-  describe('VM Sandbox Runner (server/execution/sandboxRunner.ts)', () => {
-    it('handles html/css, python diagnostic fallback, isolated JS execution, and blocks globals/process', async () => {
+  it('does not let fileName override the requested language', async () => {
+    const res = await runProcessCode({
+      code: 'console.log("LANG_SENTINEL")',
+      language: 'python',
+      fileName: 'run.js',
+    });
+    expect(res.language).toBe('python');
+    expect(res.exitCode).toBe(1);
+    expect(res.stderr.join(' ')).toContain('does not match');
+  });
+
+  describe('Preview Runner (server/execution/sandboxRunner.ts)', () => {
+    it('handles html/css, python diagnostic fallback, and child-process JS execution', async () => {
       const htmlRes = await executeSandboxCode({ code: '<h1>Hi</h1>', language: 'html' });
       expect(htmlRes.stdout[0]).toContain('sandboxed preview iframe');
 
@@ -161,14 +178,15 @@ describe('Multi-Language Execution, Sandbox Runner & Route Security', () => {
         code: 'console.log("ok", { a: 1 }); console.warn("careful");',
         language: 'javascript',
       });
-      expect(jsRes.stdout[0]).toContain('ok');
-      expect(jsRes.stderr[0]).toBe('[WARN] careful');
+      expect(jsRes.stdout.join(' ')).toContain('ok');
+      expect(jsRes.stderr.join(' ')).toContain('careful');
 
-      const blockedRes = await executeSandboxCode({
-        code: 'typeof process === "undefined" && typeof require === "undefined" ? "isolated" : "leaked"',
+      // The preview runner executes in a child process with a whitelisted environment.
+      const envRes = await executeSandboxCode({
+        code: 'console.log(process.env.JWT_SECRET === undefined ? "no-secret" : "leaked")',
         language: 'javascript',
       });
-      expect(blockedRes.stdout).toEqual(['isolated']);
+      expect(envRes.stdout).toEqual(['no-secret']);
 
       const timeoutRes = await executeSandboxCode({
         code: 'while (true) {}',
