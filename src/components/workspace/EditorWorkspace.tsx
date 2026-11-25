@@ -152,6 +152,8 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   });
 
   const isDraggingSplitRef = useRef(false);
+  const splitRatioRef = useRef(splitRatio);
+  splitRatioRef.current = splitRatio;
   const containerRef = useRef<HTMLDivElement>(null);
   const rAFSplitRef = useRef<number | null>(null);
 
@@ -190,6 +192,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       active = false;
       if (rAFSplitRef.current) {
         cancelAnimationFrame(rAFSplitRef.current);
+      }
+      if (isDraggingSplitRef.current && typeof document !== 'undefined') {
+        document.body.style.userSelect = '';
+        isDraggingSplitRef.current = false;
       }
       if (typeof document !== 'undefined' && document.fonts) {
         document.fonts.removeEventListener('loadingdone', handleLoadingDone);
@@ -656,6 +662,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   // Split handle pointer & keyboard controls
   const updateAndPersistSplitRatio = (next: number) => {
     const clamped = Math.max(20, Math.min(80, Math.round(next)));
+    splitRatioRef.current = clamped;
     setSplitRatio(clamped);
     try {
       localStorage.setItem('obsidian.layout.splitRatio', String(clamped));
@@ -678,6 +685,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
       newRatio = ((e.clientY - rect.top) / rect.height) * 100;
     }
     const clamped = Math.max(20, Math.min(80, Math.round(newRatio)));
+    splitRatioRef.current = clamped;
 
     if (rAFSplitRef.current) cancelAnimationFrame(rAFSplitRef.current);
     rAFSplitRef.current = requestAnimationFrame(() => {
@@ -692,9 +700,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {}
-    try {
-      localStorage.setItem('obsidian.layout.splitRatio', String(splitRatio));
-    } catch {}
+    if (rAFSplitRef.current) {
+      cancelAnimationFrame(rAFSplitRef.current);
+      rAFSplitRef.current = null;
+    }
+    updateAndPersistSplitRatio(splitRatioRef.current);
   };
 
   const handleSplitKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
