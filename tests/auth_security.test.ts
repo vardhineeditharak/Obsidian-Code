@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import http from 'node:http';
+import crypto from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -17,9 +18,45 @@ describe('Backend Authentication, Security, OAuth, CORS & Clerk Sync', () => {
   const originalFetch = globalThis.fetch;
   const originalEnvConfig = {
     CLERK_SECRET_KEY: config.CLERK_SECRET_KEY,
+    CLERK_PUBLISHABLE_KEY: config.CLERK_PUBLISHABLE_KEY,
     GITHUB_CLIENT_ID: config.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: config.GITHUB_CLIENT_SECRET,
   };
+
+  const clerkFrontendApi = 'clerk.test.example.com';
+  const clerkIssuer = `https://${clerkFrontendApi}`;
+  const clerkKeyPair = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const clerkPublicJwk = clerkKeyPair.publicKey.export({ format: 'jwk' });
+  const clerkPrivateKeyPem = clerkKeyPair.privateKey
+    .export({ type: 'pkcs8', format: 'pem' })
+    .toString();
+
+  function signClerkSessionToken(clerkId: string, overrides: Record<string, unknown> = {}): string {
+    return jwt.sign(
+      { sub: clerkId, ...overrides },
+      clerkPrivateKeyPem,
+      { algorithm: 'RS256', keyid: 'test-key', issuer: clerkIssuer, expiresIn: '5m' }
+    );
+  }
+
+  function installClerkFetch(
+    apiHandler: (url: string, init?: RequestInit) => Response | Promise<Response> | null
+  ): void {
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === `${clerkIssuer}/.well-known/jwks.json`) {
+        return new Response(
+          JSON.stringify({ keys: [{ ...clerkPublicJwk, kid: 'test-key', use: 'sig', alg: 'RS256' }] }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (url.startsWith('https://api.clerk.com/')) {
+        const handled = await apiHandler(url, init);
+        if (handled) return handled;
+      }
+      return originalFetch(input, init);
+    }) as typeof fetch;
+  }
 
   beforeAll(async () => {
     const app = express();
@@ -94,6 +131,7 @@ describe('Backend Authentication, Security, OAuth, CORS & Clerk Sync', () => {
 
   afterEach(() => {
     config.CLERK_SECRET_KEY = originalEnvConfig.CLERK_SECRET_KEY;
+    config.CLERK_PUBLISHABLE_KEY = originalEnvConfig.CLERK_PUBLISHABLE_KEY;
     config.GITHUB_CLIENT_ID = originalEnvConfig.GITHUB_CLIENT_ID;
     config.GITHUB_CLIENT_SECRET = originalEnvConfig.GITHUB_CLIENT_SECRET;
     globalThis.fetch = originalFetch;
@@ -331,142 +369,141 @@ describe('Backend Authentication, Security, OAuth, CORS & Clerk Sync', () => {
   });
 
   describe('Clerk Sync Verification (/api/auth/clerk-sync)', () => {
-    it('upserts Clerk user and links existing email account when CLERK_SECRET_KEY is placeholder/unset', async () => {
-      config.CLERK_SECRET_KEY = undefined;
-      const email = `clerk-dev-${Date.now()}@obsidian.test`;
+    const setPublishableKey = () => {
+      config.CLERK_PUBLISHABLE_KEY = `pk_test_${Buffer.from(`${clerkFrontendApi}$`).toString('base64')}`;
+    };
+    const postSync = (body: Record<string, unknown>) =>
+      originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-      // Pre-create standard user to test email linking
+    it('rejects sync without a configured secret, without a session token, and with a forged token', async () => {
+      setPublishableKey();
+      config.CLERK_SECRET_KEY = undefined;
+      const unconfiguredRes = await postSync({
+        clerkId: 'user_dev',
+        email: 'dev@obsidian.test',
+        name: 'Dev',
+        sessionToken: signClerkSessionToken('user_dev'),
+      });
+      expect(unconfiguredRes.status).toBe(503);
+
+      config.CLERK_SECRET_KEY = 'sk_test_verified_secret_key_for_tests';
+      installClerkFetch(() => null);
+
+      const noTokenRes = await postSync({
+        clerkId: 'user_dev',
+        email: 'dev@obsidian.test',
+        name: 'Dev',
+      });
+      expect(noTokenRes.status).toBe(400);
+
+      const forgedRes = await postSync({
+        clerkId: 'user_dev',
+        email: 'dev@obsidian.test',
+        name: 'Dev',
+        sessionToken: 'not-a-clerk-token',
+      });
+      expect(forgedRes.status).toBe(401);
+
+      const mismatchedSubjectRes = await postSync({
+        clerkId: 'user_attacker',
+        email: 'dev@obsidian.test',
+        name: 'Dev',
+        sessionToken: signClerkSessionToken('user_victim'),
+      });
+      expect(mismatchedSubjectRes.status).toBe(401);
+    });
+
+    it('verifies the session token and links an existing email account only when Clerk confirms it', async () => {
+      config.CLERK_SECRET_KEY = 'sk_test_verified_secret_key_for_tests';
+      setPublishableKey();
+      const clerkId = `user_verified_${Date.now()}`;
+      const email = `verified-${Date.now()}@clerk.test`;
       const existing = await dbStore.createUser({
         email,
         passwordHash: '$2a$10$existinghashvalue',
         name: 'Preexisting User',
       });
 
-      const res = await originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clerkId: `user_dev_${Date.now()}`,
-          email,
-          name: 'Clerk Linked Name',
-        }),
+      installClerkFetch(() => {
+        return new Response(
+          JSON.stringify({ id: clerkId, email_addresses: [{ email_address: email }] }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
       });
-      expect(res.status).toBe(200);
-      const body = (await res.json()) as any;
-      expect(String(body.user._id)).toBe(String(existing._id));
-      expect(body.user.name).toBe('Clerk Linked Name');
-      expect(typeof body.token).toBe('string');
-      expect(res.headers.get('set-cookie') || '').toContain('obsidian_token=');
-    });
 
-    it('verifies Clerk identity against Clerk Backend API when CLERK_SECRET_KEY is configured', async () => {
-      config.CLERK_SECRET_KEY = 'sk_test_verified_secret_key_for_tests';
-      const clerkId = `user_verified_${Date.now()}`;
-      const email = `verified-${Date.now()}@clerk.test`;
-
-      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.startsWith('https://api.clerk.com/v1/users/')) {
-          expect(init?.headers).toMatchObject({
-            Authorization: 'Bearer sk_test_verified_secret_key_for_tests',
-          });
-          return new Response(
-            JSON.stringify({
-              id: clerkId,
-              email_addresses: [{ email_address: email }],
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-        return originalFetch(input, init);
-      }) as typeof fetch;
-
-      const okRes = await originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clerkId, email, name: 'Verified Clerk User' }),
+      const okRes = await postSync({
+        clerkId,
+        email,
+        name: 'Verified Clerk User',
+        sessionToken: signClerkSessionToken(clerkId),
       });
       expect(okRes.status).toBe(200);
       const okBody = (await okRes.json()) as any;
+      expect(String(okBody.user._id)).toBe(String(existing._id));
       expect(okBody.user.email).toBe(email);
+      expect(okRes.headers.get('set-cookie') || '').toContain('obsidian_token=');
     });
 
     it('rejects Clerk sync with 401 on non-OK API response or ID mismatch, 403 on email mismatch, and 502 on network error', async () => {
       config.CLERK_SECRET_KEY = 'sk_test_verified_secret_key_for_tests';
+      setPublishableKey();
 
       // 1. Non-OK response from Clerk API -> 401
-      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (String(input).startsWith('https://api.clerk.com/')) {
-          return new Response(JSON.stringify({ errors: [] }), { status: 404 });
-        }
-        return originalFetch(input, init);
-      }) as typeof fetch;
-
-      const notFoundRes = await originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clerkId: 'user_bad', email: 'a@b.com', name: 'Bad' }),
+      installClerkFetch(() => new Response(JSON.stringify({ errors: [] }), { status: 404 }));
+      const notFoundRes = await postSync({
+        clerkId: 'user_bad',
+        email: 'a@b.com',
+        name: 'Bad',
+        sessionToken: signClerkSessionToken('user_bad'),
       });
       expect(notFoundRes.status).toBe(401);
 
       // 2. Clerk ID mismatch -> 401
-      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (String(input).startsWith('https://api.clerk.com/')) {
-          return new Response(
-            JSON.stringify({
-              id: 'user_different',
-              email_addresses: [{ email_address: 'a@b.com' }],
-            }),
-            { status: 200 }
-          );
-        }
-        return originalFetch(input, init);
-      }) as typeof fetch;
-
-      const idMismatchRes = await originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clerkId: 'user_expected', email: 'a@b.com', name: 'Mismatch' }),
+      installClerkFetch(() =>
+        new Response(
+          JSON.stringify({ id: 'user_different', email_addresses: [{ email_address: 'a@b.com' }] }),
+          { status: 200 }
+        )
+      );
+      const idMismatchRes = await postSync({
+        clerkId: 'user_expected',
+        email: 'a@b.com',
+        name: 'Mismatch',
+        sessionToken: signClerkSessionToken('user_expected'),
       });
       expect(idMismatchRes.status).toBe(401);
 
       // 3. Email verification mismatch -> 403
-      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (String(input).startsWith('https://api.clerk.com/')) {
-          return new Response(
-            JSON.stringify({
-              id: 'user_email_check',
-              email_addresses: [{ email_address: 'real@clerk.dev' }],
-            }),
-            { status: 200 }
-          );
-        }
-        return originalFetch(input, init);
-      }) as typeof fetch;
-
-      const emailMismatchRes = await originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clerkId: 'user_email_check',
-          email: 'spoofed@evil.dev',
-          name: 'Spoof',
-        }),
+      installClerkFetch(() =>
+        new Response(
+          JSON.stringify({
+            id: 'user_email_check',
+            email_addresses: [{ email_address: 'real@clerk.dev' }],
+          }),
+          { status: 200 }
+        )
+      );
+      const emailMismatchRes = await postSync({
+        clerkId: 'user_email_check',
+        email: 'spoofed@evil.dev',
+        name: 'Spoof',
+        sessionToken: signClerkSessionToken('user_email_check'),
       });
       expect(emailMismatchRes.status).toBe(403);
 
       // 4. Network failure contacting Clerk -> 502
-      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (String(input).startsWith('https://api.clerk.com/')) {
-          throw new Error('ECONNREFUSED');
-        }
-        return originalFetch(input, init);
-      }) as typeof fetch;
-
-      const networkErrRes = await originalFetch(`${baseUrl}/api/auth/clerk-sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clerkId: 'user_net', email: 'net@clerk.dev', name: 'Net' }),
+      installClerkFetch(() => {
+        throw new Error('ECONNREFUSED');
+      });
+      const networkErrRes = await postSync({
+        clerkId: 'user_net',
+        email: 'net@clerk.dev',
+        name: 'Net',
+        sessionToken: signClerkSessionToken('user_net'),
       });
       expect(networkErrRes.status).toBe(502);
     });
@@ -572,6 +609,48 @@ describe('Backend Authentication, Security, OAuth, CORS & Clerk Sync', () => {
       expect(savedUser).not.toBeNull();
       expect(savedUser?.email).toBe('primary@octo.dev');
       expect(savedUser?.passwordHash).toBeUndefined();
+    });
+
+    it('does not link an account using an unverified GitHub email', async () => {
+      config.GITHUB_CLIENT_ID = 'gh-client-id-test';
+      config.GITHUB_CLIENT_SECRET = 'gh-client-secret-test';
+      const victimEmail = `victim-${Date.now()}@company.com`;
+      await dbStore.createUser({
+        email: victimEmail,
+        passwordHash: '$2a$10$fakehashpassword123',
+        name: 'Victim',
+      });
+
+      const initRes = await originalFetch(`${baseUrl}/api/auth/github`, { redirect: 'manual' });
+      const state = (initRes.headers.get('set-cookie') || '').match(/gh_oauth_state=([^;]+)/)![1];
+
+      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === 'https://github.com/login/oauth/access_token') {
+          return new Response(JSON.stringify({ access_token: 'gho_mock_token' }), { status: 200 });
+        }
+        if (url === 'https://api.github.com/user') {
+          return new Response(JSON.stringify({ id: 888456, login: 'attacker', email: victimEmail }), {
+            status: 200,
+          });
+        }
+        if (url === 'https://api.github.com/user/emails') {
+          return new Response(
+            JSON.stringify([{ email: victimEmail, primary: true, verified: false }]),
+            { status: 200 }
+          );
+        }
+        return originalFetch(input, init);
+      }) as typeof fetch;
+
+      const cbRes = await originalFetch(
+        `${baseUrl}/api/auth/github/callback?code=auth_code_2&state=${state}`,
+        { redirect: 'manual', headers: { Cookie: `gh_oauth_state=${state}` } }
+      );
+      expect(cbRes.status).toBe(302);
+      const savedUser = await dbStore.findUserByGithubId('888456');
+      expect(savedUser?.email).toBe('888456@users.noreply.github.com');
+      expect(savedUser?.email).not.toBe(victimEmail);
     });
 
     it('dbStore.upsertGithubUser creates passwordless user and links by matching email', async () => {
