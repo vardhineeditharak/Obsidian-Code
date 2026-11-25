@@ -19,7 +19,7 @@ export interface SearchReplaceModalProps {
   getFileContent: (fileId: string) => Promise<string>;
   onSelectResult: (fileId: string, line: number, column: number, matchLength?: number) => void;
   onBatchReplace: (replacements: { fileId: string; newContent: string }[]) => Promise<void>;
-  onBeforeSearch?: () => Promise<void>;
+  onBeforeSearch?: () => Promise<ProjectFile[] | void>;
 }
 
 const MAX_SEARCH_RESULTS = 2000;
@@ -57,6 +57,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
   const [hasSearched, setHasSearched] = useState(false);
   const [isCapped, setIsCapped] = useState(false);
   const [collapsedFiles, setCollapsedFiles] = useState<Record<string, boolean>>({});
+  const [resultSignature, setResultSignature] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -85,6 +86,14 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       }
     };
   }, [isOpen]);
+
+  // A result list is only valid for the query/options that produced it.
+  useEffect(() => {
+    setResults([]);
+    setResultSignature('');
+    setHasSearched(false);
+    setIsCapped(false);
+  }, [query, caseSensitive, wholeWord, useRegex]);
 
   const groupedResults = useMemo(() => {
     const map = new Map<string, SearchResult[]>();
@@ -122,9 +131,11 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
     setHasSearched(true);
 
     try {
+      let filesToSearch = files;
       if (onBeforeSearch) {
         try {
-          await onBeforeSearch();
+          const refreshed = await onBeforeSearch();
+          if (Array.isArray(refreshed)) filesToSearch = refreshed;
         } catch (e) {
           console.warn('Failed to refresh files before search:', e);
         }
@@ -133,7 +144,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       const searchResults: SearchResult[] = [];
       let capped = false;
 
-      for (const file of files) {
+      for (const file of filesToSearch) {
         if (file.isFolder) continue;
         if (searchResults.length >= MAX_SEARCH_RESULTS) {
           capped = true;
@@ -176,6 +187,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       }
 
       setResults(searchResults);
+      setResultSignature(`${query}\u0000${caseSensitive}\u0000${wholeWord}\u0000${useRegex}`);
       setIsCapped(capped);
     } catch (err: unknown) {
       notify.error('Search failed', err instanceof Error ? err.message : 'Unable to scan workspace files');
@@ -187,6 +199,12 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
   const handleBatchReplace = async () => {
     if (!query || results.length === 0) return;
 
+    const currentSignature = `${query}\u0000${caseSensitive}\u0000${wholeWord}\u0000${useRegex}`;
+    if (resultSignature !== currentSignature) {
+      notify.error('Search changed', 'Run the search again before replacing occurrences.');
+      return;
+    }
+
     let regex: RegExp;
     try {
       regex = buildSearchRegex(query, { caseSensitive, wholeWord, useRegex });
@@ -197,14 +215,20 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
 
     try {
       const batch: { fileId: string; newContent: string }[] = [];
+      let changedFiles = 0;
       for (const fileId of groupedResults.keys()) {
         const content = await getFileContent(fileId);
         const replaced = content.replace(regex, replacement);
+        if (replaced !== content) changedFiles += 1;
         batch.push({ fileId, newContent: replaced });
+      }
+      if (changedFiles === 0) {
+        notify.error('No matches', 'Nothing matched the current query in the listed files.');
+        return;
       }
 
       await onBatchReplace(batch);
-      notify.success(`Replaced occurrences across ${groupedResults.size} files`);
+      notify.success(`Replaced occurrences across ${changedFiles} files`);
       setResults([]);
       setIsCapped(false);
       setHasSearched(false);
