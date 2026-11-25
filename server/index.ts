@@ -141,7 +141,13 @@ const PORT = parseInt(process.env.PORT || config.PORT, 10);
 const HOST = '0.0.0.0';
 
 async function start(): Promise<void> {
-  await connectDB();
+  const connected = await connectDB();
+  if (!connected && config.NODE_ENV === 'production') {
+    console.error(
+      'CRITICAL: MongoDB is unavailable in production. Refusing to start with the volatile in-memory fallback.'
+    );
+    process.exit(1);
+  }
 
   server.listen(PORT, HOST, () => {
     console.log('===============================================');
