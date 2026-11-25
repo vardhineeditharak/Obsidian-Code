@@ -131,11 +131,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </span>
         )}
 
-        <span>Ln {cursorLine}, Col {cursorColumn}</span>
+        <span className="tabular-nums">Ln {cursorLine}, Col {cursorColumn}</span>
 
         <span className="text-stone hidden sm:inline" aria-hidden="true">|</span>
 
-        <span className="hidden sm:inline">Spaces: {tabSize}</span>
+        <span className="hidden sm:inline tabular-nums">Spaces: {tabSize}</span>
 
         <span className="text-stone hidden sm:inline" aria-hidden="true">|</span>
 
@@ -143,7 +143,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span className="text-stone" aria-hidden="true">|</span>
 
-        <span className="uppercase text-ink font-medium">{currentLanguage || 'plaintext'}</span>
+        <span className="uppercase text-ink font-medium tracking-[0.04em]">{currentLanguage || 'plaintext'}</span>
       </div>
     </footer>
   );

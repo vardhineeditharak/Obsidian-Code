@@ -58,24 +58,24 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none transition-colors duration-150">
-          <div className="w-full max-w-lg bg-bone rounded-xl border border-stone p-8 shadow-2xl inset-glow space-y-6 text-center">
+          <div className="w-full max-w-lg glass-modal rounded-2xl p-8 space-y-6 text-center">
             <div className="flex flex-col items-center gap-3">
-              <BrandMark className="w-12 h-12 text-ink" />
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-crimson/10 border border-crimson/20 text-crimson text-xs font-mono">
+              <BrandMark className="w-11 h-11 text-ink" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-crimson/12 border border-crimson/25 text-crimson text-[11px] font-medium tracking-[0.01em]">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>Renderer Encountered an Exception</span>
               </div>
-              <h1 className="headline-md font-normal text-ink mt-1">
+              <h1 className="headline-md text-ink mt-1">
                 Workspace Interrupted
               </h1>
-              <p className="text-[16px] text-driftwood leading-relaxed max-w-md">
+              <p className="text-[14px] text-driftwood leading-relaxed max-w-md">
                 An unexpected error occurred while rendering the workspace. Your CRDT changes and
                 snapshots remain intact.
               </p>
             </div>
 
             {error ? (
-              <div className="text-left bg-parchment border border-stone rounded-md p-3.5 text-xs font-mono text-ink">
+              <div className="text-left bg-parchment/80 border border-(--border-subtle) rounded-xl p-3.5 text-xs font-mono text-ink">
                 <p className="text-crimson font-medium break-words">
                   {error.name}: {error.message}
                 </p>
@@ -108,7 +108,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <button
                 type="button"
                 onClick={this.handleBackToDashboard}
-                className="btn-secondary text-xs px-4 py-2"
+                className="btn-secondary text-[13px] px-4 py-2"
               >
                 <Home className="w-3.5 h-3.5" />
                 <span>Back to Dashboard</span>
@@ -117,7 +117,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <button
                 type="button"
                 onClick={this.handleReload}
-                className="btn-primary text-xs px-4 py-2"
+                className="btn-primary text-[13px] px-4 py-2"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reload Application</span>

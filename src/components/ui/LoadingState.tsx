@@ -25,7 +25,7 @@ export function LoadingState({
 
       <div className="flex items-center gap-2 mt-1">
         <RotateCw className="w-3.5 h-3.5 animate-spin text-ash" aria-hidden="true" />
-        <span className="font-mono text-xs text-driftwood tracking-wide">{label}</span>
+        <span className="font-sans text-[13px] font-medium tracking-[-0.01em] text-driftwood">{label}</span>
       </div>
     </div>
   );

@@ -124,19 +124,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       onClose={onClose}
       maxWidth="max-w-xl"
       title={
-        <div className="flex items-center space-x-2">
-          <Users className="w-5 h-5 text-ash" />
-          <h2 className="text-base font-normal text-ink">Share "{projectName}"</h2>
+        <div className="flex items-center gap-2.5">
+          <Users className="w-4 h-4 text-ash" />
+          <h2 className="text-[15px] font-medium tracking-[-0.015em] text-ink">Share "{projectName}"</h2>
         </div>
       }
     >
       {/* Modal Body */}
       <div className="p-6 space-y-6">
         {/* Link Generation Section */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <label
             htmlFor="invite-url-field"
-            className="text-xs font-mono text-ash uppercase tracking-wider block"
+            className="text-eyebrow block"
           >
             Invite Collaborators via Link
           </label>
@@ -149,7 +149,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 placeholder="Click generate to create an invite link..."
                 value={inviteUrl}
                 aria-label="Generated invitation URL"
-                className="w-full bg-surface border border-stone rounded-lg px-3 py-2 text-xs font-mono text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber placeholder-mist"
+                className="input-atelier w-full h-9 text-[12px] font-mono"
               />
             </div>
 
@@ -162,7 +162,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   setSelectedRole(nextRole);
                   setCopied(false);
                 }}
-                className="bg-surface border border-stone rounded-lg px-3 py-2 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
+                className="h-9 bg-white/[0.04] border border-white/[0.1] rounded-[9px] px-3 text-[12.5px] font-sans text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
               >
                 <option value="editor">Editor (Can edit)</option>
                 <option value="viewer">Viewer (Read-only)</option>
@@ -174,7 +174,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="btn-primary text-xs px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                  className="btn-primary min-h-0 h-9 px-3.5 text-[12.5px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                 >
                   {copied ? (
                     <Check className="w-3.5 h-3.5 text-verdant" />
@@ -190,7 +190,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     disabled={isLoading}
                     title="Regenerate invite link"
                     aria-label="Regenerate invite link"
-                    className="btn-secondary text-xs px-2.5 py-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                    className="btn-secondary min-h-0 h-9 px-2.5 text-[12.5px] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                   >
                     <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                   </button>
@@ -201,7 +201,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 type="button"
                 onClick={() => handleGenerateLink(selectedRole)}
                 disabled={isLoading || !isOwner}
-                className="btn-primary text-xs px-3 py-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                className="btn-primary min-h-0 h-9 px-3.5 text-[12.5px] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 {isRoleChanged ? (
                   <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -215,21 +215,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             )}
           </div>
           {isRoleChanged && (
-            <p className="text-[11px] font-mono text-amber">
+            <p className="text-[11.5px] font-sans text-amber">
               Permission changed to {selectedRole}. Regenerate Link to create an updated invite.
             </p>
           )}
           {!isOwner && (
-            <p className="text-xs text-amber">
+            <p className="text-[12px] text-amber">
               Only the workspace Owner can create new invitation links.
             </p>
           )}
         </div>
 
         {/* Members List */}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-ash uppercase tracking-wider block">
+            <span className="text-eyebrow block tabular-nums">
               Workspace Members ({members.length})
             </span>
           </div>
@@ -241,7 +241,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               return (
                 <div
                   key={member.userId}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-surface border border-stone inset-glow"
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.025] border border-white/[0.08] inset-glow"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
@@ -250,18 +250,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(member.name)}`
                       }
                       alt={member.name}
-                      className="w-8 h-8 rounded-lg border border-stone bg-linen object-cover shrink-0"
+                      className="w-8 h-8 rounded-full border border-white/15 bg-linen object-cover shrink-0"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-normal text-ink truncate">{member.name}</p>
+                        <p className="text-[13.5px] font-medium text-ink truncate">{member.name}</p>
                         {isSelf && (
-                          <span className="text-[10px] font-mono text-ash bg-linen px-1.5 py-0.5 rounded-sm shrink-0">
+                          <span className="text-[10.5px] font-sans font-medium text-ash bg-white/[0.07] px-1.5 py-0.5 rounded-full shrink-0">
                             You
                           </span>
                         )}
                       </div>
-                      <p className="text-xs font-mono text-mist truncate">{member.email}</p>
+                      <p className="text-[12px] font-sans text-mist truncate">{member.email}</p>
                     </div>
                   </div>
 
@@ -274,7 +274,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           onChange={(e) =>
                             handleRoleChange(member.userId, e.target.value as ProjectRole)
                           }
-                          className="bg-surface border border-stone rounded-lg px-2 py-1 text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
+                          className="h-7 bg-white/[0.04] border border-white/[0.1] rounded-lg px-2 text-[12px] font-sans text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
                         >
                           <option value="owner">Owner</option>
                           <option value="editor">Editor</option>
@@ -291,14 +291,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           }
                           title={`Remove ${member.name}`}
                           aria-label={`Remove member ${member.name}`}
-                          className="p-1 rounded-md text-ash hover:text-crimson hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer"
+                          className="w-7 h-7 flex items-center justify-center rounded-lg text-ash hover:text-crimson hover:bg-crimson/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="tag-badge text-xs font-mono px-2 py-0.5 border border-stone">
+                        <span className="tag-badge text-[11px] font-sans px-2.5 py-0.5">
                           {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                         </span>
                         {isSelf && member.role !== 'owner' && (
@@ -312,7 +312,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                               })
                             }
                             aria-label="Leave workspace"
-                            className="flex items-center gap-1 text-[11px] text-crimson hover:opacity-80 px-2 py-1 rounded-md transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson"
+                            className="flex items-center gap-1 text-[12px] font-medium text-crimson hover:bg-crimson/10 px-2.5 py-1 rounded-lg transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson"
                           >
                             <LogOut className="w-3 h-3" />
                             <span>Leave</span>
@@ -329,11 +329,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       </div>
 
       {/* Modal Footer */}
-      <div className="px-6 py-3 border-t border-stone bg-bone flex justify-end">
+      <div className="px-6 py-3.5 border-t border-(--border-subtle) bg-bone/60 flex justify-end">
         <button
           type="button"
           onClick={onClose}
-          className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="btn-secondary min-h-0 h-8 px-4 text-[12.5px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           Done
         </button>

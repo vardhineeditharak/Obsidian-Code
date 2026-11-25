@@ -153,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
   const roleLabel = userRole === 'owner' ? 'Owner' : userRole === 'editor' ? 'Editor' : 'Viewer';
 
   return (
-    <header className="h-13 border-b border-stone bg-parchment px-3 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2">
+    <header className="h-12 apple-glass-header border-b border-(--border-subtle) px-3 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2">
       {/* Left: Explorer Toggle, Brand, Project Name, Role Badge & Save-State Pill */}
       <div className="flex items-center gap-2 min-w-0 shrink">
         {onToggleSidebar && (
@@ -163,8 +163,8 @@ export const Header: React.FC<HeaderProps> = ({
             title={showSidebar ? 'Hide Explorer (Ctrl+B)' : 'Show Explorer (Ctrl+B)'}
             aria-label={showSidebar ? 'Hide Explorer Sidebar' : 'Show Explorer Sidebar'}
             aria-pressed={showSidebar}
-            className={`p-1.5 rounded-md transition cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
-              showSidebar ? 'text-ink bg-surface hover:bg-linen' : 'text-ash hover:text-ink hover:bg-linen'
+            className={`w-7 h-7 flex items-center justify-center rounded-[7px] transition cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
+              showSidebar ? 'text-ink bg-white/[0.08] hover:bg-white/[0.12]' : 'text-ash hover:text-ink hover:bg-white/[0.07]'
             }`}
           >
             <PanelLeft className="w-4 h-4" />
@@ -176,10 +176,10 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onBackToDashboard}
           title="Back to Dashboard"
           aria-label="Back to Projects Dashboard"
-          className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-linen text-ink transition group cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+          className="flex items-center gap-2 px-2 h-7 rounded-[7px] hover:bg-white/[0.07] text-ink transition group cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <BrandMark className="w-6 h-6 text-ink shrink-0" />
-          <span className="font-brand text-lg font-medium tracking-tight text-ink hidden sm:inline">
+          <BrandMark className="w-5 h-5 text-ink shrink-0" />
+          <span className="font-brand text-[14.5px] font-semibold tracking-[-0.02em] text-ink hidden sm:inline">
             Obsidian
           </span>
         </button>
@@ -220,54 +220,54 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="truncate">{displayName}</span>
               </button>
             ) : (
-              <span className="text-xs font-medium text-ink px-2 py-0.5 cursor-default truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs">
+              <span className="text-[13px] font-medium tracking-[-0.01em] text-ink px-2 py-0.5 cursor-default truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs">
                 {displayName}
               </span>
             )}
 
-            <span className="tag-badge font-mono text-[10px] uppercase tracking-wider shrink-0">
+            <span className="tag-badge font-sans text-[10.5px] font-medium uppercase tracking-[0.04em] shrink-0">
               {roleLabel}
             </span>
           </div>
         )}
 
         {/* Save-State Indicator */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-surface border border-stone inset-glow text-micro font-mono shrink-0">
+        <div className="hidden sm:flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11.5px] font-sans tabular-nums shrink-0">
           {effectiveSaveState === 'saving' ? (
             <>
               <RotateCw className="w-3 h-3 animate-spin text-ash" />
-              <span className="text-ash text-micro">Saving…</span>
+              <span className="text-ash text-[11.5px]">Saving…</span>
             </>
           ) : effectiveSaveState === 'saved' ? (
             <>
               <Check className="w-3 h-3 text-verdant" />
-              <span className="text-verdant text-micro">
+              <span className="text-verdant text-[11.5px]">
                 All changes saved · {formatSaveRelativeTime(lastSavedAt)}
               </span>
             </>
           ) : effectiveSaveState === 'offline' ? (
             <>
               <span className="w-1.5 h-1.5 rounded-full bg-warning-yellow" />
-              <span className="text-warning-yellow text-micro">Saved locally · will sync</span>
+              <span className="text-warning-yellow text-[11.5px]">Saved locally · will sync</span>
             </>
           ) : (
             <>
               <span className="w-1.5 h-1.5 rounded-full bg-verdant" />
-              <span className="text-verdant text-micro">Up to date</span>
+              <span className="text-verdant text-[11.5px]">Up to date</span>
             </>
           )}
         </div>
       </div>
 
       {/* Center: Run, Search, History, Export */}
-      <div className="flex items-center gap-1 bg-surface border border-stone inset-glow p-0.5 rounded-lg shrink-0">
+      <div className="flex items-center gap-0.5 apple-segmented p-0.5 rounded-[9px] shrink-0">
         <button
           type="button"
           onClick={onRunCode}
           disabled={isRunningCode || userRole === 'viewer'}
           title={userRole === 'viewer' ? 'Viewers cannot execute code' : 'Execute Code (Sandbox)'}
           aria-label={isRunningCode ? 'Running Code' : 'Execute Code (Sandbox)'}
-          className="btn-amber text-xs py-1 px-3 rounded-md font-medium disabled:opacity-40 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-amber h-[26px] px-2.5 rounded-[6.5px] text-[12px] font-medium disabled:opacity-40 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           {isRunningCode ? (
             <RotateCw className="w-3.5 h-3.5 animate-spin" />
@@ -277,16 +277,16 @@ export const Header: React.FC<HeaderProps> = ({
           <span>Run</span>
         </button>
 
-        <div className="h-4 w-px bg-stone mx-0.5" aria-hidden="true" />
+        <div className="h-3.5 w-px bg-white/10 mx-0.5" aria-hidden="true" />
 
         <button
           type="button"
           onClick={onOpenSearch}
           title="Search in Project (Ctrl+Shift+F)"
           aria-label="Search in Project (Ctrl+Shift+F)"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost w-7 h-[26px] justify-center rounded-[6.5px] text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <Search size={15} />
+          <Search size={14} />
         </button>
 
         <button
@@ -294,9 +294,9 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenHistory}
           title="Version History & Diff"
           aria-label="Version History & Diff"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost w-7 h-[26px] justify-center rounded-[6.5px] text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <History size={15} />
+          <History size={14} />
         </button>
 
         <button
@@ -304,9 +304,9 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onExportZip}
           title="Export Workspace as ZIP"
           aria-label="Export Workspace as ZIP"
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost w-7 h-[26px] justify-center rounded-[6.5px] text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <Download size={15} />
+          <Download size={14} />
         </button>
       </div>
 
@@ -336,12 +336,12 @@ export const Header: React.FC<HeaderProps> = ({
                       : `Follow ${c.name} (${c.role})${isFollowed ? ' - Currently Following' : ''}`
                   }
                   aria-pressed={isSelf ? undefined : isFollowed}
-                  className={`relative w-5 h-5 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
+                  className={`relative w-6 h-6 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                     isSelf ? 'cursor-default opacity-90' : 'transform hover:scale-105 cursor-pointer'
                   } ${isFollowed ? 'border-amber ring-2 ring-amber/40' : 'border-stone'}`}
                   style={{ backgroundColor: c.color }}
                 >
-                  <span className="text-micro font-mono font-medium text-white flex items-center justify-center h-full">
+                  <span className="text-[11px] font-sans font-semibold text-white flex items-center justify-center h-full">
                     {c.name.charAt(0).toUpperCase()}
                   </span>
                 </button>
@@ -361,14 +361,14 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Select Transport Mode"
             aria-haspopup="true"
             aria-expanded={showTransportMenu}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface hover:bg-linen border border-stone inset-glow text-micro font-mono text-driftwood transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+            className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-white/[0.035] hover:bg-white/[0.075] border border-white/[0.09] text-[11.5px] font-sans font-medium text-driftwood transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
           >
             {isOnline ? (
               <Wifi size={13} color="var(--color-verdant)" strokeWidth={2} />
             ) : (
               <WifiOff size={13} color="var(--color-warning-yellow)" strokeWidth={2} />
             )}
-            <span className="font-mono text-micro hidden md:inline">{transportMode}</span>
+            <span className="font-sans text-[11.5px] hidden md:inline">{transportMode}</span>
             <ChevronDown size={11} className="text-ash" />
           </button>
 
@@ -376,7 +376,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               role="menu"
               aria-label="Transport modes"
-              className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-surface border border-stone inset-glow shadow-xl py-1 z-50 text-xs"
+              className="absolute right-0 top-full mt-1.5 w-46 rounded-xl apple-popover p-1 z-50 text-[12.5px] modal-dialog"
             >
               {TRANSPORT_MODES.map((mode) => (
                 <button
@@ -388,12 +388,12 @@ export const Header: React.FC<HeaderProps> = ({
                     onTransportChange(mode);
                     setShowTransportMenu(false);
                   }}
-                  className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-linen transition cursor-pointer ${
+                  className={`w-full text-left px-2.5 py-1.5 rounded-[7px] flex items-center justify-between hover:bg-white/[0.08] transition cursor-pointer ${
                     transportMode === mode ? 'text-ink font-medium' : 'text-driftwood'
                   }`}
                 >
-                  <span className="font-mono text-xs">{mode}</span>
-                  {transportMode === mode && <Check size={13} />}
+                  <span className="font-sans text-[12.5px]">{mode}</span>
+                  {transportMode === mode && <Check size={13} className="text-amber" />}
                 </button>
               ))}
             </div>
@@ -407,12 +407,12 @@ export const Header: React.FC<HeaderProps> = ({
           title={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
           aria-label={isAudioMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
           aria-pressed={isAudioMuted}
-          className="btn-ghost p-1.5 rounded-md text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-ghost w-7 h-7 justify-center rounded-[7px] text-ash hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           {isAudioMuted ? (
-            <VolumeMute size={15} strokeWidth={2} />
+            <VolumeMute size={14} strokeWidth={2} />
           ) : (
-            <VolumeHigh size={15} strokeWidth={2} />
+            <VolumeHigh size={14} strokeWidth={2} />
           )}
         </button>
 
@@ -425,9 +425,9 @@ export const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onOpenShare}
           aria-label="Share workspace"
-          className="btn-primary text-xs py-1 px-3 rounded-lg font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-primary min-h-0 h-7 px-3 rounded-[7px] text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
-          <Share size={13} color="currentColor" strokeWidth={2} />
+          <Share size={12.5} color="currentColor" strokeWidth={2} />
           <span>Share</span>
         </button>
 
@@ -442,7 +442,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="User Account Menu"
             aria-haspopup="true"
             aria-expanded={showUserMenu}
-            className="w-6 h-6 rounded-full overflow-hidden border border-(--border-subtle) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment hover:border-(--border-active) transition cursor-pointer"
+            className="w-7 h-7 rounded-full overflow-hidden border border-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber hover:border-white/30 transition cursor-pointer"
           >
             <img
               src={user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user.name)}`}
@@ -455,11 +455,11 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               role="menu"
               aria-label="User account actions"
-              className="absolute right-0 top-full mt-1.5 w-48 rounded-lg bg-bone border border-(--border-subtle) shadow-xl py-1 z-50 text-xs"
+              className="absolute right-0 top-full mt-1.5 w-52 rounded-xl apple-popover p-1 z-50 text-[12.5px] modal-dialog"
             >
-              <div className="px-3 py-2 border-b border-(--border-subtle)">
-                <p className="font-medium text-ink truncate">{user.name}</p>
-                <p className="font-mono text-micro text-ash truncate">{user.email}</p>
+              <div className="px-2.5 py-2 border-b border-(--border-subtle) mb-1">
+                <p className="font-medium text-ink truncate text-[12.5px]">{user.name}</p>
+                <p className="font-sans text-[11px] text-ash truncate">{user.email}</p>
               </div>
               <button
                 type="button"
@@ -468,7 +468,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowUserMenu(false);
                   onBackToDashboard();
                 }}
-                className="w-full text-left px-3 py-2 text-driftwood hover:text-ink hover:bg-linen flex items-center gap-2 transition cursor-pointer"
+                className="w-full text-left px-2.5 py-1.5 rounded-[7px] text-driftwood hover:text-ink hover:bg-white/[0.08] flex items-center gap-2 transition cursor-pointer"
               >
                 <FolderOpen size={14} className="text-ash" />
                 <span>Projects Dashboard</span>
@@ -487,11 +487,12 @@ export const Header: React.FC<HeaderProps> = ({
                   } catch {}
                   window.location.reload();
                 }}
-                className="w-full text-left px-3 py-2 text-driftwood hover:text-ink hover:bg-linen flex items-center gap-2 border-b border-(--border-subtle) transition cursor-pointer"
+                className="w-full text-left px-2.5 py-1.5 rounded-[7px] text-driftwood hover:text-ink hover:bg-white/[0.08] flex items-center gap-2 transition cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-ash" />
                 <span>Reset Layout</span>
               </button>
+              <div className="my-1 border-t border-(--border-subtle)" />
               <button
                 type="button"
                 role="menuitem"
@@ -499,7 +500,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowUserMenu(false);
                   onLogout();
                 }}
-                className="w-full text-left px-3 py-2 text-crimson hover:bg-linen flex items-center gap-2 transition cursor-pointer"
+                className="w-full text-left px-2.5 py-1.5 rounded-[7px] text-crimson hover:bg-crimson/10 flex items-center gap-2 transition cursor-pointer"
               >
                 <LogOut size={14} />
                 <span>Log out</span>

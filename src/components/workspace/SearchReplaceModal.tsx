@@ -273,17 +273,17 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       aria-label="Workspace Search & Replace"
     >
       <div
-        className="w-full max-w-2xl h-[75vh] rounded-xl overflow-hidden border border-stone bg-bone shadow-2xl flex flex-col modal-dialog"
+        className="w-full max-w-2xl h-[75vh] rounded-2xl overflow-hidden glass-modal flex flex-col modal-dialog"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-stone bg-bone">
-          <div className="flex items-center space-x-2">
-            <Search className="w-5 h-5 text-ash" />
-            <h2 className="text-base font-normal text-ink flex items-center gap-2">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-(--border-subtle) bg-bone/60">
+          <div className="flex items-center gap-2.5">
+            <Search className="w-4 h-4 text-ash" />
+            <h2 className="text-[15px] font-medium tracking-[-0.015em] text-ink flex items-center gap-2">
               <span>Workspace Search & Replace</span>
               {results.length > 0 && (
-                <span className="text-xs font-mono text-mist">
+                <span className="text-[12px] font-sans tabular-nums text-mist font-normal">
                   ({results.length} result{results.length === 1 ? '' : 's'} in{' '}
                   {groupedResults.size} file{groupedResults.size === 1 ? '' : 's'})
                 </span>
@@ -294,14 +294,14 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Input Bar */}
-        <div className="p-4 space-y-3 bg-bone border-b border-stone">
+        <div className="p-4 space-y-2.5 bg-bone/40 border-b border-(--border-subtle)">
           {/* Find Row */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -318,13 +318,13 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                     handleSearch();
                   }
                 }}
-                className="w-full bg-surface border border-stone rounded-lg px-3 py-2 text-xs font-mono text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-amber focus-visible:ring-2 focus-visible:ring-amber"
+                className="input-atelier w-full h-9 text-[12.5px] font-mono"
               />
             </div>
 
             {/* Modifiers */}
             <div
-              className="flex items-center bg-surface border border-stone rounded-lg p-0.5 inset-glow"
+              className="flex items-center apple-segmented rounded-[8px] p-0.5 h-9"
               role="group"
               aria-label="Search modifiers"
             >
@@ -334,8 +334,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                 title="Match Case"
                 aria-label="Match Case"
                 aria-pressed={caseSensitive}
-                className={`px-2 py-1 text-xs font-mono rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
-                  caseSensitive ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
+                className={`px-2.5 h-full text-[12px] font-mono rounded-[6px] transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+                  caseSensitive ? 'apple-segment-active text-ink' : 'text-ash hover:text-ink'
                 }`}
               >
                 Aa
@@ -346,8 +346,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                 title="Match Whole Word"
                 aria-label="Match Whole Word"
                 aria-pressed={wholeWord}
-                className={`px-2 py-1 text-xs font-mono rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
-                  wholeWord ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
+                className={`px-2.5 h-full text-[12px] font-mono rounded-[6px] transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+                  wholeWord ? 'apple-segment-active text-ink' : 'text-ash hover:text-ink'
                 }`}
               >
                 \b
@@ -358,8 +358,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                 title="Use Regular Expression"
                 aria-label="Use Regular Expression"
                 aria-pressed={useRegex}
-                className={`px-2 py-1 text-xs font-mono rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
-                  useRegex ? 'bg-linen text-ink border border-stone/50' : 'text-ash hover:text-ink'
+                className={`px-2.5 h-full text-[12px] font-mono rounded-[6px] transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+                  useRegex ? 'apple-segment-active text-ink' : 'text-ash hover:text-ink'
                 }`}
               >
                 .*
@@ -370,7 +370,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
               type="button"
               onClick={handleSearch}
               disabled={searching}
-              className="btn-primary text-xs px-3.5 py-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+              className="btn-primary min-h-0 h-9 px-4 text-[12.5px] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
             >
               {searching ? 'Finding...' : 'Find'}
             </button>
@@ -385,14 +385,14 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                 aria-label="Replace with"
                 value={replacement}
                 onChange={(e) => setReplacement(e.target.value)}
-                className="w-full bg-surface border border-stone rounded-lg px-3 py-2 text-xs font-mono text-ink placeholder-mist focus:outline-none focus:ring-2 focus:ring-amber focus-visible:ring-2 focus-visible:ring-amber"
+                className="input-atelier w-full h-9 text-[12.5px] font-mono"
               />
             </div>
             <button
               type="button"
               onClick={handleBatchReplace}
               disabled={results.length === 0}
-              className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+              className="btn-secondary min-h-0 h-9 px-3.5 text-[12.5px] flex items-center gap-1.5 tabular-nums disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
             >
               <Replace className="w-3.5 h-3.5" />
               <span>Replace All ({results.length})</span>
@@ -401,16 +401,16 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
         </div>
 
         {/* Results Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-parchment selectable-text">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-parchment/70 selectable-text">
           {isCapped && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-amber/10 border border-amber/20 text-amber text-xs font-mono rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber/10 border border-amber/20 text-amber text-[12px] font-sans rounded-lg">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>Showing first 2000 matches (capped for performance)</span>
             </div>
           )}
 
           {results.length === 0 && (
-            <p className="text-center text-mist text-xs py-12">
+            <p className="text-center text-mist text-[13px] font-sans py-12">
               {hasSearched && query.trim()
                 ? 'No matching occurrences found in project files.'
                 : 'Enter a query and click Find to search.'}
@@ -424,15 +424,15 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
             return (
               <div
                 key={fileId}
-                className="rounded-lg border border-stone bg-bone inset-glow overflow-hidden"
+                className="rounded-xl border border-(--border-subtle) bg-bone inset-glow overflow-hidden"
               >
                 <button
                   type="button"
                   aria-expanded={!isCollapsed}
                   onClick={() => toggleCollapse(fileId)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-linen/40 text-left hover:bg-linen transition cursor-pointer"
+                  className="w-full flex items-center justify-between px-3.5 py-2 bg-white/[0.03] text-left hover:bg-white/[0.06] transition cursor-pointer"
                 >
-                  <div className="flex items-center gap-2 text-xs font-medium text-ink font-mono">
+                  <div className="flex items-center gap-2 text-[12.5px] font-medium text-ink font-sans">
                     {isCollapsed ? (
                       <ChevronRight className="w-3.5 h-3.5 text-ash" />
                     ) : (
@@ -441,13 +441,13 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                     <FileCode className="w-3.5 h-3.5 text-ash" />
                     <span>{fileName}</span>
                   </div>
-                  <span className="text-[11px] bg-parchment text-ash px-2 py-0.5 rounded-md border border-stone font-mono">
+                  <span className="text-[11px] font-sans tabular-nums bg-white/[0.06] text-ash px-2 py-0.5 rounded-full border border-white/[0.08]">
                     {matches.length}
                   </span>
                 </button>
 
                 {!isCollapsed && (
-                  <div className="divide-y divide-stone/30 font-mono text-xs">
+                  <div className="divide-y divide-white/[0.05] font-mono text-[12px]">
                     {matches.map((m, idx) => (
                       <button
                         key={`${m.fileId}-${m.line}-${m.column}-${idx}`}
@@ -456,9 +456,9 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
                           onSelectResult(m.fileId, m.line, m.column, m.matchText.length || 0);
                           onClose();
                         }}
-                        className="w-full text-left px-4 py-1.5 hover:bg-linen/60 flex items-baseline gap-3 transition group cursor-pointer"
+                        className="w-full text-left px-4 py-1.5 hover:bg-white/[0.05] flex items-baseline gap-3 transition group cursor-pointer"
                       >
-                        <span className="text-mist text-[11px] w-8 shrink-0">{m.line}:</span>
+                        <span className="text-mist text-[11px] tabular-nums w-8 shrink-0">{m.line}:</span>
                         <span className="text-driftwood truncate group-hover:text-ink">
                           {renderHighlightedLine(m)}
                         </span>

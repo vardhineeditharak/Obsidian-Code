@@ -216,12 +216,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <React.Fragment key={file._id}>
         <div
           style={{ paddingLeft: `${depth * 14 + 8}px` }}
-          className={`group flex items-center justify-between pr-2 py-1.5 rounded-sm text-[13px] font-normal transition ${
+          className={`group flex items-center justify-between pr-2 py-1 rounded-[7px] text-[12.5px] transition ${
             isSelected
-              ? 'bg-linen text-ink border-l-2 border-amber'
+              ? 'bg-white/[0.09] text-ink font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
               : isFolderSelected
-              ? 'bg-linen/60 text-ink'
-              : 'text-ink hover:bg-linen'
+              ? 'bg-white/[0.05] text-ink'
+              : 'text-driftwood hover:text-ink hover:bg-white/[0.04]'
           }`}
         >
           {editingFileId === file._id ? (
@@ -373,8 +373,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       />
 
       {/* Explorer Header */}
-      <div className="px-3.5 py-2.5 border-b border-(--border-subtle) flex items-center justify-between">
-        <span className="font-mono text-xs font-normal text-ash uppercase tracking-wider">
+      <div className="h-9 px-3.5 border-b border-(--border-subtle) flex items-center justify-between shrink-0">
+        <span className="font-sans text-[11px] font-semibold text-ash uppercase tracking-[0.06em]">
           Explorer
         </span>
         {canEdit && (
@@ -384,7 +384,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => handleStartCreate(false)}
               title={selectedFolderId ? 'New File in Selected Folder' : 'New File'}
               aria-label="New File"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
             >
               <FilePlus size={14} />
             </button>
@@ -393,7 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => handleStartCreate(true)}
               title={selectedFolderId ? 'New Folder in Selected Folder' : 'New Folder'}
               aria-label="New Folder"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
             >
               <FolderPlus size={14} />
             </button>
@@ -404,21 +404,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Filter / Search Input */}
       <div className="px-2.5 py-2 border-b border-(--border-subtle)">
         <div className="relative flex items-center">
-          <Search size={12} className="text-ash absolute left-2.5 pointer-events-none" />
+          <Search size={12} className="text-ash absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Filter files..."
             aria-label="Filter files"
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-parchment border border-stone rounded-md pl-7 pr-6 py-1 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus-visible:ring-1 focus-visible:ring-amber font-mono"
+            className="w-full h-7 bg-parchment/80 border border-white/[0.08] rounded-[7px] pl-7 pr-6 text-[12px] text-ink placeholder-mist focus:outline-none focus:border-amber focus-visible:ring-1 focus-visible:ring-amber font-sans"
           />
           {filterQuery && (
             <button
               type="button"
               onClick={() => setFilterQuery('')}
               aria-label="Clear file filter"
-              className="absolute right-1.5 p-0.5 rounded text-ash hover:text-ink cursor-pointer"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-ash hover:text-ink cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>

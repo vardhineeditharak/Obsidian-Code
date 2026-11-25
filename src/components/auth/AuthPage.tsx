@@ -253,13 +253,13 @@ export function AuthPage(_props: AuthPageProps) {
         <ThemeToggle size={16} />
       </div>
 
-      <div className="m-auto w-full max-w-md bg-bone rounded-xl p-6 sm:p-8 border border-stone inset-glow shadow-xl relative">
+      <div className="m-auto w-full max-w-[420px] glass-modal rounded-2xl p-6 sm:p-8 relative">
         <div className="text-center mb-6">
-          <BrandMark className="w-12 h-12 text-ink mx-auto mb-3" />
-          <h1 className="font-brand text-3xl font-semibold tracking-tight text-ink">
+          <BrandMark className="w-11 h-11 text-ink mx-auto mb-3.5" />
+          <h1 className="font-brand text-[26px] font-semibold tracking-[-0.025em] text-ink">
             Obsidian Code
           </h1>
-          <p className="text-sm text-driftwood mt-1">
+          <p className="text-[13.5px] text-driftwood mt-1">
             Your team&apos;s shared workspace for code
           </p>
         </div>
@@ -267,13 +267,13 @@ export function AuthPage(_props: AuthPageProps) {
         {verifying ? (
           <form onSubmit={handleVerifyCode} className="space-y-4">
             <div className="text-center mb-4">
-              <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-linen text-amber mb-2 inset-glow">
+              <div className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.09] text-amber mb-2.5 inset-glow">
                 <KeyRound className="w-4 h-4" />
               </div>
-              <h2 className="headline-sm text-base font-semibold text-ink">Verify Your Email</h2>
-              <p className="text-sm text-driftwood mt-1">
+              <h2 className="headline-sm text-ink">Verify Your Email</h2>
+              <p className="text-[13px] text-driftwood mt-1">
                 Enter the 6-digit code sent to{' '}
-                <span className="font-mono text-xs text-ink font-normal">{email}</span>
+                <span className="font-mono text-[12px] text-ink font-medium">{email}</span>
               </p>
             </div>
 
@@ -281,7 +281,7 @@ export function AuthPage(_props: AuthPageProps) {
               <div
                 role="alert"
                 id="auth-error-message"
-                className="text-xs text-crimson flex items-center gap-1.5"
+                className="text-[12.5px] text-crimson bg-crimson/10 border border-crimson/20 rounded-lg px-3 py-2 flex items-center gap-2"
               >
                 <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
                 <span>{error}</span>
@@ -291,7 +291,7 @@ export function AuthPage(_props: AuthPageProps) {
             <div>
               <label
                 htmlFor="verification-code"
-                className="text-xs font-normal text-driftwood block mb-1.5"
+                className="text-[12px] font-medium text-driftwood block mb-1.5"
               >
                 Verification Code
               </label>
@@ -308,24 +308,24 @@ export function AuthPage(_props: AuthPageProps) {
                 onChange={(e) => setVerificationCode(e.target.value)}
                 aria-invalid={!!error}
                 aria-describedby={error ? 'auth-error-message' : undefined}
-                className="w-full bg-surface border border-stone rounded-lg px-4 py-2 text-center text-lg font-mono tracking-widest text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                className="input-atelier w-full h-11 text-center text-lg font-mono tracking-widest tabular-nums"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading || verificationCode.trim().length === 0}
-              className="btn-primary w-full py-2.5 text-sm rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
+              className="btn-primary w-full h-10 text-[13.5px] rounded-[9px] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
             >
               <span>{loading ? 'Verifying...' : 'Verify & Continue'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center justify-between pt-2 text-xs">
+            <div className="flex items-center justify-between pt-2 text-[12px]">
               <button
                 type="button"
                 onClick={() => setVerifying(false)}
-                className="btn-ghost"
+                className="btn-ghost px-2 py-1 text-[12.5px]"
               >
                 ← Back to Sign Up
               </button>
@@ -333,7 +333,7 @@ export function AuthPage(_props: AuthPageProps) {
                 type="button"
                 onClick={handleResendCode}
                 disabled={resending}
-                className="text-amber hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-amber hover:underline flex items-center gap-1 cursor-pointer font-medium"
               >
                 <RotateCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
                 <span>{resending ? 'Sending...' : 'Resend Code'}</span>
@@ -345,16 +345,16 @@ export function AuthPage(_props: AuthPageProps) {
             <div
               role="tablist"
               aria-label="Authentication mode"
-              className="flex bg-surface p-1 rounded-lg mb-6 border border-stone"
+              className="flex apple-segmented p-1 rounded-[10px] mb-5"
             >
               <button
                 type="button"
                 role="tab"
                 aria-selected={isLogin}
                 onClick={() => switchMode(true)}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer ${
+                className={`flex-1 py-1.5 text-[12.5px] font-medium rounded-[7px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer ${
                   isLogin
-                    ? 'bg-linen text-ink border border-stone inset-glow'
+                    ? 'apple-segment-active text-ink'
                     : 'text-driftwood hover:text-ink'
                 }`}
               >
@@ -365,9 +365,9 @@ export function AuthPage(_props: AuthPageProps) {
                 role="tab"
                 aria-selected={!isLogin}
                 onClick={() => switchMode(false)}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer ${
+                className={`flex-1 py-1.5 text-[12.5px] font-medium rounded-[7px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer ${
                   !isLogin
-                    ? 'bg-linen text-ink border border-stone inset-glow'
+                    ? 'apple-segment-active text-ink'
                     : 'text-driftwood hover:text-ink'
                 }`}
               >
@@ -379,7 +379,7 @@ export function AuthPage(_props: AuthPageProps) {
               <div
                 role="alert"
                 id="auth-error-message"
-                className="text-xs text-crimson flex items-center gap-1.5 mb-4"
+                className="text-[12.5px] text-crimson bg-crimson/10 border border-crimson/20 rounded-lg px-3 py-2 flex items-center gap-2 mb-4"
               >
                 <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
                 <span>{error}</span>
@@ -391,12 +391,12 @@ export function AuthPage(_props: AuthPageProps) {
                 <div>
                   <label
                     htmlFor="auth-name"
-                    className="text-xs font-normal text-driftwood block mb-1.5"
+                    className="text-[12px] font-medium text-driftwood block mb-1.5"
                   >
                     Full Name
                   </label>
                   <div className="relative">
-                    <UserIcon className="w-4 h-4 text-ash absolute left-3 top-3 pointer-events-none" />
+                    <UserIcon className="w-4 h-4 text-ash absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="auth-name"
                       type="text"
@@ -407,7 +407,7 @@ export function AuthPage(_props: AuthPageProps) {
                       onChange={(e) => setName(e.target.value)}
                       aria-invalid={!!error}
                       aria-describedby={error ? 'auth-error-message' : undefined}
-                      className="w-full bg-surface border border-stone rounded-lg pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                      className="input-atelier w-full h-9.5 pl-9 pr-3 text-[13px]"
                     />
                   </div>
                 </div>
@@ -416,12 +416,12 @@ export function AuthPage(_props: AuthPageProps) {
               <div>
                 <label
                   htmlFor="auth-email"
-                  className="text-xs font-normal text-driftwood block mb-1.5"
+                  className="text-[12px] font-medium text-driftwood block mb-1.5"
                 >
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-ash absolute left-3 top-3 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-ash absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="auth-email"
                     type="email"
@@ -432,7 +432,7 @@ export function AuthPage(_props: AuthPageProps) {
                     onChange={(e) => setEmail(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'auth-error-message' : undefined}
-                    className="w-full bg-surface border border-stone rounded-lg pl-9 pr-3 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                    className="input-atelier w-full h-9.5 pl-9 pr-3 text-[13px]"
                   />
                 </div>
               </div>
@@ -440,12 +440,12 @@ export function AuthPage(_props: AuthPageProps) {
               <div>
                 <label
                   htmlFor="auth-password"
-                  className="text-xs font-normal text-driftwood block mb-1.5"
+                  className="text-[12px] font-medium text-driftwood block mb-1.5"
                 >
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-ash absolute left-3 top-3 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-ash absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="auth-password"
                     type={showPassword ? 'text' : 'password'}
@@ -456,13 +456,13 @@ export function AuthPage(_props: AuthPageProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'auth-error-message' : undefined}
-                    className="w-full bg-surface border border-stone rounded-lg pl-9 pr-10 py-2 text-sm text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                    className="input-atelier w-full h-9.5 pl-9 pr-10 text-[13px]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-2.5 text-ash hover:text-ink transition p-0.5 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ash hover:text-ink transition p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -472,7 +472,7 @@ export function AuthPage(_props: AuthPageProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full py-2.5 text-sm rounded-lg mt-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
+                className="btn-primary w-full h-10 text-[13.5px] rounded-[9px] mt-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
               >
                 <span>{loading ? 'Authenticating...' : isLogin ? 'Sign In' : 'Get Started'}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -481,11 +481,11 @@ export function AuthPage(_props: AuthPageProps) {
 
             <div className="mt-5 space-y-2.5">
               <div className="flex items-center gap-3 mb-4" aria-hidden="true">
-                <div className="flex-1 h-px bg-stone" />
-                <span className="text-micro text-ash uppercase font-mono tracking-wider whitespace-nowrap">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[11px] font-medium text-ash uppercase tracking-[0.06em] whitespace-nowrap">
                   or continue with
                 </span>
-                <div className="flex-1 h-px bg-stone" />
+                <div className="flex-1 h-px bg-white/10" />
               </div>
 
               <button
@@ -493,7 +493,7 @@ export function AuthPage(_props: AuthPageProps) {
                 onClick={() => handleOAuth('oauth_google')}
                 disabled={loading}
                 aria-label="Continue with Google"
-                className="w-full py-2.5 bg-surface hover:bg-linen border border-stone text-ink rounded-lg text-sm font-medium transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer inset-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                className="btn-secondary w-full h-10 rounded-[9px] text-[13px] font-medium disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 {GOOGLE_ICON}
                 <span>Continue with Google</span>
@@ -504,7 +504,7 @@ export function AuthPage(_props: AuthPageProps) {
                 onClick={() => handleOAuth('oauth_github')}
                 disabled={loading}
                 aria-label="Continue with GitHub"
-                className="w-full py-2.5 bg-surface hover:bg-linen border border-stone text-ink rounded-lg text-sm font-medium transition flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer inset-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                className="btn-secondary w-full h-10 rounded-[9px] text-[13px] font-medium disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 {GITHUB_ICON}
                 <span>Continue with GitHub</span>

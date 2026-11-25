@@ -29,7 +29,7 @@ export function SkeletonCard({ className = '' }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`bg-bone p-5 rounded-lg border border-(--border-subtle) flex flex-col justify-between h-44 animate-pulse ${className}`}
+      className={`bg-bone p-5 rounded-lg border border-(--border-subtle) inset-glow flex flex-col justify-between h-44 animate-pulse ${className}`}
     >
       <div>
         <div className="flex items-start justify-between mb-3">

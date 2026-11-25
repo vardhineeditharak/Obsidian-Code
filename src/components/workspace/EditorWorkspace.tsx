@@ -739,7 +739,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-parchment overflow-hidden select-none transition-colors duration-200">
       {/* Editor Tabs Header Bar */}
-      <div className="h-9 border-b border-stone bg-parchment flex items-center justify-between px-2 gap-2 shrink-0">
+      <div className="h-9 border-b border-(--border-subtle) bg-parchment/90 flex items-center justify-between px-2 gap-2 shrink-0">
         {/* Open Tabs */}
         <div
           role="tablist"
@@ -771,10 +771,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     onSelectFile(fileId);
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs font-mono rounded-t-lg border-t-2 cursor-pointer transition shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
+                className={`flex items-center gap-2 h-7 px-2.5 text-[12px] font-sans font-medium rounded-[7px] cursor-pointer transition shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                   isActive
-                    ? 'bg-bone border-amber text-ink'
-                    : 'border-transparent text-driftwood hover:text-ink hover:bg-linen/40'
+                    ? 'bg-bone border border-white/[0.09] text-ink shadow-[0_1px_2px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.06)]'
+                    : 'border border-transparent text-driftwood hover:text-ink hover:bg-white/[0.05]'
                 }`}
               >
                 <span className="truncate max-w-[160px]">{file.name}</span>
@@ -785,7 +785,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     e.stopPropagation();
                     handleTabClose(fileId);
                   }}
-                  className="p-0.5 rounded-sm hover:bg-stone/50 text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer shrink-0"
+                  className="p-0.5 rounded-[5px] hover:bg-white/[0.1] text-ash hover:text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer shrink-0"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -797,14 +797,14 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
         {/* Split Controls & Viewer Read-Only Badge */}
         <div className="flex items-center gap-2 shrink-0">
           {isViewer && (
-            <span className="tag-badge flex items-center gap-1 text-[11px] font-mono text-warning-yellow bg-warning-yellow/10 border border-warning-yellow/30">
+            <span className="tag-badge flex items-center gap-1 text-[11px] font-sans font-medium text-warning-yellow bg-warning-yellow/10 border border-warning-yellow/30">
               <ShieldAlert className="w-3 h-3" />
               <span>Read-only</span>
             </span>
           )}
 
           <div
-            className="flex items-center bg-bone rounded-lg p-0.5 border border-stone inset-glow"
+            className="flex items-center apple-segmented rounded-[8px] p-0.5"
             role="group"
             aria-label="Editor split options"
           >
@@ -814,9 +814,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               title="Split Editor Right"
               aria-label="Split Editor Right"
               aria-pressed={splitMode === 'vertical'}
-              className={`p-1 rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+              className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
                 splitMode === 'vertical'
-                  ? 'bg-linen text-ink border border-stone/50'
+                  ? 'apple-segment-active text-ink'
                   : 'text-ash hover:text-ink'
               }`}
             >
@@ -828,9 +828,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
               title="Split Editor Down"
               aria-label="Split Editor Down"
               aria-pressed={splitMode === 'horizontal'}
-              className={`p-1 rounded-md transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
+              className={`w-6 h-6 flex items-center justify-center rounded-[6px] transition focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer ${
                 splitMode === 'horizontal'
-                  ? 'bg-linen text-ink border border-stone/50'
+                  ? 'apple-segment-active text-ink'
                   : 'text-ash hover:text-ink'
               }`}
             >
@@ -951,16 +951,16 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 }
                 className="relative h-full min-w-0 min-h-0 overflow-hidden flex flex-col"
               >
-                <div className="h-8 border-b border-stone bg-parchment px-2.5 flex items-center justify-between shrink-0">
+                <div className="h-9 border-b border-(--border-subtle) bg-parchment px-3 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-ash shrink-0">
+                    <span className="text-[11px] font-sans font-semibold uppercase tracking-[0.06em] text-ash shrink-0">
                       Split Pane
                     </span>
                     <select
                       aria-label="Select file for split pane"
                       value={splitFile?._id || ''}
                       onChange={(e) => setSplitFileId(e.target.value)}
-                      className="bg-bone border border-stone rounded px-2 py-0.5 text-xs font-mono text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer max-w-[200px] truncate"
+                      className="h-6 bg-white/[0.04] border border-white/[0.1] rounded-md px-2 text-[12px] font-sans text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer max-w-[200px] truncate"
                     >
                       {nonFolderFiles.map((f) => (
                         <option key={f._id} value={f._id}>
@@ -974,7 +974,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     onClick={() => setSplitMode('single')}
                     title="Close Split Pane"
                     aria-label="Close Split Pane"
-                    className="p-0.5 rounded-sm text-ash hover:text-ink hover:bg-linen transition cursor-pointer"
+                    className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] transition cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -982,7 +982,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 <div className="flex-1 relative overflow-hidden">
                   {!fontsReady ? (
                     <div className="w-full h-full bg-parchment flex items-center justify-center text-ash">
-                      <span className="text-xs font-mono text-mist">Loading editor...</span>
+                      <span className="text-[12px] font-sans text-mist">Loading editor...</span>
                     </div>
                   ) : (
                     <Editor
@@ -1007,9 +1007,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             )}
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-ash space-y-2">
-            <p className="text-sm text-ink font-normal">Select or create a file to start editing</p>
-            <p className="text-xs font-mono text-mist">Press Ctrl+Shift+F to search across project</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-ash space-y-2.5">
+            <p className="text-[14px] text-ink font-medium tracking-[-0.01em]">Select or create a file to start editing</p>
+            <p className="text-[12px] font-sans text-mist">
+              Press <kbd className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.09] text-driftwood">Ctrl+Shift+F</kbd> to search across project
+            </p>
           </div>
         )}
       </div>

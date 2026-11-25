@@ -6,9 +6,11 @@ import type * as Monaco from 'monaco-editor';
  */
 export const editorOptions: Monaco.editor.IStandaloneEditorConstructionOptions = {
   fontSize: 13,
-  fontFamily: 'JetBrains Mono, Fira Code, monospace',
+  fontFamily: 'JetBrains Mono, SF Mono, Menlo, monospace',
   fontLigatures: false,
-  lineHeight: 20,
+  lineHeight: 21,
+  padding: { top: 12, bottom: 12 },
+  roundedSelection: true,
   scrollBeyondLastLine: false,
   smoothScrolling: true,
   cursorBlinking: 'smooth',

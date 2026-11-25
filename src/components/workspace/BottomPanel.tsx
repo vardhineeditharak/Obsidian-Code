@@ -247,8 +247,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       )}
 
       {/* Panel Header Bar */}
-      <div className="h-8 px-3 flex items-center justify-between border-b border-stone bg-parchment shrink-0">
-        <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-2">
+      <div className="h-8 px-3 flex items-center justify-between border-b border-(--border-subtle) bg-parchment/90 shrink-0">
+        <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-1">
           {BOTTOM_TABS.map((tab) => {
             const isActive = activeTab === tab;
             return (
@@ -261,15 +261,15 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   onTabChange(tab);
                   if (!isOpen) onToggle();
                 }}
-                className={`px-2 py-0.5 text-xs font-mono transition flex items-center gap-1.5 cursor-pointer border-b-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber ${
+                className={`px-2.5 h-6 text-[11px] font-sans font-semibold tracking-[0.05em] rounded-[6px] transition flex items-center gap-1.5 cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-amber ${
                   isActive
-                    ? 'text-ink border-amber font-medium'
-                    : 'text-ash border-transparent hover:text-ink'
+                    ? 'bg-white/[0.09] text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                    : 'text-ash hover:text-ink hover:bg-white/[0.04]'
                 }`}
               >
                 <span>{tab}</span>
                 {tab === 'PROBLEMS' && diagnostics.length > 0 && (
-                  <span className="text-[10px] font-mono text-mist">({diagnostics.length})</span>
+                  <span className="text-[10.5px] font-sans tabular-nums text-mist">({diagnostics.length})</span>
                 )}
               </button>
             );
@@ -277,14 +277,14 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
         </div>
 
         {/* Panel Actions & Collapse/Expand */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {activeTab === 'OUTPUT' && (
             <button
               type="button"
               onClick={onClearOutput}
               title="Clear Output"
               aria-label="Clear Output"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
             >
               <Trash size={13} />
             </button>
@@ -296,7 +296,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               onClick={() => setTerminalLog([])}
               title="Clear Terminal Console"
               aria-label="Clear Terminal Console"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
             >
               <Trash size={13} />
             </button>
@@ -308,7 +308,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               onClick={onRefreshPreview}
               title="Refresh Preview"
               aria-label="Refresh Preview"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+              className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -319,7 +319,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
             onClick={onToggle}
             title={isOpen ? 'Collapse Panel' : 'Expand Panel'}
             aria-label={isOpen ? 'Collapse Bottom Panel' : 'Expand Bottom Panel'}
-            className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment transition cursor-pointer"
+            className="w-6 h-6 flex items-center justify-center rounded-md text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
           >
             {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
@@ -328,29 +328,29 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
       {/* Panel Body */}
       {isOpen && (
-        <div className="flex-1 overflow-hidden p-3 font-mono text-xs select-text selectable-text">
+        <div className="flex-1 overflow-hidden p-3 font-mono text-[12px] leading-[1.55] select-text selectable-text">
           {/* 1. OUTPUT TAB */}
           {activeTab === 'OUTPUT' && (
             <div className="h-full overflow-y-auto space-y-1">
               {executionResult ? (
                 <>
-                  <div className="text-[11px] text-driftwood mb-2 border-b border-stone pb-1 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="text-[11.5px] font-sans text-driftwood mb-2 border-b border-(--border-subtle) pb-1.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
                       {executionResult.exitCode !== null && executionResult.exitCode !== undefined && (
                         <span
-                          className={`font-mono font-medium ${
+                          className={`font-mono font-medium tabular-nums ${
                             executionResult.exitCode === 0 ? 'text-verdant' : 'text-crimson'
                           }`}
                         >
                           exit {executionResult.exitCode}
                         </span>
                       )}
-                      <span>Time: {executionResult.executionTimeMs}ms</span>
+                      <span className="tabular-nums">Time: {executionResult.executionTimeMs}ms</span>
                       {executionResult.language && (
                         <span className="text-mist">({executionResult.language})</span>
                       )}
                     </div>
-                    <span className="text-mist">
+                    <span className="text-mist tabular-nums">
                       {new Date(executionResult.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
@@ -409,9 +409,9 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
               </div>
               <form
                 onSubmit={handleTermSubmit}
-                className="flex items-center gap-2 border border-stone pt-2 mt-1 bg-parchment px-3 py-1.5 rounded-md focus-within:ring-1 focus-within:ring-amber"
+                className="flex items-center gap-2 border border-white/[0.09] mt-1.5 bg-parchment/80 px-3 h-8 rounded-lg focus-within:ring-2 focus-within:ring-amber/30 focus-within:border-amber transition"
               >
-                <span className="text-ash font-mono whitespace-nowrap select-none font-medium">
+                <span className="text-ash font-mono whitespace-nowrap select-none font-medium text-[12px]">
                   {promptLanguage} ❯
                 </span>
                 <input
@@ -422,7 +422,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                   value={termInput}
                   onChange={(e) => setTermInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 bg-transparent border-none text-ink focus:outline-none text-xs font-mono placeholder:text-mist"
+                  className="flex-1 bg-transparent border-none text-ink focus:outline-none text-[12px] font-mono placeholder:text-mist"
                 />
               </form>
             </div>
@@ -431,17 +431,17 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
           {/* 3. PROBLEMS TAB */}
           {activeTab === 'PROBLEMS' && (
             <div className="h-full overflow-y-auto space-y-1">
-              <div className="flex items-center gap-4 text-[11px] text-driftwood mb-2 border-b border-stone pb-1">
-                <span className="flex items-center gap-1 text-crimson">
+              <div className="flex items-center gap-4 text-[11.5px] font-sans tabular-nums text-driftwood mb-2 border-b border-(--border-subtle) pb-1.5">
+                <span className="flex items-center gap-1.5 text-crimson font-medium">
                   <AlertCircle className="w-3.5 h-3.5" /> {errorCount} Errors
                 </span>
-                <span className="flex items-center gap-1 text-warning-yellow">
+                <span className="flex items-center gap-1.5 text-warning-yellow font-medium">
                   <AlertTriangle className="w-3.5 h-3.5" /> {warnCount} Warnings
                 </span>
               </div>
 
               {diagnostics.length === 0 ? (
-                <p className="text-mist italic">
+                <p className="text-mist font-sans text-[12.5px] py-2">
                   No syntax issues or lint warnings detected in workspace files.
                 </p>
               ) : (
@@ -450,7 +450,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                     key={diag.id}
                     type="button"
                     onClick={() => onSelectProblem(diag.fileId, diag.line, diag.column)}
-                    className="w-full text-left flex items-start gap-2 p-1.5 rounded-md hover:bg-linen/60 cursor-pointer transition text-xs border-b border-stone/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
+                    className="w-full text-left flex items-start gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.05] cursor-pointer transition border border-transparent hover:border-white/[0.06] focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
                   >
                     {diag.severity === 'error' && (
                       <AlertCircle className="w-3.5 h-3.5 text-crimson mt-0.5 shrink-0" />
@@ -463,8 +463,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
                     )}
 
                     <div className="flex-1 overflow-hidden">
-                      <div className="text-ink truncate">{diag.message}</div>
-                      <div className="text-[10px] text-mist font-mono">
+                      <div className="text-ink font-sans text-[12.5px] font-medium truncate">{diag.message}</div>
+                      <div className="text-[11px] text-mist font-mono tabular-nums mt-0.5">
                         {diag.fileName || 'file'} [{diag.line}:{diag.column}] &bull; {diag.source}
                       </div>
                     </div>

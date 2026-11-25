@@ -55,6 +55,7 @@ describe('Frontend Core Modules, Utilities & Editor Configuration', () => {
 
       await expect(ensureFontsReady(1000)).resolves.toBeUndefined();
       expect(mockLoad).toHaveBeenCalledWith('13px "JetBrains Mono"');
+      expect(mockLoad).toHaveBeenCalledWith('13px "Inter"');
     });
 
     it('resolves via timeout fallback if fonts.ready never settles', async () => {

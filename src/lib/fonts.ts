@@ -30,9 +30,14 @@ export function ensureFontsReady(timeoutMs: number = 3000): Promise<void> {
 
     const fontCheck = async () => {
       try {
-        await Promise.resolve()
-          .then(() => document.fonts.load('13px "JetBrains Mono"'))
-          .catch(() => []);
+        await Promise.all([
+          Promise.resolve()
+            .then(() => document.fonts.load('13px "JetBrains Mono"'))
+            .catch(() => []),
+          Promise.resolve()
+            .then(() => document.fonts.load('13px "Inter"'))
+            .catch(() => []),
+        ]);
 
         if (document.fonts.ready) {
           await document.fonts.ready.catch(() => undefined);

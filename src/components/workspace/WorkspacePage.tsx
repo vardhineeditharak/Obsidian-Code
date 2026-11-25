@@ -1412,7 +1412,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
                 setQuickOpenFilter('');
               }
             }}
-            className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs font-mono text-ink placeholder-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+            className="input-atelier w-full h-10 px-3.5 text-[13px] font-sans"
           />
           <div className="max-h-60 overflow-y-auto space-y-1">
             {quickOpenMatches.map((file) => (
@@ -1424,14 +1424,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
                   setShowQuickOpen(false);
                   setQuickOpenFilter('');
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-md text-left hover:bg-linen/60 text-xs font-mono text-driftwood hover:text-ink transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-[9px] text-left hover:bg-white/[0.06] text-[13px] font-sans text-driftwood hover:text-ink transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
-                <span className="font-normal text-ink">{file.name}</span>
-                <span className="text-micro text-mist font-mono">{file.path}</span>
+                <span className="font-medium text-ink">{file.name}</span>
+                <span className="text-[11.5px] text-mist font-mono">{file.path}</span>
               </button>
             ))}
             {quickOpenMatches.length === 0 && (
-              <p className="text-center text-xs font-sans text-mist py-4">No matching files</p>
+              <p className="text-center text-[12.5px] font-sans text-mist py-4">No matching files</p>
             )}
           </div>
         </div>

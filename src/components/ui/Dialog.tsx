@@ -130,19 +130,19 @@ export function Modal({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className={`w-full ${maxWidth} rounded-xl bg-bone border border-stone shadow-2xl inset-glow overflow-hidden flex flex-col modal-dialog ${className}`}
+        className={`w-full ${maxWidth} rounded-2xl glass-modal overflow-hidden flex flex-col modal-dialog ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {title ? (
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-stone bg-bone">
-            <div id={titleId} className="text-sm font-normal text-ink flex items-center gap-2">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-(--border-subtle) bg-bone/60">
+            <div id={titleId} className="text-[15px] font-medium tracking-[-0.015em] text-ink flex items-center gap-2.5">
               {title}
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close dialog"
-              className="p-1 rounded-md text-ash hover:text-ink hover:bg-linen focus:outline-none focus-visible:ring-1 focus-visible:ring-amber transition cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-ash hover:text-ink hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -181,13 +181,13 @@ export function ConfirmDialog({
 
   return (
     <Modal isOpen={isOpen} onClose={onCancel} maxWidth="max-w-md" ariaDescribedBy={descId}>
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-5">
         <div className="flex items-start gap-3.5">
           <div
-            className={`p-2.5 rounded-md shrink-0 ${
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
               isDestructive
-                ? 'bg-crimson/10 text-crimson border border-crimson/20'
-                : 'bg-warning-yellow/10 text-warning-yellow border border-warning-yellow/20'
+                ? 'bg-crimson/12 text-crimson border border-crimson/25'
+                : 'bg-warning-yellow/12 text-warning-yellow border border-warning-yellow/25'
             }`}
           >
             {isDestructive ? (
@@ -197,8 +197,8 @@ export function ConfirmDialog({
             )}
           </div>
           <div>
-            <h3 className="text-base font-normal text-ink">{title}</h3>
-            <p id={descId} className="text-sm text-driftwood mt-1 leading-relaxed">
+            <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-ink">{title}</h3>
+            <p id={descId} className="text-[13px] text-driftwood mt-1 leading-relaxed">
               {message}
             </p>
           </div>
@@ -208,7 +208,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
+            className="btn-secondary text-[13px] px-4 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
           >
             {cancelText}
           </button>
@@ -220,8 +220,8 @@ export function ConfirmDialog({
             }}
             className={
               isDestructive
-                ? 'px-4 py-2 text-xs font-normal rounded-md bg-crimson text-white hover:opacity-90 transition cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-crimson'
-                : 'btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber'
+                ? 'min-h-[32px] px-4 py-1.5 text-[13px] font-medium rounded-lg bg-crimson text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] hover:opacity-90 active:scale-[0.985] transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson'
+                : 'btn-primary text-[13px] px-4 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber'
             }
           >
             {confirmText}
@@ -298,17 +298,17 @@ export function PromptDialog({
     >
       <form onSubmit={handleSubmit} className="p-5 space-y-4">
         {message ? (
-          <p id={msgId} className="text-xs text-driftwood">
+          <p id={msgId} className="text-[13px] text-driftwood leading-relaxed">
             {message}
           </p>
         ) : null}
 
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           {fields.map((field) => {
             const inputId = `prompt-${field.id}`;
             return (
               <div key={field.id}>
-                <label htmlFor={inputId} className="block text-xs font-normal text-ink mb-1">
+                <label htmlFor={inputId} className="block text-[12px] font-medium text-driftwood mb-1.5">
                   {field.label}{' '}
                   {field.required ? <span className="text-crimson">*</span> : null}
                 </label>
@@ -321,7 +321,7 @@ export function PromptDialog({
                     }
                     placeholder={field.placeholder}
                     rows={3}
-                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber transition"
+                    className="input-atelier w-full text-[13px]"
                   />
                 ) : (
                   <input
@@ -332,7 +332,7 @@ export function PromptDialog({
                       setFormValues((prev) => ({ ...prev, [field.id]: e.target.value }))
                     }
                     placeholder={field.placeholder}
-                    className="w-full bg-parchment border border-stone rounded-md px-3 py-2 text-xs text-ink placeholder-mist focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber transition"
+                    className="input-atelier w-full text-[13px]"
                   />
                 )}
               </div>
@@ -340,17 +340,17 @@ export function PromptDialog({
           })}
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-stone">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-(--border-subtle)">
           <button
             type="button"
             onClick={onCancel}
-            className="btn-secondary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
+            className="btn-secondary text-[13px] px-4 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
           >
             {cancelText}
           </button>
           <button
             type="submit"
-            className="btn-primary text-xs px-4 py-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-amber"
+            className="btn-primary text-[13px] px-4 py-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
           >
             {submitText}
           </button>

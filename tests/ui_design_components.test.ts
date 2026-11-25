@@ -291,6 +291,20 @@ describe('UI Design System, AuthPage, Accessibility Primitives & Modal Stability
       expect(cssContent).toContain('.selectable-text');
       expect(cssContent).toContain('user-select: text;');
       expect(cssContent).toContain('.text-micro');
+      expect(cssContent).toContain("font-family: 'Inter';");
+      expect(cssContent).toContain('/fonts/inter-latin.woff2');
+      expect(cssContent).toContain("font-family: 'JetBrains Mono';");
+      expect(cssContent).toContain('SF Pro Text');
+      expect(cssContent).toContain('--color-parchment: #171717;');
+      expect(cssContent).toContain('--color-ember: #7c3aed;');
+      expect(cssContent).toContain('.apple-glass-header');
+      expect(cssContent).toContain('.apple-popover');
+    });
+
+    it('preloads self-hosted Inter and JetBrains Mono fonts in index.html', () => {
+      const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf-8');
+      expect(html).toContain('/fonts/inter-latin.woff2');
+      expect(html).toContain('/fonts/jetbrains-mono-latin.woff2');
     });
   });
 });

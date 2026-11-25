@@ -13,22 +13,22 @@ const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 function ClerkConfigNotice() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none transition-colors duration-150">
-      <div className="w-full max-w-lg bg-bone rounded-xl border border-stone p-8 shadow-2xl space-y-6 text-center">
+      <div className="w-full max-w-lg glass-modal rounded-2xl p-8 space-y-6 text-center">
         <div className="flex flex-col items-center gap-3">
-          <BrandMark className="w-12 h-12 text-ink" />
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ember/10 border border-ember/20 text-ember text-xs font-mono">
+          <BrandMark className="w-11 h-11 text-ink" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ember/12 border border-ember/25 text-amber text-[11px] font-medium tracking-[0.01em]">
             <span>Configuration Required</span>
           </div>
-          <h1 className="headline-md font-normal text-ink mt-1">
+          <h1 className="headline-md text-ink mt-1">
             Clerk Authentication Setup
           </h1>
-          <p className="text-[15px] text-driftwood leading-relaxed max-w-md">
+          <p className="text-[14px] text-driftwood leading-relaxed max-w-md">
             Obsidian Code requires Clerk for secure authentication and multi-user synchronization.
             Please configure your Clerk Publishable Key in your environment file.
           </p>
         </div>
 
-        <div className="text-left bg-parchment border border-stone rounded-md p-4 text-xs font-mono text-ink space-y-2">
+        <div className="text-left bg-parchment/80 border border-(--border-subtle) rounded-xl p-4 text-xs font-mono text-ink space-y-2">
           <p className="text-driftwood text-[11px] font-sans">
             Add this to your root <code className="text-ember font-mono">.env</code> file:
           </p>
@@ -88,8 +88,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       toastOptions={{
         classNames: {
           toast:
-            'border! border-stone! bg-bone! text-ink! text-sm! rounded-md! shadow-2xl! font-sans!',
-          description: 'text-driftwood! text-xs! font-sans!',
+            'glass-modal! border! border-white/12! text-ink! text-[13px]! rounded-xl! shadow-2xl! font-sans!',
+          description: 'text-driftwood! text-[12px]! font-sans!',
         },
       }}
     />

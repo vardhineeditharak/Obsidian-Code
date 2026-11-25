@@ -228,7 +228,7 @@ export function Dashboard({
 
   return (
     <div className="min-h-screen bg-parchment text-ink flex flex-col select-none transition-colors duration-150">
-      <nav className="h-13 border-b border-stone px-6 flex items-center justify-between">
+      <nav className="h-14 apple-glass-header sticky top-0 z-20 border-b border-(--border-subtle) px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BrandMark className="w-8 h-8 text-ink shrink-0" />
           <span className="font-brand text-xl font-semibold tracking-tight text-ink">
@@ -265,11 +265,11 @@ export function Dashboard({
         </div>
       </nav>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto p-8 flex flex-col">
-        <div className="flex items-start justify-between mb-8 pb-4 border-b border-stone gap-4 flex-wrap">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-6 sm:px-8 py-8 flex flex-col">
+        <div className="flex items-start justify-between mb-7 pb-5 border-b border-(--border-subtle) gap-4 flex-wrap">
           <div>
-            <div className="text-eyebrow mb-1">Workspaces</div>
-            <h1 className="headline-md font-semibold text-ink">Your Projects</h1>
+            <div className="text-eyebrow mb-1.5">Workspaces</div>
+            <h1 className="headline-md text-ink">Your Projects</h1>
             <p className="text-sm text-driftwood mt-1">
               Collaborate in real time with peers or jump into your personal code ateliers.
             </p>
@@ -299,19 +299,19 @@ export function Dashboard({
         {loading ? (
           <SkeletonGrid count={6} />
         ) : projects.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-stone inset-glow rounded-xl text-center">
-            <div className="w-10 h-10 rounded-lg bg-linen inset-glow flex items-center justify-center text-ash mb-3">
+          <div className="flex-1 flex flex-col items-center justify-center p-12 bg-bone border border-(--border-subtle) inset-glow rounded-2xl text-center">
+            <div className="w-11 h-11 rounded-xl bg-white/[0.05] border border-white/[0.08] inset-glow flex items-center justify-center text-ash mb-3.5">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h2 className="headline-sm font-semibold text-ink mb-1">No Projects Found</h2>
-            <p className="text-sm text-driftwood max-w-sm mb-6">
+            <h2 className="headline-sm text-ink mb-1.5">No Projects Found</h2>
+            <p className="text-[13.5px] text-driftwood max-w-sm leading-relaxed mb-6">
               Create a new collaborative project or join an existing workspace with an invitation
               link.
             </p>
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary text-xs"
+              className="btn-primary text-[13px]"
             >
               Create Your First Project
             </button>
@@ -321,41 +321,41 @@ export function Dashboard({
             {projects.length > 1 ? (
               <div className="mb-5 flex items-center justify-between gap-3">
                 <div className="relative w-full max-w-xs">
-                  <Search className="w-3.5 h-3.5 text-ash absolute left-3 top-2.5 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-ash absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Filter projects..."
                     aria-label="Filter projects"
-                    className="w-full bg-bone border border-stone rounded-lg pl-8 pr-8 py-1.5 text-xs font-mono text-ink placeholder-mist focus:outline-none focus:border-amber focus-visible:ring-1 focus-visible:ring-amber"
+                    className="input-atelier w-full h-9 pl-9 pr-8 text-[13px] font-sans"
                   />
                   {searchQuery ? (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
                       aria-label="Clear project filter"
-                      className="absolute right-2 top-2 text-ash hover:text-ink cursor-pointer"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ash hover:text-ink cursor-pointer p-0.5 rounded"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : null}
                 </div>
-                <span className="text-xs font-mono text-ash shrink-0">
+                <span className="text-[12px] font-medium font-sans tabular-nums text-ash shrink-0">
                   {filteredProjects.length} of {projects.length}
                 </span>
               </div>
             ) : null}
 
             {filteredProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-10 bg-bone border border-stone rounded-xl text-center">
-                <p className="text-sm text-driftwood mb-3">
+              <div className="flex flex-col items-center justify-center p-10 bg-bone border border-(--border-subtle) rounded-2xl text-center">
+                <p className="text-[13.5px] text-driftwood mb-3.5">
                   No projects match &ldquo;{searchQuery.trim()}&rdquo;.
                 </p>
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="btn-secondary text-xs"
+                  className="btn-secondary text-[13px]"
                 >
                   Clear Filter
                 </button>
@@ -376,20 +376,20 @@ export function Dashboard({
                         onOpenProject(project._id);
                       }
                     }}
-                    className="bg-bone p-5 rounded-xl border border-stone inset-glow hover:border-(--border-active) transition group cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                    className="bg-bone p-5 rounded-xl border border-(--border-subtle) inset-glow hover:border-white/20 hover:bg-linen/50 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-150 group cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                   >
                     <div>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-linen border border-stone inset-glow flex items-center justify-center text-ash group-hover:text-ink transition">
+                      <div className="flex items-start justify-between mb-3.5">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-[9px] bg-white/[0.045] border border-white/[0.08] inset-glow flex items-center justify-center text-ash group-hover:text-ink transition shrink-0">
                             <FolderOpen size={15} />
                           </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-ink transition">
+                          <div className="min-w-0">
+                            <h3 className="text-[14.5px] font-semibold tracking-[-0.015em] text-ink truncate transition">
                               {project.name}
                             </h3>
-                            <span className="font-mono text-[11px] text-ash flex items-center gap-1">
-                              <Clock className="w-2.5 h-2.5" />
+                            <span className="font-sans text-[11.5px] tabular-nums text-ash flex items-center gap-1 mt-0.5">
+                              <Clock className="w-3 h-3 text-ash/80" />
                               {new Date(project.updatedAt).toLocaleDateString()}
                             </span>
                           </div>
@@ -403,25 +403,25 @@ export function Dashboard({
                           }}
                           title={`Delete ${project.name}`}
                           aria-label={`Delete project ${project.name}`}
-                          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1 rounded-md text-ash hover:text-crimson hover:bg-linen focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer"
+                          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-ash hover:text-crimson hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer shrink-0"
                         >
                           <Trash size={14} />
                         </button>
                       </div>
 
                       {project.description ? (
-                        <p className="text-sm text-driftwood line-clamp-2 mb-4">
+                        <p className="text-[13px] text-driftwood leading-relaxed line-clamp-2 mb-4">
                           {project.description}
                         </p>
                       ) : null}
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-stone text-[11px] font-mono text-ash">
-                      <span className="flex items-center gap-1">
+                    <div className="flex items-center justify-between pt-3.5 border-t border-(--border-subtle) text-[11.5px] font-sans text-ash">
+                      <span className="flex items-center gap-1.5">
                         <Users size={12} className="text-ash" />
                         Collaborative Workspace
                       </span>
-                      <span className="text-ink group-hover:text-amber transition flex items-center gap-1 font-sans text-xs">
+                      <span className="text-ink group-hover:text-amber transition flex items-center gap-1 font-medium text-[12px]">
                         Open <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -440,7 +440,7 @@ export function Dashboard({
         title="Create Collaborative Project"
       >
         <div className="p-6">
-          <p className="text-sm text-driftwood mb-5">
+          <p className="text-[13px] text-driftwood mb-5 leading-relaxed">
             Choose a template to scaffold your shared project environment.
           </p>
 
@@ -448,7 +448,7 @@ export function Dashboard({
             <div>
               <label
                 htmlFor="project-name-input"
-                className="text-xs font-normal text-driftwood block mb-1"
+                className="text-[12px] font-medium text-driftwood block mb-1.5"
               >
                 Project Name
               </label>
@@ -466,7 +466,7 @@ export function Dashboard({
             <div>
               <label
                 htmlFor="project-desc-input"
-                className="text-xs font-normal text-driftwood block mb-1"
+                className="text-[12px] font-medium text-driftwood block mb-1.5"
               >
                 Description (Optional)
               </label>
@@ -481,10 +481,10 @@ export function Dashboard({
             </div>
 
             <div>
-              <span className="text-xs font-normal text-driftwood block mb-2">
+              <span className="text-[12px] font-medium text-driftwood block mb-2">
                 Starter Template
               </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {TEMPLATE_OPTIONS.map((tpl) => {
                   const isSelected = selectedTemplate === tpl.id;
                   return (
@@ -493,30 +493,30 @@ export function Dashboard({
                       type="button"
                       aria-pressed={isSelected}
                       onClick={() => setSelectedTemplate(tpl.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition text-left inset-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
+                      className={`p-3 rounded-[10px] border cursor-pointer transition text-left inset-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                         isSelected
-                          ? 'border-amber bg-linen text-ink'
-                          : 'border-stone bg-bone text-driftwood hover:bg-linen'
+                          ? 'border-amber/80 bg-linen text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                          : 'border-white/[0.08] bg-white/[0.025] text-driftwood hover:bg-white/[0.05]'
                       }`}
                     >
                       {tpl.icon}
-                      <p className="text-xs font-medium text-ink">{tpl.label}</p>
-                      <p className="font-mono text-[10px] text-ash">{tpl.sub}</p>
+                      <p className="text-[12.5px] font-medium text-ink">{tpl.label}</p>
+                      <p className="font-sans text-[11px] text-ash mt-0.5">{tpl.sub}</p>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-stone">
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-(--border-subtle)">
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="btn-ghost text-xs"
+                className="btn-ghost px-3 py-1.5 text-[13px]"
               >
                 Cancel
               </button>
-              <button type="submit" disabled={creating} className="btn-primary text-xs">
+              <button type="submit" disabled={creating} className="btn-primary text-[13px]">
                 {creating ? 'Creating...' : 'Create Project'}
               </button>
             </div>
@@ -531,12 +531,12 @@ export function Dashboard({
         title="Join Workspace"
       >
         <div className="p-6">
-          <p className="text-sm text-driftwood mb-5">
+          <p className="text-[13px] text-driftwood mb-5 leading-relaxed">
             Paste your invitation token or share link to join a team&apos;s code workspace.
           </p>
 
           {joinError ? (
-            <div role="alert" className="mb-4 text-[13px] text-crimson flex items-center gap-1.5">
+            <div role="alert" className="mb-4 text-[12.5px] text-crimson bg-crimson/10 border border-crimson/20 rounded-lg px-3 py-2 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-crimson" />
               <span>{joinError}</span>
             </div>
@@ -546,7 +546,7 @@ export function Dashboard({
             <div>
               <label
                 htmlFor="join-token-input"
-                className="text-xs font-normal text-driftwood block mb-1"
+                className="text-[12px] font-medium text-driftwood block mb-1.5"
               >
                 Invitation Link or Token
               </label>
@@ -560,22 +560,22 @@ export function Dashboard({
                   setInviteToken(e.target.value);
                   if (joinError) setJoinError(null);
                 }}
-                className="input-atelier w-full font-mono text-xs"
+                className="input-atelier w-full font-mono text-[12.5px]"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-(--border-subtle)">
+            <div className="flex items-center justify-end gap-2.5 pt-3.5 border-t border-(--border-subtle)">
               <button
                 type="button"
                 onClick={() => setShowJoinModal(false)}
-                className="btn-ghost text-xs"
+                className="btn-ghost px-3 py-1.5 text-[13px]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={joining}
-                className="btn-primary text-xs disabled:opacity-50"
+                className="btn-primary text-[13px] disabled:opacity-50"
               >
                 {joining ? 'Joining...' : 'Join Workspace'}
               </button>

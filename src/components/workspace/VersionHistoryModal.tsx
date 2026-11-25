@@ -174,26 +174,26 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
       maxWidth="max-w-6xl"
       className="h-[85vh] p-0"
       title={
-        <div className="flex items-center space-x-2.5">
-          <History className="w-5 h-5 text-ash" />
-          <h2 className="text-base font-normal text-ink">Version History & Diff Comparison</h2>
+        <div className="flex items-center gap-2.5">
+          <History className="w-4 h-4 text-ash" />
+          <h2 className="text-[15px] font-medium tracking-[-0.015em] text-ink">Version History & Diff Comparison</h2>
         </div>
       }
     >
       {/* Modal Workspace Grid */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Checkpoint List Drawer */}
-        <div className="w-80 border-r border-stone bg-parchment flex flex-col shrink-0">
-          <div className="p-3 border-b border-stone">
-            <span className="text-xs font-mono text-ash uppercase tracking-wider">
+        <div className="w-80 border-r border-(--border-subtle) bg-parchment/70 flex flex-col shrink-0">
+          <div className="h-11 px-3.5 border-b border-(--border-subtle) flex items-center">
+            <span className="text-eyebrow tabular-nums">
               Checkpoints ({versions.length})
             </span>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-            {loading && <p className="text-xs font-mono text-mist p-4">Loading checkpoints...</p>}
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+            {loading && <p className="text-[12px] font-sans text-mist p-4">Loading checkpoints...</p>}
             {!loading && versions.length === 0 && (
-              <div className="text-center p-6 text-mist text-xs font-sans">
+              <div className="text-center p-6 text-mist text-[12.5px] font-sans leading-relaxed">
                 No named checkpoints created yet. Press Ctrl+S in the editor or create a checkpoint.
               </div>
             )}
@@ -204,19 +204,19 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                   key={v._id}
                   type="button"
                   onClick={() => setSelectedVersion(v)}
-                  className={`w-full text-left p-3 rounded-lg border transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
+                  className={`w-full text-left p-3 rounded-xl border transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber ${
                     isSelected
-                      ? 'bg-bone border-amber text-ink shadow-none inset-glow'
-                      : 'bg-transparent border-transparent text-driftwood hover:bg-linen/50'
+                      ? 'bg-bone border-amber/60 text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                      : 'bg-transparent border-transparent text-driftwood hover:bg-white/[0.04]'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="font-normal text-sm text-ink truncate">{v.name}</span>
+                      <span className="font-medium text-[13.5px] text-ink truncate">{v.name}</span>
                       <span
                         className={`tag-badge shrink-0 ${
                           v.type === 'auto'
-                            ? 'bg-linen text-ash border border-stone'
+                            ? 'bg-white/[0.06] text-ash border border-white/[0.09]'
                             : 'bg-amber/15 text-amber border border-amber/30'
                         }`}
                       >
@@ -224,15 +224,15 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                       </span>
                     </div>
                     <span
-                      className="text-micro font-mono text-mist flex items-center gap-1 shrink-0 ml-2"
+                      className="text-[11px] font-sans tabular-nums text-mist flex items-center gap-1 shrink-0 ml-2"
                       title={new Date(v.createdAt).toLocaleString()}
                     >
                       <Clock className="w-3 h-3" />
                       {formatRelativeTime(v.createdAt)}
                     </span>
                   </div>
-                  {v.note && <p className="text-xs text-driftwood line-clamp-1 mb-1">{v.note}</p>}
-                  <div className="flex items-center gap-1 text-[11px] font-mono text-ash">
+                  {v.note && <p className="text-[12px] text-driftwood line-clamp-1 mb-1">{v.note}</p>}
+                  <div className="flex items-center gap-1.5 text-[11px] font-sans text-ash">
                     <UserIcon className="w-3 h-3" />
                     <span>{v.createdBy?.name || 'Unknown'}</span>
                   </div>
@@ -245,9 +245,9 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
         {/* Right Diff Comparison Area */}
         <div className="flex-1 flex flex-col bg-parchment min-w-0">
           {/* Diff Controls Header */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-stone bg-bone text-xs shrink-0">
+          <div className="h-11 flex items-center justify-between px-4 border-b border-(--border-subtle) bg-bone/60 text-[12px] shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <label htmlFor="compare-file-select" className="text-driftwood font-mono text-xs shrink-0">
+              <label htmlFor="compare-file-select" className="text-driftwood font-sans font-medium text-[12px] shrink-0">
                 Comparing:
               </label>
               <select
@@ -255,7 +255,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 aria-label="Select file to compare"
                 value={selectedFileId}
                 onChange={(e) => setSelectedFileId(e.target.value)}
-                className="bg-surface text-ink border border-stone rounded-lg px-2.5 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber font-mono text-xs cursor-pointer max-w-[240px] truncate"
+                className="h-7 bg-white/[0.04] text-ink border border-white/[0.1] rounded-md px-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber font-sans text-[12px] cursor-pointer max-w-[240px] truncate"
               >
                 {files
                   .filter((f) => !f.isFolder)
@@ -268,7 +268,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
             </div>
 
             <div className="flex items-center gap-4 shrink-0">
-              <span className="text-mist font-mono text-[11px] hidden md:inline">
+              <span className="text-mist font-sans text-[11.5px] hidden md:inline">
                 Original (Checkpoint) ⟷ Modified (Current)
               </span>
               {selectedVersion && (
@@ -281,7 +281,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                       ? 'Viewers cannot restore checkpoints'
                       : 'Restore this checkpoint to workspace'
                   }
-                  className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-40 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                  className="btn-primary min-h-0 h-7 px-3 text-[12px] flex items-center gap-1.5 disabled:opacity-40 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>{restoring ? 'Restoring…' : 'Restore This Version'}</span>
@@ -308,6 +308,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 fontSize: editorOptions.fontSize,
                 fontFamily: editorOptions.fontFamily,
                 fontLigatures: editorOptions.fontLigatures,
+                lineHeight: editorOptions.lineHeight,
                 lineNumbers: 'on',
                 scrollBeyondLastLine: false,
               }}
