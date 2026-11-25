@@ -1,10 +1,17 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
+import { config } from '../config';
 import { runProcessCode } from '../execution/processRunner';
 import { probe, LANGUAGE_DEFINITIONS } from '../execution/languageRegistry';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 
 const router = Router();
+
+function executionAvailable(): boolean {
+  return (
+    config.NODE_ENV !== 'production' || config.EXECUTION_ENABLED_IN_PRODUCTION === 'true'
+  );
+}
 
 // Bounded in-memory per-user rate limit (10 runs / min)
 const userRunTimestamps = new Map<string, number[]>();
@@ -65,12 +72,25 @@ const executeSchema = z.object({
 
 // GET /api/execute/runtimes
 router.get('/runtimes', authenticateJWT, async (_req: AuthRequest, res: Response) => {
+  if (!executionAvailable()) {
+    return res.status(503).json({
+      message:
+        'Code execution is disabled in production. Set EXECUTION_ENABLED_IN_PRODUCTION=true only when the runner is isolated.',
+    });
+  }
   const runtimes = await probe();
   return res.json({ runtimes });
 });
 
 // POST /api/execute
 router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
+  if (!executionAvailable()) {
+    return res.status(503).json({
+      message:
+        'Code execution is disabled in production. Set EXECUTION_ENABLED_IN_PRODUCTION=true only when the runner is isolated.',
+    });
+  }
+
   const parsed = executeSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: 'Validation failed', errors: parsed.error.issues });
