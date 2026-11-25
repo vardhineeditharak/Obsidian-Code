@@ -283,7 +283,11 @@ describe('Frontend Core Modules, Utilities & Editor Configuration', () => {
       expect(fakeAnchor.click).toHaveBeenCalledTimes(1);
       expect(clickedDownload).toBe('my-cool-project-workspace.zip');
       expect(removed).toBe(true);
-      expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:obsidian-test-zip');
+      // The object URL is revoked on a delayed timer so the browser can start the download.
+      await vi.waitFor(
+        () => expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:obsidian-test-zip'),
+        { timeout: 2000 }
+      );
       expect(completedSpy).toHaveBeenCalledWith('my-cool-project-workspace.zip');
 
       expect(capturedBlob).not.toBeNull();
