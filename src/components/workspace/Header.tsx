@@ -47,7 +47,8 @@ export interface HeaderProps {
   onToggleSidebar?: () => void;
 }
 
-const TRANSPORT_MODES: TransportMode[] = ['Hybrid', 'WebSocket Only', 'P2P Mesh Only'];
+// WebRTC P2P is disabled for RBAC-protected documents; only server-backed modes are offered.
+const TRANSPORT_MODES: TransportMode[] = ['Hybrid', 'WebSocket Only'];
 
 export const Header: React.FC<HeaderProps> = ({
   project,
