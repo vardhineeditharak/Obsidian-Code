@@ -1,6 +1,5 @@
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
-import { WebrtcProvider } from 'y-webrtc';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { MonacoBinding } from 'y-monaco';
 import type { Awareness } from 'y-protocols/awareness';
@@ -19,7 +18,8 @@ export interface DocSession {
   ytext: Y.Text;
   lineAuthors: Y.Map<LineAuthorMetadata>;
   wsProvider: WebsocketProvider | null;
-  webrtcProvider: WebrtcProvider | null;
+  /** P2P is disabled: public signaling peers would bypass server-side RBAC. */
+  webrtcProvider: null;
   awareness: Awareness | null;
   idbPersistence: IndexeddbPersistence;
   binding: MonacoBinding | null;
@@ -62,6 +62,7 @@ function readStoredAuthToken(): string {
 class YjsDocManager {
   private sessions = new Map<string, DocSession>();
   private pendingSessions = new Map<string, Promise<DocSession>>();
+  private roomGenerations = new Map<string, number>();
   private bindings = new Map<string, MonacoBinding>();
   private secondaryBindings = new Map<string, MonacoBinding>();
   private activeBoundFileId: string | null = null;
@@ -92,6 +93,7 @@ class YjsDocManager {
     allowP2P: boolean = false
   ): Promise<DocSession> {
     const roomKey = getRoomKey(projectId, fileId);
+    const generation = this.roomGenerations.get(roomKey) ?? 0;
 
     const existing = this.sessions.get(roomKey);
     if (existing) {
@@ -107,15 +109,18 @@ class YjsDocManager {
       roomKey,
       initialContent,
       onSyncStatusChange,
-      allowP2P
+      allowP2P,
+      generation
     );
     this.pendingSessions.set(roomKey, createPromise);
 
     try {
-      const session = await createPromise;
-      return session;
+      return await createPromise;
     } finally {
-      this.pendingSessions.delete(roomKey);
+      // Only the creator removes its own entry; other awaiters must not evict it early.
+      if (this.pendingSessions.get(roomKey) === createPromise) {
+        this.pendingSessions.delete(roomKey);
+      }
     }
   }
 
@@ -123,7 +128,8 @@ class YjsDocManager {
     roomKey: string,
     initialContent: string,
     onSyncStatusChange?: (synced: boolean) => void,
-    allowP2P: boolean = false
+    allowP2P: boolean = false,
+    generation: number = 0
   ): Promise<DocSession> {
     const doc = new Y.Doc();
     const ytext = doc.getText('content');
@@ -132,6 +138,12 @@ class YjsDocManager {
     // 1. Local-first persistence via IndexedDB
     const idbPersistence = new IndexeddbPersistence(roomKey, doc);
     await idbPersistence.whenSynced;
+
+    if ((this.roomGenerations.get(roomKey) ?? 0) !== generation) {
+      idbPersistence.destroy();
+      doc.destroy();
+      throw new Error('Yjs session was disposed while it was being created.');
+    }
 
     // Seed empty local document once before any MonacoBinding attaches
     if (ytext.length === 0 && initialContent) {
@@ -143,8 +155,11 @@ class YjsDocManager {
     onSyncStatusChange?.(true);
 
     let wsProvider: WebsocketProvider | null = null;
-    let webrtcProvider: WebrtcProvider | null = null;
     const cleanups: (() => void)[] = [];
+    // WebRTC P2P is intentionally never attached to an authoritative project document:
+    // public signaling peers cannot be subjected to server-side RBAC, and their Yjs
+    // updates would be relayed to the server through the shared doc.
+    void allowP2P;
 
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     const wsProto = isHttps ? 'wss:' : 'ws:';
@@ -153,62 +168,46 @@ class YjsDocManager {
         ? `${wsProto}//${window.location.host}/ws`
         : 'ws://localhost:5000/ws';
 
-    // 2. WebSocket Relay (Hybrid or WebSocket Only)
-    if (this.activeTransport === 'Hybrid' || this.activeTransport === 'WebSocket Only') {
-      try {
-        wsProvider = new WebsocketProvider(wsHost, roomKey, doc, {
-          connect: true,
-          params: {
-            token: readStoredAuthToken(),
-          },
-        });
+    // 2. Authoritative WebSocket relay (all transport modes)
+    try {
+      wsProvider = new WebsocketProvider(wsHost, roomKey, doc, {
+        connect: true,
+        params: {
+          token: readStoredAuthToken(),
+        },
+      });
 
-        const statusHandler = ({ status }: { status: string }) => {
-          onSyncStatusChange?.(status === 'connected');
-        };
-        wsProvider.on('status', statusHandler);
-        cleanups.push(() => wsProvider?.off('status', statusHandler));
-      } catch (err) {
-        console.warn('Failed to connect to WebSocket relay:', err);
-      }
+      const statusHandler = ({ status }: { status: string }) => {
+        onSyncStatusChange?.(status === 'connected');
+      };
+      wsProvider.on('status', statusHandler);
+      cleanups.push(() => wsProvider?.off('status', statusHandler));
+    } catch (err) {
+      console.warn('Failed to connect to WebSocket relay:', err);
     }
 
-    // 3. WebRTC P2P Mesh (public projects only when Hybrid or P2P Mesh Only)
-    if (this.activeTransport === 'Hybrid' || this.activeTransport === 'P2P Mesh Only') {
-      if (allowP2P) {
-        try {
-          webrtcProvider = new WebrtcProvider(roomKey, doc, {
-            awareness: wsProvider ? wsProvider.awareness : undefined,
-            signaling: [
-              'wss://signaling.yjs.dev',
-              'wss://y-webrtc-signaling-eu.herokuapp.com',
-            ],
-          });
-        } catch (err) {
-          console.warn('WebRTC signaling initialization notice:', err);
-        }
-      } else {
-        console.warn(
-          `[Security] WebRTC P2P skipped for private room ${roomKey}. P2P is allowed only for public projects.`
-        );
-      }
-    }
-
-    const awareness: Awareness | null =
-      wsProvider?.awareness ?? webrtcProvider?.awareness ?? null;
+    const awareness: Awareness | null = wsProvider?.awareness ?? null;
 
     const session: DocSession = {
       doc,
       ytext,
       lineAuthors,
       wsProvider,
-      webrtcProvider,
+      webrtcProvider: null,
       awareness,
       idbPersistence,
       binding: null,
       synced: true,
       cleanups,
     };
+
+    if ((this.roomGenerations.get(roomKey) ?? 0) !== generation) {
+      session.cleanups.forEach((cleanup) => cleanup());
+      session.wsProvider?.destroy();
+      session.idbPersistence.destroy();
+      doc.destroy();
+      throw new Error('Yjs session was disposed while it was being created.');
+    }
 
     this.sessions.set(roomKey, session);
     return session;
@@ -275,6 +274,9 @@ class YjsDocManager {
 
     const unsubscribe = () => {
       awareness.off('change', updateCollaborators);
+      const index = session.cleanups.indexOf(unsubscribe);
+      if (index >= 0) session.cleanups.splice(index, 1);
+      if (session.unsubscribeAwareness === unsubscribe) session.unsubscribeAwareness = undefined;
     };
 
     session.cleanups.push(unsubscribe);
@@ -463,6 +465,11 @@ class YjsDocManager {
   public destroySession(projectId: string, fileId: string): void {
     this.destroyBinding(fileId);
     const roomKey = getRoomKey(projectId, fileId);
+    // Bump the generation even when creation is still in flight so it cannot become a
+    // live, unowned session after this call returns.
+    this.roomGenerations.set(roomKey, (this.roomGenerations.get(roomKey) ?? 0) + 1);
+    this.pendingSessions.delete(roomKey);
+
     const session = this.sessions.get(roomKey);
     if (!session) return;
 
@@ -472,7 +479,6 @@ class YjsDocManager {
     session.cleanups.forEach((cleanup) => cleanup());
     session.binding?.destroy();
     session.wsProvider?.destroy();
-    session.webrtcProvider?.destroy();
     session.idbPersistence.destroy();
     session.doc.destroy();
 
