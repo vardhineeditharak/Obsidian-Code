@@ -1,0 +1,53 @@
+# ==============================================================================
+# Obsidian Code — Git Ignore Rules
+# ==============================================================================
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build Outputs
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# Environment & Local Configuration
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS Artifacts
+.DS_Store
+Thumbs.db
+
+# IDE & Editor Scratch Files
+.idea/
+*.sw?
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+
+# Cache & Temporary Directories
+.turbo/
+.cache/
+temp/
+tmp/
+
+# Workspace agent files
+.agents/
+skills-lock.json
+context.md
