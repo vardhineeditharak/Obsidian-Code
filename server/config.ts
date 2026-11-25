@@ -20,6 +20,9 @@ const envSchema = z.object({
   CLIENT_ORIGIN: z.string().default('http://localhost:3000'),
   APP_URL: z.string().default('http://localhost:5000'),
   SESSION_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+  // Native code execution is remote code execution by design. Require an explicit opt-in
+  // in production so it is only enabled inside a properly isolated deployment.
+  EXECUTION_ENABLED_IN_PRODUCTION: z.enum(['true', 'false']).optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),
