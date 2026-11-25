@@ -1,5 +1,19 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** Extracts the public class name from Java source, ignoring comments and literals. */
+function extractJavaMainClass(code: string): string | null {
+  const cleaned = code
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+    .replace(/'(?:\\.|[^'\\])*'/g, "''")
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ');
+  const match = cleaned.match(
+    /\bpublic\s+(?:final\s+|abstract\s+|sealed\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)/
+  );
+  return match ? match[1] : null;
+}
 
 export interface CommandSpec {
   command: string;
@@ -43,7 +57,8 @@ export interface ResolvedLanguage {
 }
 
 const isWin = process.platform === 'win32';
-const tsxCliPath = path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
+// Resolve relative to this module so execution works regardless of the server's CWD.
+const tsxCliPath = fileURLToPath(new URL('../../node_modules/tsx/dist/cli.mjs', import.meta.url));
 
 export const LANGUAGE_DEFINITIONS: Record<string, LanguageDefinition> = {
   javascript: {
@@ -140,16 +155,9 @@ export const LANGUAGE_DEFINITIONS: Record<string, LanguageDefinition> = {
       args: [sourceFile],
     }),
     run: (targetFile, workDir, _cmd, code) => {
-      let className = 'Main';
-      if (code) {
-        const match = code.match(/public\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/);
-        if (match) className = match[1];
-      } else {
-        const base = path.basename(targetFile, '.java');
-        if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(base)) {
-          className = base;
-        }
-      }
+      const base = path.basename(targetFile, '.java');
+      const fallback = /^[A-Za-z_][A-Za-z0-9_]*$/.test(base) ? base : 'Main';
+      const className = code ? extractJavaMainClass(code) || fallback : fallback;
       return {
         command: 'java',
         args: ['-cp', workDir, className],
