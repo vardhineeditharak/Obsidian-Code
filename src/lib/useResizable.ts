@@ -107,6 +107,8 @@ export function useResizable({
       const delta = currentPos - startPosRef.current;
       const effectiveDelta = reverse ? -delta : delta;
       const clamped = clampSize(startSizeRef.current + effectiveDelta, min, max);
+      // Commit to the ref synchronously: pointerup may cancel the pending frame.
+      sizeRef.current = clamped;
 
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
@@ -135,6 +137,7 @@ export function useResizable({
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      setSizeState(sizeRef.current);
 
       try {
         localStorage.setItem(storageKey, String(sizeRef.current));
