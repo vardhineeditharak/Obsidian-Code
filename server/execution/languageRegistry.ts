@@ -247,6 +247,7 @@ async function testCandidate(cand: CommandSpec): Promise<{ available: boolean; v
       child = spawn(cand.command, cand.args, {
         shell: false,
         timeout: 2000,
+        stdio: ['ignore', 'pipe', 'pipe'],
         env: {
           ...process.env,
           LANG: 'en_US.UTF-8',
@@ -293,33 +294,28 @@ export async function probe(): Promise<RuntimeProbeResult[]> {
   if (probePromise) return probePromise;
 
   probePromise = (async () => {
-    const results: RuntimeProbeResult[] = [];
-
-    for (const [key, def] of Object.entries(LANGUAGE_DEFINITIONS)) {
-      let matched = false;
-      for (const cand of def.probeCandidates) {
-        const check = await testCandidate(cand);
-        if (check.available) {
-          results.push({
-            language: key,
-            available: true,
-            version: check.version,
-            command: cand.command,
-            hint: def.hint,
-          });
-          matched = true;
-          break;
+    const results = await Promise.all(
+      Object.entries(LANGUAGE_DEFINITIONS).map(async ([key, def]): Promise<RuntimeProbeResult> => {
+        for (const cand of def.probeCandidates) {
+          const check = await testCandidate(cand);
+          if (check.available) {
+            return {
+              language: key,
+              available: true,
+              version: check.version,
+              command: cand.command,
+              hint: def.hint,
+            };
+          }
         }
-      }
 
-      if (!matched) {
-        results.push({
+        return {
           language: key,
           available: false,
           hint: def.hint,
-        });
-      }
-    }
+        };
+      })
+    );
 
     probeCache = results;
     return results;

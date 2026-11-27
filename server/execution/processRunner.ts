@@ -1,5 +1,5 @@
 /**
- * Obsidian Code — Process Runner
+ * Process Runner
  *
  * Mitigations enforced by this runner:
  *   1. Authentication via `authenticateJWT` on execution routes.
@@ -11,7 +11,7 @@
  *   7. Whitelisted environment variables only.
  */
 
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -61,13 +61,42 @@ function getWhitelistedEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-async function killProcessTree(pid: number): Promise<void> {
+async function killProcessTree(pid: number, child?: ChildProcess): Promise<void> {
   if (isWin) {
-    await new Promise<void>((resolve) => {
-      const killer = spawn('taskkill', ['/pid', String(pid), '/T', '/F'], { shell: false });
-      killer.on('close', () => resolve());
-      killer.on('error', () => resolve());
+    const taskkillExitCode = await new Promise<number | null>((resolve) => {
+      let settled = false;
+      const finish = (code: number | null) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(guard);
+        resolve(code);
+      };
+      const killer = spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
+        shell: false,
+        stdio: 'ignore',
+      });
+      const guard = setTimeout(() => {
+        try {
+          killer.kill('SIGKILL');
+        } catch {}
+        finish(1);
+      }, 1500);
+      guard.unref?.();
+      killer.on('close', (code) => finish(code));
+      killer.on('error', () => finish(1));
     });
+    if (taskkillExitCode !== 0 || (child && child.exitCode === null)) {
+      try {
+        child?.kill('SIGKILL');
+      } catch {
+        // Ignore if already exited
+      }
+      try {
+        process.kill(pid, 'SIGKILL');
+      } catch {
+        // Ignore if already exited
+      }
+    }
   } else {
     try {
       process.kill(-pid, 'SIGKILL');
@@ -122,6 +151,7 @@ function runSpawnCommand(
         cwd,
         env: getWhitelistedEnv(),
         shell: false,
+        stdio: ['ignore', 'pipe', 'pipe'],
         detached: !isWin,
       });
     } catch (err: any) {
@@ -139,7 +169,11 @@ function runSpawnCommand(
       if (child.exitCode !== null) return;
       timedOut = true;
       if (child.pid) {
-        void killProcessTree(child.pid);
+        void killProcessTree(child.pid, child);
+      } else {
+        try {
+          child.kill('SIGKILL');
+        } catch {}
       }
     }, timeoutMs);
     timer.unref?.();
@@ -198,7 +232,7 @@ function runSpawnCommand(
 
         let error: string | undefined;
         let exitCode = timedOut ? 124 : code;
-        if (code === null && signal) {
+        if (!timedOut && code === null && signal) {
           error = `Terminated by signal ${signal}`;
           stderrLines.push(error);
           exitCode = 1;
