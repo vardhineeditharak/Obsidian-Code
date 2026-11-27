@@ -63,14 +63,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <BrandMark className="w-11 h-11 text-ink" />
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-crimson/12 border border-crimson/25 text-crimson text-[11px] font-medium tracking-[0.01em]">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Renderer Encountered an Exception</span>
+                <span>Render Error</span>
               </div>
               <h1 className="headline-md text-ink mt-1">
                 Workspace Interrupted
               </h1>
               <p className="text-[14px] text-driftwood leading-relaxed max-w-md">
-                An unexpected error occurred while rendering the workspace. Your CRDT changes and
-                snapshots remain intact.
+                Something went wrong while rendering the editor. Saved checkpoints and synced
+                local edits remain stored.
               </p>
             </div>
 

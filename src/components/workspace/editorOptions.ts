@@ -2,7 +2,7 @@ import type * as Monaco from 'monaco-editor';
 
 /**
  * Shared base editor configuration across primary and split editor panes.
- * Enforces single source of truth for font-family, ligatures, metrics, and cursor settings.
+ * Keeps font, spacing, and cursor settings aligned.
  */
 export const editorOptions: Monaco.editor.IStandaloneEditorConstructionOptions = {
   fontSize: 13,
@@ -39,7 +39,7 @@ export const splitEditorOptions: Monaco.editor.IStandaloneEditorConstructionOpti
 };
 
 /**
- * Read-only mirror options preserved for compatibility and read-only diff/preview contexts.
+ * Read-only options for diff and preview views.
  */
 export const mirrorEditorOptions: Monaco.editor.IStandaloneEditorConstructionOptions = {
   ...editorOptions,

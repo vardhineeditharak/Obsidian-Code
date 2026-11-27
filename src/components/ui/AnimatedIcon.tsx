@@ -72,7 +72,7 @@ export interface AnimatedIconProps {
 }
 
 /**
- * AnimatedIcon wraps MorphIcon with Obsidian Code defaults and reduced-motion compliance.
+ * Animated icon button wrapper with reduced-motion support.
  */
 export function AnimatedIcon({
   fromKey,

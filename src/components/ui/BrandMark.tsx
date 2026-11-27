@@ -5,7 +5,7 @@ export interface BrandMarkProps extends React.ImgHTMLAttributes<HTMLImageElement
 }
 
 /**
- * Obsidian Code canonical brand emblem backed by public/logo.svg.
+ * App logo rendered from public/logo.svg.
  */
 export function BrandMark({ className, ...props }: BrandMarkProps) {
   return (

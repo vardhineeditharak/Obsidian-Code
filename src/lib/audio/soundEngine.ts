@@ -1,6 +1,5 @@
 /**
- * Obsidian Code Audio Synthesizer Engine
- * Pure Web Audio API tone synthesis with zero external audio assets.
+ * Web Audio synthesizer for UI sound effects with no external audio files.
  */
 
 const MUTE_STORAGE_KEY = 'obsidian_audio_muted';

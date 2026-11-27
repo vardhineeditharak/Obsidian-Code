@@ -4,7 +4,7 @@
 
 # Obsidian Code
 
-Real-time collaborative code editor — Yjs CRDT · Monaco · Obsidian Crystalline UI
+Browser-based collaborative code editor built with Yjs, Monaco, and Express.
 
 </div>
 

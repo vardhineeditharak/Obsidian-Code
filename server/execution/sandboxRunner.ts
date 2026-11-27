@@ -43,9 +43,9 @@ export async function executeSandboxCode({
   if (lowerLang === 'python') {
     return {
       stdout: [
-        '--- Python Diagnostics & Syntax Analysis ---',
-        'Lightweight Python syntax checked successfully.',
-        'Note: Full Python runtime execution requires a dedicated backend sandbox container or Pyodide worker.',
+        'Python Diagnostics',
+        'Syntax check passed.',
+        'Note: Full Python execution requires a backend runtime or Pyodide worker.',
       ],
       stderr: [],
       executionTimeMs: 5,

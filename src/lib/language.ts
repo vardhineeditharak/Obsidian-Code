@@ -29,7 +29,7 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
 };
 
 /**
- * Maps a filename extension to its authoritative Monaco / runtime language identifier.
+ * Maps a filename extension to its Monaco and runtime language identifier.
  */
 export function detectLanguage(fileName: string): string {
   const lastDot = fileName.lastIndexOf('.');

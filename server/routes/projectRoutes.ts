@@ -205,8 +205,7 @@ console.log('Hello from ' + ${safeJsNameLiteral} + '!');
     language: 'markdown',
     content: `# ${name}
 
-Your team's shared workspace for code.
-Start editing files, collaborate in real time, and share your project.
+Shared project workspace.
 `,
   });
 }

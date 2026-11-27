@@ -1,22 +1,21 @@
 import { toast } from 'sonner';
 
 /**
- * Obsidian Code Notification Manager
- * Encapsulates Sonner notifications with stable toast IDs and semantic timing.
+ * Toast helpers wrapping Sonner with deduplicated IDs.
  */
 export const notify = {
   // Save confirmations
   saved: (fileName?: string) => {
     toast.success(fileName ? `Saved ${fileName}` : 'All changes saved', {
       id: 'doc-save',
-      description: 'Synchronized with local storage and collaborative mesh',
+      description: 'Saved locally and synced',
       duration: 2500,
     });
   },
 
   checkpointCreated: (checkpointName: string) => {
     toast.success('Checkpoint created', {
-      description: `"${checkpointName}" is recorded in version history`,
+      description: `Saved "${checkpointName}"`,
       duration: 3000,
     });
   },
@@ -34,24 +33,23 @@ export const notify = {
       toast.success('Connected', {
         id: 'network-status',
         description: transport
-          ? `Synchronizing via ${transport}`
-          : 'Reconnected to collaborative network',
+          ? `Syncing via ${transport}`
+          : 'Reconnected',
         duration: 3000,
       });
     } else {
-      toast.warning('Offline mode active', {
+      toast.warning('Offline', {
         id: 'network-status',
-        description:
-          'Changes will be saved locally in IndexedDB and synchronized once reconnected',
+        description: 'Edits stay in IndexedDB and sync when you reconnect',
         duration: 5000,
       });
     }
   },
 
   transportChanged: (mode: string) => {
-    toast.info(`Transport Mode: ${mode}`, {
+    toast.info(`Sync mode: ${mode}`, {
       id: 'transport-mode',
-      description: `Active sync channel updated to ${mode}`,
+      description: `Switched sync to ${mode}`,
       duration: 2500,
     });
   },
@@ -75,7 +73,7 @@ export const notify = {
     if (isFollowing) {
       toast.info(`Following ${collaboratorName || 'collaborator'}`, {
         id: 'follow-mode',
-        description: 'Your editor will track their active viewport and cursor position',
+        description: 'Follows their cursor and scroll position',
         duration: 2500,
       });
     } else {
@@ -87,19 +85,19 @@ export const notify = {
   },
 
   roleChanged: (newRole: string) => {
-    toast.info(`Workspace Role: ${newRole}`, {
+    toast.info(`Role: ${newRole}`, {
       id: 'user-role',
       description:
         newRole === 'Viewer'
-          ? 'Read-only mode active. You can observe cursors but cannot edit.'
-          : `You now have ${newRole} privileges.`,
+          ? 'Read-only mode. You can view files and cursors.'
+          : `Your role is now ${newRole}.`,
       duration: 4000,
     });
   },
 
   permissionDenied: (action: string) => {
     toast.error('Permission Denied', {
-      description: `Viewers are not permitted to ${action}.`,
+      description: `Viewers cannot ${action}.`,
       duration: 3500,
     });
   },
@@ -119,18 +117,18 @@ export const notify = {
 
   // Code Execution
   executionStarted: () => {
-    return toast.loading('Executing code in sandbox...', { id: 'code-exec' });
+    return toast.loading('Running code...', { id: 'code-exec' });
   },
 
   executionSuccess: (durationMs: number) => {
-    toast.success(`Execution completed in ${durationMs}ms`, {
+    toast.success(`Finished in ${durationMs}ms`, {
       id: 'code-exec',
       duration: 3000,
     });
   },
 
   executionFailed: (errorMsg: string) => {
-    toast.error('Execution Failed', {
+    toast.error('Run failed', {
       id: 'code-exec',
       description: errorMsg,
       duration: 4000,
@@ -139,15 +137,15 @@ export const notify = {
 
   // Sharing & Invitations
   inviteCopied: () => {
-    toast.success('Invitation link copied to clipboard', {
-      description: 'Anyone with this link can join with specified role permissions',
+    toast.success('Invite link copied', {
+      description: 'Anyone with this link can join with that role',
       duration: 3000,
     });
   },
 
   // Export
   exportStarted: () => {
-    return toast.loading('Packaging workspace files into ZIP...', { id: 'export-zip' });
+    return toast.loading('Creating ZIP...', { id: 'export-zip' });
   },
 
   exportCompleted: (fileName: string) => {
