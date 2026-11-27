@@ -23,8 +23,8 @@ function ClerkConfigNotice() {
             Clerk Authentication Setup
           </h1>
           <p className="text-[14px] text-driftwood leading-relaxed max-w-md">
-            Obsidian Code requires Clerk for secure authentication and multi-user synchronization.
-            Please configure your Clerk Publishable Key in your environment file.
+            Obsidian Code uses Clerk for authentication. Set your Clerk publishable key in
+            .env to continue.
           </p>
         </div>
 
@@ -88,7 +88,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       toastOptions={{
         classNames: {
           toast:
-            'glass-modal! border! border-white/12! text-ink! text-[13px]! rounded-xl! shadow-2xl! font-sans!',
+            'text-[13px]! rounded-xl! shadow-2xl! font-sans!',
           description: 'text-driftwood! text-[12px]! font-sans!',
         },
       }}
