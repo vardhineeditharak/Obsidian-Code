@@ -1,7 +1,7 @@
 {
   "name": "obsidian-code",
   "version": "2.0.0",
-  "description": "Real-time collaborative code editor combining Yjs CRDT multiplayer synchronization with VS Code ergonomics and an Obsidian Crystalline dark UI.",
+  "description": "Browser-based collaborative code editor using Yjs CRDTs, Monaco Editor, and Express.",
   "type": "module",
   "author": "Obsidian Code Contributors",
   "license": "MIT",
@@ -70,6 +70,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/react": "^16.3.3",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -82,6 +83,7 @@
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.6",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",

@@ -216,7 +216,7 @@ describe('Workspace, Dashboard & Real-Time UI Components', () => {
           currentUserId: 'u-2',
         })
       );
-      expect(editorHtml).toContain('Only the workspace Owner can create new invitation links.');
+      expect(editorHtml).toContain('Only the owner can create invite links.');
       expect(editorHtml).toContain('aria-label="Leave workspace"');
 
       const shareSrc = fs.readFileSync(
