@@ -37,6 +37,8 @@ export function App() {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [pendingInviteToken, setPendingInviteToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncAttempt, setSyncAttempt] = useState(0);
 
   const updateUser = useCallback((user: User | null) => {
     currentUserRef.current = user;
@@ -69,7 +71,7 @@ export function App() {
         userSnapshot.firstName ||
         userSnapshot.username ||
         email.split('@')[0] ||
-        'Obsidian Developer';
+        'Developer';
       const avatar = userSnapshot.imageUrl;
 
       const syncSession = async () => {
@@ -86,10 +88,12 @@ export function App() {
         });
       };
 
+      setSyncError(null);
       syncSession()
         .then(({ user }) => {
           if (cancelled) return;
           updateUser(user);
+          setSyncError(null);
 
           let inviteToken = getInviteTokenFromPath();
           if (!inviteToken && typeof window !== 'undefined') {
@@ -118,7 +122,7 @@ export function App() {
           if (cancelled) return;
           console.error('Failed to sync Clerk user with backend:', err);
           updateUser(null);
-          setCurrentRoute('auth');
+          setSyncError(err instanceof Error ? err.message : 'Unable to sync authenticated session.');
         })
         .finally(() => {
           if (!cancelled) {
@@ -127,6 +131,7 @@ export function App() {
         });
     } else {
       updateUser(null);
+      setSyncError(null);
       setLoading(false);
       setCurrentRoute('auth');
     }
@@ -161,7 +166,7 @@ export function App() {
       cancelled = true;
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [isClerkLoaded, isSignedIn, clerkUser?.id, updateUser]);
+  }, [isClerkLoaded, isSignedIn, clerkUser?.id, syncAttempt, updateUser]);
 
   const handleOpenProject = useCallback((projectId: string) => {
     setActiveProjectId(projectId);
@@ -210,7 +215,38 @@ export function App() {
   }
 
   if (loading || !isClerkLoaded) {
-    return <LoadingState fullscreen label="Initializing Obsidian Code…" />;
+    return <LoadingState fullscreen label="Loading Obsidian Code..." />;
+  }
+
+  if (isSignedIn && syncError && !currentUser) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-parchment p-6 select-none">
+        <div className="w-full max-w-md glass-modal rounded-2xl p-7 text-center space-y-4">
+          <h1 className="headline-sm text-ink">Unable to Sync Session</h1>
+          <p className="text-[13px] text-driftwood leading-relaxed">{syncError}</p>
+          <div className="flex items-center justify-center gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="btn-secondary text-[13px]"
+            >
+              Sign Out
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setSyncError(null);
+                setSyncAttempt((prev) => prev + 1);
+              }}
+              className="btn-primary text-[13px]"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (currentRoute === 'auth' || !currentUser) {
