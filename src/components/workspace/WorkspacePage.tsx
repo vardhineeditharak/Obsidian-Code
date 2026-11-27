@@ -258,10 +258,10 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
 
   // Reflect active project name in browser tab title
   useEffect(() => {
-    const defaultTitle = 'Obsidian Code — Real-Time Collaborative Code Editor';
+    const defaultTitle = 'Obsidian Code';
     if (project) {
       const displayName = project.name && project.name.trim() ? project.name : 'Untitled Project';
-      document.title = `${displayName} — Obsidian Code`;
+      document.title = `${displayName} - Obsidian Code`;
     }
     return () => {
       document.title = defaultTitle;
@@ -329,6 +329,13 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         setIsSearchOpen(true);
+      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (userRoleRef.current === 'viewer') {
+          notify.permissionDenied('create checkpoints');
+        } else {
+          setShowCheckpointDialog(true);
+        }
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         setShowSidebar((prev) => !prev);
@@ -1111,7 +1118,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       .replace(/<\/script>/gi, '<\\/script>');
 
     if (!htmlContent && !cssContent && !jsContent) {
-      return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 24px;background:#171717;color:#a3a3a3;margin:0;"><h3 style="color:#eeeeee;font-weight:500;margin-bottom:6px;">No HTML / CSS / JS previewable files</h3><p style="font-size:13px;margin:0;">Create an index.html file to preview your web app live.</p></body></html>`;
+      return `<!DOCTYPE html><html><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 24px;background:#171717;color:#a3a3a3;margin:0;"><h3 style="color:#eeeeee;font-weight:500;margin-bottom:6px;">No previewable files</h3><p style="font-size:13px;margin:0;">Add an index.html file to preview your app.</p></body></html>`;
     }
 
     let output = htmlContent || `<!DOCTYPE html><html><head></head><body></body></html>`;
@@ -1155,8 +1162,13 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   const activeFile = files.find((f) => f._id === activeFileId);
   const errorCount = diagnostics.filter((d) => d.severity === 'error').length;
   const warnCount = diagnostics.filter((d) => d.severity === 'warning').length;
+  const quickOpenQuery = quickOpenFilter.trim().toLowerCase();
   const quickOpenMatches = files.filter(
-    (f) => !f.isFolder && f.name.toLowerCase().includes(quickOpenFilter.toLowerCase())
+    (f) =>
+      !f.isFolder &&
+      (!quickOpenQuery ||
+        f.name.toLowerCase().includes(quickOpenQuery) ||
+        f.path.toLowerCase().includes(quickOpenQuery))
   );
 
   return (
@@ -1168,7 +1180,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
           className="bg-linen border-b border-stone px-3 py-1.5 flex items-center justify-between text-xs text-driftwood z-40 shrink-0"
         >
           <span className="truncate pr-2">
-            Obsidian Code is desktop-optimized. Code editing is best experienced on wider displays.
+            Obsidian Code works best on wider screens.
           </span>
           <button
             type="button"

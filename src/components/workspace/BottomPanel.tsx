@@ -65,7 +65,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 }) => {
   const [termInput, setTermInput] = useState('');
   const [terminalLog, setTerminalLog] = useState<TerminalLine[]>([
-    { id: 'init-1', kind: 'system', text: 'Obsidian Code Interactive Console. Type "help" for commands.' },
+    { id: 'init-1', kind: 'system', text: 'Console ready. Type "help" for commands.' },
   ]);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
@@ -247,7 +247,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
       )}
 
       {/* Panel Header Bar */}
-      <div className="h-8 px-3 flex items-center justify-between border-b border-(--border-subtle) bg-parchment/90 shrink-0">
+      <div
+        className={`h-8 px-3 flex items-center justify-between bg-parchment/90 shrink-0 ${
+          isOpen ? 'border-b border-(--border-subtle)' : ''
+        }`}
+      >
         <div role="tablist" aria-label="Bottom panel tabs" className="flex items-center gap-1">
           {BOTTOM_TABS.map((tab) => {
             const isActive = activeTab === tab;
@@ -442,7 +446,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = ({
 
               {diagnostics.length === 0 ? (
                 <p className="text-mist font-sans text-[12.5px] py-2">
-                  No syntax issues or lint warnings detected in workspace files.
+                  No issues found.
                 </p>
               ) : (
                 diagnostics.map((diag) => (

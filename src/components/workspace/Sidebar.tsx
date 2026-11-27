@@ -302,8 +302,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
 
-          {canEdit && (
-            <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 flex items-center gap-0.5 shrink-0 transition">
+          {canEdit && editingFileId !== file._id && (
+            <div className="w-0 opacity-0 overflow-hidden group-hover:w-auto group-hover:opacity-100 group-focus-within:w-auto group-focus-within:opacity-100 [@media(hover:none)]:w-auto [@media(hover:none)]:opacity-100 flex items-center gap-0.5 shrink-0 transition">
               {isFolder && (
                 <button
                   type="button"
@@ -363,7 +363,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       style={{ width: `${size}px` }}
-      className="relative border-r border-stone bg-bone flex flex-col select-none h-full shrink-0 transition-colors duration-150"
+      className="relative max-w-[85vw] border-r border-stone bg-bone flex flex-col select-none h-full shrink-0 transition-colors duration-150"
     >
       {/* Right-Edge Drag Handle */}
       <div

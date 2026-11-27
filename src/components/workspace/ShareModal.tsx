@@ -48,6 +48,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   }, [projectId]);
 
   useEffect(() => {
+    if (!isOpen) {
+      setCopied(false);
+      setMemberToRemove(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     return () => {
       if (copyTimerRef.current) {
         clearTimeout(copyTimerRef.current);
@@ -140,13 +147,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           >
             Invite Collaborators via Link
           </label>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="relative flex-1 min-w-0">
               <input
                 id="invite-url-field"
                 type="text"
                 readOnly
-                placeholder="Click generate to create an invite link..."
+                placeholder="Create an invite link..."
                 value={inviteUrl}
                 aria-label="Generated invitation URL"
                 className="input-atelier w-full h-9 text-[12px] font-mono"
@@ -164,8 +171,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 }}
                 className="h-9 bg-white/[0.04] border border-white/[0.1] rounded-[9px] px-3 text-[12.5px] font-sans text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
               >
-                <option value="editor">Editor (Can edit)</option>
-                <option value="viewer">Viewer (Read-only)</option>
+                <option value="editor" className="bg-bone text-ink">Editor (Can edit)</option>
+                <option value="viewer" className="bg-bone text-ink">Viewer (Read-only)</option>
               </select>
             )}
 
@@ -216,12 +223,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           </div>
           {isRoleChanged && (
             <p className="text-[11.5px] font-sans text-amber">
-              Permission changed to {selectedRole}. Regenerate Link to create an updated invite.
+              Permission changed to {selectedRole}. Click Regenerate Link to update the invite.
             </p>
           )}
           {!isOwner && (
             <p className="text-[12px] text-amber">
-              Only the workspace Owner can create new invitation links.
+              Only the owner can create invite links.
             </p>
           )}
         </div>
@@ -276,9 +283,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           }
                           className="h-7 bg-white/[0.04] border border-white/[0.1] rounded-lg px-2 text-[12px] font-sans text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-amber cursor-pointer"
                         >
-                          <option value="owner">Owner</option>
-                          <option value="editor">Editor</option>
-                          <option value="viewer">Viewer</option>
+                          <option value="owner" className="bg-bone text-ink">Owner</option>
+                          <option value="editor" className="bg-bone text-ink">Editor</option>
+                          <option value="viewer" className="bg-bone text-ink">Viewer</option>
                         </select>
                         <button
                           type="button"

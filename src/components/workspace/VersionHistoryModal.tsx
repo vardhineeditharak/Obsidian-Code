@@ -82,14 +82,14 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
   }, [isOpen, projectId, loadVersions]);
 
   useEffect(() => {
-    if (!isOpen || selectedFileId) return;
+    if (!isOpen) return;
     if (activeFileId) {
       setSelectedFileId(activeFileId);
     } else {
       const firstNonFolder = files.find((f) => !f.isFolder);
-      if (firstNonFolder) setSelectedFileId(firstNonFolder._id);
+      setSelectedFileId(firstNonFolder?._id || '');
     }
-  }, [isOpen, activeFileId, files, selectedFileId]);
+  }, [isOpen, activeFileId, files]);
 
   if (!isOpen) return null;
 
@@ -176,14 +176,14 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
       title={
         <div className="flex items-center gap-2.5">
           <History className="w-4 h-4 text-ash" />
-          <h2 className="text-[15px] font-medium tracking-[-0.015em] text-ink">Version History & Diff Comparison</h2>
+          <h2 className="text-[15px] font-medium tracking-[-0.015em] text-ink">Version History</h2>
         </div>
       }
     >
       {/* Modal Workspace Grid */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
         {/* Left Checkpoint List Drawer */}
-        <div className="w-80 border-r border-(--border-subtle) bg-parchment/70 flex flex-col shrink-0">
+        <div className="w-full sm:w-72 md:w-80 max-h-48 sm:max-h-none border-b sm:border-b-0 sm:border-r border-(--border-subtle) bg-parchment/70 flex flex-col shrink-0">
           <div className="h-11 px-3.5 border-b border-(--border-subtle) flex items-center">
             <span className="text-eyebrow tabular-nums">
               Checkpoints ({versions.length})
@@ -194,7 +194,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
             {loading && <p className="text-[12px] font-sans text-mist p-4">Loading checkpoints...</p>}
             {!loading && versions.length === 0 && (
               <div className="text-center p-6 text-mist text-[12.5px] font-sans leading-relaxed">
-                No named checkpoints created yet. Press Ctrl+S in the editor or create a checkpoint.
+                No checkpoints yet. Press Ctrl+S or create one.
               </div>
             )}
             {versions.map((v) => {
@@ -260,7 +260,7 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                 {files
                   .filter((f) => !f.isFolder)
                   .map((f) => (
-                    <option key={f._id} value={f._id}>
+                    <option key={f._id} value={f._id} className="bg-bone text-ink">
                       {f.path || f.name}
                     </option>
                   ))}

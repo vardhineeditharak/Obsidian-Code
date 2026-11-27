@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { notify } from '../../lib/notifications';
 import { sound } from '../../lib/audio/soundEngine';
-import { ThemeToggle } from '../ui/AnimatedIcon';
 import { BrandMark } from '../ui/BrandMark';
 
 const GOOGLE_ICON = (
@@ -249,10 +248,6 @@ export function AuthPage(_props: AuthPageProps) {
 
   return (
     <div className="h-dvh w-full overflow-y-auto bg-parchment p-4 flex select-none relative transition-colors duration-150">
-      <div className="hidden">
-        <ThemeToggle size={16} />
-      </div>
-
       <div className="m-auto w-full max-w-[420px] glass-modal rounded-2xl p-6 sm:p-8 relative">
         <div className="text-center mb-6">
           <BrandMark className="w-11 h-11 text-ink mx-auto mb-3.5" />
@@ -260,7 +255,7 @@ export function AuthPage(_props: AuthPageProps) {
             Obsidian Code
           </h1>
           <p className="text-[13.5px] text-driftwood mt-1">
-            Your team&apos;s shared workspace for code
+            Real-time team code editor
           </p>
         </div>
 
@@ -324,7 +319,11 @@ export function AuthPage(_props: AuthPageProps) {
             <div className="flex items-center justify-between pt-2 text-[12px]">
               <button
                 type="button"
-                onClick={() => setVerifying(false)}
+                onClick={() => {
+                  setVerifying(false);
+                  setError(null);
+                  setVerificationCode('');
+                }}
                 className="btn-ghost px-2 py-1 text-[12.5px]"
               >
                 ← Back to Sign Up
@@ -333,7 +332,7 @@ export function AuthPage(_props: AuthPageProps) {
                 type="button"
                 onClick={handleResendCode}
                 disabled={resending}
-                className="text-amber hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                className="text-amber hover:underline flex items-center gap-1 cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RotateCw className={`w-3 h-3 ${resending ? 'animate-spin' : ''}`} />
                 <span>{resending ? 'Sending...' : 'Resend Code'}</span>
@@ -345,6 +344,12 @@ export function AuthPage(_props: AuthPageProps) {
             <div
               role="tablist"
               aria-label="Authentication mode"
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  switchMode(!isLogin);
+                }
+              }}
               className="flex apple-segmented p-1 rounded-[10px] mb-5"
             >
               <button
@@ -402,7 +407,7 @@ export function AuthPage(_props: AuthPageProps) {
                       type="text"
                       required
                       autoComplete="name"
-                      placeholder="John Doe"
+                      placeholder="Your name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       aria-invalid={!!error}

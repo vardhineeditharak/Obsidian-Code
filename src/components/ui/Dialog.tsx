@@ -29,6 +29,7 @@ export function Modal({
   maxWidth = 'max-w-md',
   ariaDescribedBy,
 }: ModalProps) {
+  const backdropRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
@@ -64,7 +65,11 @@ export function Modal({
     }, 25);
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (dialogStack[dialogStack.length - 1] !== stackToken) return;
+      const openDialogs = document.querySelectorAll('[role="dialog"]');
+      const isTopmostDomDialog =
+        openDialogs.length > 0 && openDialogs[openDialogs.length - 1] === backdropRef.current;
+      if (!isTopmostDomDialog && dialogStack[dialogStack.length - 1] !== stackToken) return;
+      if (openDialogs.length > 0 && !isTopmostDomDialog) return;
 
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -116,6 +121,7 @@ export function Modal({
 
   return (
     <div
+      ref={backdropRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-scrim"
       onClick={(e) => {
         if (e.target === e.currentTarget) {

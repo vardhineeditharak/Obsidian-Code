@@ -112,6 +112,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
   const filesRef = useRef<ProjectFile[]>(files);
 
   const viewStatesRef = useRef<Map<string, Monaco.editor.ICodeEditorViewState>>(new Map());
+  const tabElementsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const [fontsReady, setFontsReady] = useState(false);
   const revealPendingRef = useRef<{
     fileId: string;
@@ -208,6 +209,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
     if (!activeFile) {
       editorRef.current = null;
       prevActiveFileIdRef.current = null;
+    } else {
+      const activeTabEl = tabElementsRef.current.get(activeFile._id);
+      if (activeTabEl && typeof activeTabEl.scrollIntoView === 'function') {
+        activeTabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
     }
   }, [activeFile]);
 
@@ -754,6 +760,10 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             return (
               <div
                 key={fileId}
+                ref={(el) => {
+                  if (el) tabElementsRef.current.set(fileId, el);
+                  else tabElementsRef.current.delete(fileId);
+                }}
                 role="tab"
                 tabIndex={0}
                 aria-selected={isActive}
@@ -889,8 +899,12 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                   : undefined
               }
               className={`${
-                splitMode === 'single' ? 'flex-1' : ''
-              } relative h-full min-w-0 min-h-0 overflow-hidden`}
+                splitMode === 'single'
+                  ? 'flex-1 h-full'
+                  : splitMode === 'vertical'
+                  ? 'h-full'
+                  : 'w-full'
+              } relative min-w-0 min-h-0 overflow-hidden`}
             >
               {!fontsReady ? (
                 <div className="w-full h-full bg-parchment flex items-center justify-center text-ash">
@@ -949,7 +963,9 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                     ? { flexBasis: `${100 - splitRatio}%`, width: `${100 - splitRatio}%` }
                     : { flexBasis: `${100 - splitRatio}%`, height: `${100 - splitRatio}%` }
                 }
-                className="relative h-full min-w-0 min-h-0 overflow-hidden flex flex-col"
+                className={`relative ${
+                  splitMode === 'vertical' ? 'h-full' : 'w-full'
+                } min-w-0 min-h-0 overflow-hidden flex flex-col`}
               >
                 <div className="h-9 border-b border-(--border-subtle) bg-parchment px-3 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2 min-w-0">
@@ -963,7 +979,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                       className="h-6 bg-white/[0.04] border border-white/[0.1] rounded-md px-2 text-[12px] font-sans text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-amber cursor-pointer max-w-[200px] truncate"
                     >
                       {nonFolderFiles.map((f) => (
-                        <option key={f._id} value={f._id}>
+                        <option key={f._id} value={f._id} className="bg-bone text-ink">
                           {f.path || f.name}
                         </option>
                       ))}
@@ -1007,10 +1023,11 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
             )}
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-ash space-y-2.5">
+          <div className="flex-1 flex flex-col items-center justify-center text-ash space-y-2.5 px-6 text-center">
             <p className="text-[14px] text-ink font-medium tracking-[-0.01em]">Select or create a file to start editing</p>
             <p className="text-[12px] font-sans text-mist">
-              Press <kbd className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.09] text-driftwood">Ctrl+Shift+F</kbd> to search across project
+              Press <kbd className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.09] text-driftwood">Ctrl+P</kbd> to quick open or{' '}
+              <kbd className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.09] text-driftwood">Ctrl+Shift+F</kbd> to search across project
             </p>
           </div>
         )}

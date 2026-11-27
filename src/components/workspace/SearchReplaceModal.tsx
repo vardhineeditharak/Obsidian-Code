@@ -54,11 +54,13 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
   const [useRegex, setUseRegex] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isCapped, setIsCapped] = useState(false);
   const [collapsedFiles, setCollapsedFiles] = useState<Record<string, boolean>>({});
   const [resultSignature, setResultSignature] = useState('');
 
+  const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
@@ -73,6 +75,31 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       if (e.key === 'Escape') {
         e.stopPropagation();
         onCloseRef.current();
+        return;
+      }
+
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey) {
+          if (active === first || !dialogRef.current.contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (active === last || !dialogRef.current.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -213,6 +240,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       return;
     }
 
+    setReplacing(true);
     try {
       const batch: { fileId: string; newContent: string }[] = [];
       let changedFiles = 0;
@@ -235,6 +263,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       onClose();
     } catch (err: unknown) {
       notify.error('Replace failed', err instanceof Error ? err.message : 'Unable to replace occurrences');
+    } finally {
+      setReplacing(false);
     }
   };
 
@@ -254,7 +284,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       return (
         <>
           <span>{lineText.slice(0, startIdx)}</span>
-          <mark className="bg-selection/40 text-ink rounded-sm px-0.5">{candidate}</mark>
+          <mark className="bg-amethyst/35 text-ink rounded-sm px-0.5 border border-lavender/30">{candidate}</mark>
           <span>{lineText.slice(startIdx + matchText.length)}</span>
         </>
       );
@@ -264,7 +294,7 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center modal-scrim p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center modal-scrim p-3 sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -273,6 +303,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
       aria-label="Workspace Search & Replace"
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="w-full max-w-2xl h-[75vh] rounded-2xl overflow-hidden glass-modal flex flex-col modal-dialog"
         onClick={(e) => e.stopPropagation()}
       >
@@ -303,8 +335,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
         {/* Input Bar */}
         <div className="p-4 space-y-2.5 bg-bone/40 border-b border-(--border-subtle)">
           {/* Find Row */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+            <div className="relative flex-1 min-w-[180px]">
               <input
                 ref={inputRef}
                 type="text"
@@ -377,8 +409,8 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
           </div>
 
           {/* Replace Row */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+            <div className="relative flex-1 min-w-[180px]">
               <input
                 type="text"
                 placeholder="Replace with..."
@@ -391,11 +423,11 @@ export const SearchReplaceModal: React.FC<SearchReplaceModalProps> = ({
             <button
               type="button"
               onClick={handleBatchReplace}
-              disabled={results.length === 0}
-              className="btn-secondary min-h-0 h-9 px-3.5 text-[12.5px] flex items-center gap-1.5 tabular-nums disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+              disabled={results.length === 0 || replacing}
+              className="btn-secondary min-h-0 h-9 px-3.5 text-[12.5px] flex items-center gap-1.5 tabular-nums disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber shrink-0"
             >
               <Replace className="w-3.5 h-3.5" />
-              <span>Replace All ({results.length})</span>
+              <span>{replacing ? 'Replacing...' : `Replace All (${results.length})`}</span>
             </button>
           </div>
         </div>

@@ -3,7 +3,6 @@ import { RotateCw, RotateCcw, PanelLeft } from 'lucide-react';
 import { Project, ProjectRole, TransportMode, CollaboratorPresence, User, SaveState } from '../../lib/types';
 import { BrandMark } from '../ui/BrandMark';
 import {
-  ThemeToggle,
   Search,
   History,
   Download,
@@ -152,8 +151,11 @@ export const Header: React.FC<HeaderProps> = ({
   const effectiveSaveState: SaveState = !isOnline ? 'offline' : saveState;
   const roleLabel = userRole === 'owner' ? 'Owner' : userRole === 'editor' ? 'Editor' : 'Viewer';
 
+  const visibleCollaborators = collaborators.slice(0, 4);
+  const overflowCollaborators = Math.max(0, collaborators.length - visibleCollaborators.length);
+
   return (
-    <header className="h-12 apple-glass-header border-b border-(--border-subtle) px-3 flex items-center justify-between select-none z-30 transition-colors duration-150 gap-2">
+    <header className="h-12 apple-glass-header border-b border-(--border-subtle) px-3 flex items-center justify-between select-none z-40 transition-colors duration-150 gap-2">
       {/* Left: Explorer Toggle, Brand, Project Name, Role Badge & Save-State Pill */}
       <div className="flex items-center gap-2 min-w-0 shrink">
         {onToggleSidebar && (
@@ -205,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             autoFocus
             aria-label="Project Name"
-            className="input-atelier text-xs px-2 py-0.5 rounded-md min-w-[120px] max-w-[200px]"
+            className="input-atelier min-h-0 h-7 text-xs px-2 py-0.5 rounded-md min-w-[120px] max-w-[200px]"
           />
         ) : (
           <div className="flex items-center gap-2 min-w-0">
@@ -215,24 +217,24 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={handleStartEditName}
                 title="Click to rename"
                 aria-label={`Rename project ${displayName}`}
-                className="text-xs font-medium text-ink px-2 py-0.5 rounded-md hover:bg-linen transition flex items-center cursor-pointer truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink dark:focus-visible:ring-parchment"
+                className="text-xs font-medium text-ink px-2 py-0.5 rounded-md hover:bg-linen transition flex items-center cursor-pointer truncate max-w-[100px] sm:max-w-[180px] md:max-w-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
               >
                 <span className="truncate">{displayName}</span>
               </button>
             ) : (
-              <span className="text-[13px] font-medium tracking-[-0.01em] text-ink px-2 py-0.5 cursor-default truncate max-w-[130px] sm:max-w-[200px] md:max-w-xs">
+              <span className="text-[13px] font-medium tracking-[-0.01em] text-ink px-2 py-0.5 cursor-default truncate max-w-[100px] sm:max-w-[180px] md:max-w-xs">
                 {displayName}
               </span>
             )}
 
-            <span className="tag-badge font-sans text-[10.5px] font-medium uppercase tracking-[0.04em] shrink-0">
+            <span className="tag-badge hidden sm:inline-flex font-sans text-[10.5px] font-medium uppercase tracking-[0.04em] shrink-0">
               {roleLabel}
             </span>
           </div>
         )}
 
         {/* Save-State Indicator */}
-        <div className="hidden sm:flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11.5px] font-sans tabular-nums shrink-0">
+        <div className="hidden lg:flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11.5px] font-sans tabular-nums shrink-0">
           {effectiveSaveState === 'saving' ? (
             <>
               <RotateCw className="w-3 h-3 animate-spin text-ash" />
@@ -267,7 +269,7 @@ export const Header: React.FC<HeaderProps> = ({
           disabled={isRunningCode || userRole === 'viewer'}
           title={userRole === 'viewer' ? 'Viewers cannot execute code' : 'Execute Code (Sandbox)'}
           aria-label={isRunningCode ? 'Running Code' : 'Execute Code (Sandbox)'}
-          className="btn-amber h-[26px] px-2.5 rounded-[6.5px] text-[12px] font-medium disabled:opacity-40 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-amber h-[26px] px-2.5 rounded-[6.5px] text-[12px] font-medium disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           {isRunningCode ? (
             <RotateCw className="w-3.5 h-3.5 animate-spin" />
@@ -312,9 +314,9 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right: Presence, Transport, Audio, Theme Toggle, Share, Profile */}
       <div className="flex items-center gap-2 shrink-0">
-        {collaborators.length > 0 && (
+        {visibleCollaborators.length > 0 && (
           <div className="flex items-center -space-x-1 mr-0.5">
-            {collaborators.map((c) => {
+            {visibleCollaborators.map((c) => {
               const isSelf = c.id === user._id;
               const isFollowed = !isSelf && followingUserId === c.id;
               return (
@@ -347,6 +349,14 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               );
             })}
+            {overflowCollaborators > 0 && (
+              <span
+                title={`${overflowCollaborators} more collaborator${overflowCollaborators === 1 ? '' : 's'}`}
+                className="relative w-6 h-6 rounded-full border border-stone bg-linen text-[10px] font-sans font-semibold text-driftwood flex items-center justify-center tabular-nums"
+              >
+                +{overflowCollaborators}
+              </span>
+            )}
           </div>
         )}
 
@@ -416,19 +426,16 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
-        <div className="hidden">
-          <ThemeToggle size={16} />
-        </div>
 
         {/* Share Button */}
         <button
           type="button"
           onClick={onOpenShare}
           aria-label="Share workspace"
-          className="btn-primary min-h-0 h-7 px-3 rounded-[7px] text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          className="btn-primary min-h-0 h-7 px-2.5 sm:px-3 rounded-[7px] text-[12px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
         >
           <Share size={12.5} color="currentColor" strokeWidth={2} />
-          <span>Share</span>
+          <span className="hidden sm:inline">Share</span>
         </button>
 
         {/* User Account Menu */}

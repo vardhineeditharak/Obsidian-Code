@@ -15,7 +15,6 @@ import {
   FolderOpen,
   LogOut,
   Plus,
-  ThemeToggle,
   Trash,
   Users,
 } from '../ui/AnimatedIcon';
@@ -29,37 +28,43 @@ import { sound } from '../../lib/audio/soundEngine';
 
 type ProjectTemplate = 'blank' | 'web' | 'node' | 'algorithms';
 
-interface TemplateOption {
+const TEMPLATE_OPTIONS: Array<{
   id: ProjectTemplate;
   label: string;
   sub: string;
-  icon: React.ReactNode;
-}
-
-const TEMPLATE_OPTIONS: TemplateOption[] = [
+  renderIcon: (isSelected: boolean) => React.ReactNode;
+}> = [
   {
     id: 'web',
     label: 'Web App',
     sub: 'HTML, CSS, JS',
-    icon: <Globe className="w-4 h-4 text-ash mb-1.5" />,
+    renderIcon: (isSelected) => (
+      <Globe className={`w-4 h-4 mb-1.5 transition-colors ${isSelected ? 'text-amber' : 'text-ash'}`} />
+    ),
   },
   {
     id: 'node',
     label: 'Node.js',
     sub: 'Package & script',
-    icon: <Terminal className="w-4 h-4 text-ash mb-1.5" />,
+    renderIcon: (isSelected) => (
+      <Terminal className={`w-4 h-4 mb-1.5 transition-colors ${isSelected ? 'text-amber' : 'text-ash'}`} />
+    ),
   },
   {
     id: 'algorithms',
     label: 'Algorithms',
     sub: 'Data structures',
-    icon: <Binary className="w-4 h-4 text-ash mb-1.5" />,
+    renderIcon: (isSelected) => (
+      <Binary className={`w-4 h-4 mb-1.5 transition-colors ${isSelected ? 'text-amber' : 'text-ash'}`} />
+    ),
   },
   {
     id: 'blank',
     label: 'Blank',
     sub: 'Clean slate',
-    icon: <Sparkles className="w-4 h-4 text-amber mb-1.5" />,
+    renderIcon: (isSelected) => (
+      <Sparkles className={`w-4 h-4 mb-1.5 transition-colors ${isSelected ? 'text-amber' : 'text-ash'}`} />
+    ),
   },
 ];
 
@@ -227,21 +232,18 @@ export function Dashboard({
   };
 
   return (
-    <div className="min-h-screen bg-parchment text-ink flex flex-col select-none transition-colors duration-150">
-      <nav className="h-14 apple-glass-header sticky top-0 z-20 border-b border-(--border-subtle) px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="h-full min-h-0 overflow-y-auto bg-parchment text-ink flex flex-col select-none transition-colors duration-150">
+      <nav className="h-14 apple-glass-header sticky top-0 z-20 border-b border-(--border-subtle) px-4 sm:px-6 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
           <BrandMark className="w-8 h-8 text-ink shrink-0" />
-          <span className="font-brand text-xl font-semibold tracking-tight text-ink">
+          <span className="font-brand text-xl font-semibold tracking-tight text-ink truncate">
             Obsidian Code
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden">
-            <ThemeToggle size={16} />
-          </div>
+        <div className="flex items-center gap-3 shrink-0">
 
-          <div className="flex items-center gap-2 pl-3 border-l border-stone">
+          <div className="flex items-center gap-2 pr-3 border-r border-white/10">
             <img
               src={
                 user.avatar ||
@@ -250,7 +252,7 @@ export function Dashboard({
               alt={user.name}
               className="w-6 h-6 rounded-full border border-stone"
             />
-            <span className="font-mono text-xs text-driftwood">{user.name}</span>
+            <span className="font-mono text-xs text-driftwood hidden sm:inline">{user.name}</span>
           </div>
 
           <button
@@ -271,7 +273,7 @@ export function Dashboard({
             <div className="text-eyebrow mb-1.5">Workspaces</div>
             <h1 className="headline-md text-ink">Your Projects</h1>
             <p className="text-sm text-driftwood mt-1">
-              Collaborate in real time with peers or jump into your personal code ateliers.
+              Open a workspace or create a new project.
             </p>
           </div>
 
@@ -305,8 +307,7 @@ export function Dashboard({
             </div>
             <h2 className="headline-sm text-ink mb-1.5">No Projects Found</h2>
             <p className="text-[13.5px] text-driftwood max-w-sm leading-relaxed mb-6">
-              Create a new collaborative project or join an existing workspace with an invitation
-              link.
+              Create a project or join one with an invite link.
             </p>
             <button
               type="button"
@@ -365,66 +366,62 @@ export function Dashboard({
                 {filteredProjects.map((project) => (
                   <div
                     key={project._id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onOpenProject(project._id)}
-                    onKeyDown={(e) => {
-                      // Ignore Enter/Space bubbling from the nested delete button.
-                      if (e.target !== e.currentTarget) return;
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onOpenProject(project._id);
-                      }
-                    }}
-                    className="bg-bone p-5 rounded-xl border border-(--border-subtle) inset-glow hover:border-white/20 hover:bg-linen/50 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-150 group cursor-pointer flex flex-col justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                    className="relative bg-bone rounded-xl border border-(--border-subtle) inset-glow hover:border-white/20 hover:bg-linen/50 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-12px_rgba(0,0,0,0.55)] transition-all duration-150 group"
                   >
-                    <div>
-                      <div className="flex items-start justify-between mb-3.5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-[9px] bg-white/[0.045] border border-white/[0.08] inset-glow flex items-center justify-center text-ash group-hover:text-ink transition shrink-0">
-                            <FolderOpen size={15} />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="text-[14.5px] font-semibold tracking-[-0.015em] text-ink truncate transition">
-                              {project.name}
-                            </h3>
-                            <span className="font-sans text-[11.5px] tabular-nums text-ash flex items-center gap-1 mt-0.5">
-                              <Clock className="w-3 h-3 text-ash/80" />
-                              {new Date(project.updatedAt).toLocaleDateString()}
-                            </span>
+                    <button
+                      type="button"
+                      onClick={() => onOpenProject(project._id)}
+                      aria-label={`Open project ${project.name}`}
+                      className="w-full h-full p-5 text-left flex flex-col justify-between cursor-pointer rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between mb-3.5 pr-8">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-[9px] bg-white/[0.045] border border-white/[0.08] inset-glow flex items-center justify-center text-ash group-hover:text-ink transition shrink-0">
+                              <FolderOpen size={15} />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-[14.5px] font-semibold tracking-[-0.015em] text-ink truncate transition">
+                                {project.name}
+                              </h3>
+                              <span className="font-sans text-[11.5px] tabular-nums text-ash flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3 text-ash/80" />
+                                {new Date(project.updatedAt).toLocaleDateString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setProjectToDelete({ id: project._id, name: project.name });
-                          }}
-                          title={`Delete ${project.name}`}
-                          aria-label={`Delete project ${project.name}`}
-                          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-ash hover:text-crimson hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer shrink-0"
-                        >
-                          <Trash size={14} />
-                        </button>
+                        {project.description ? (
+                          <p className="text-[13px] text-driftwood leading-relaxed line-clamp-2 mb-4">
+                            {project.description}
+                          </p>
+                        ) : null}
                       </div>
 
-                      {project.description ? (
-                        <p className="text-[13px] text-driftwood leading-relaxed line-clamp-2 mb-4">
-                          {project.description}
-                        </p>
-                      ) : null}
-                    </div>
+                      <div className="flex items-center justify-between pt-3.5 border-t border-(--border-subtle) text-[11.5px] font-sans text-ash w-full">
+                        <span className="flex items-center gap-1.5">
+                          <Users size={12} className="text-ash" />
+                          Collaborative Workspace
+                        </span>
+                        <span className="text-ink group-hover:text-amber transition flex items-center gap-1 font-medium text-[12px]">
+                          Open <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </button>
 
-                    <div className="flex items-center justify-between pt-3.5 border-t border-(--border-subtle) text-[11.5px] font-sans text-ash">
-                      <span className="flex items-center gap-1.5">
-                        <Users size={12} className="text-ash" />
-                        Collaborative Workspace
-                      </span>
-                      <span className="text-ink group-hover:text-amber transition flex items-center gap-1 font-medium text-[12px]">
-                        Open <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProjectToDelete({ id: project._id, name: project.name });
+                      }}
+                      title={`Delete ${project.name}`}
+                      aria-label={`Delete project ${project.name}`}
+                      className="absolute top-4 right-4 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100 p-1.5 rounded-lg text-ash hover:text-crimson hover:bg-white/[0.06] focus:outline-none focus-visible:ring-2 focus-visible:ring-crimson transition cursor-pointer"
+                    >
+                      <Trash size={14} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -441,7 +438,7 @@ export function Dashboard({
       >
         <div className="p-6">
           <p className="text-[13px] text-driftwood mb-5 leading-relaxed">
-            Choose a template to scaffold your shared project environment.
+            Pick a starter template for your project.
           </p>
 
           <form onSubmit={handleCreateProject} className="space-y-4">
@@ -456,7 +453,7 @@ export function Dashboard({
                 id="project-name-input"
                 type="text"
                 required
-                placeholder="e.g. NextGen Web App"
+                placeholder="e.g. api-starter"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 className="input-atelier w-full"
@@ -473,7 +470,7 @@ export function Dashboard({
               <input
                 id="project-desc-input"
                 type="text"
-                placeholder="Short workspace description..."
+                placeholder="Optional description..."
                 value={newProjectDesc}
                 onChange={(e) => setNewProjectDesc(e.target.value)}
                 className="input-atelier w-full"
@@ -499,7 +496,7 @@ export function Dashboard({
                           : 'border-white/[0.08] bg-white/[0.025] text-driftwood hover:bg-white/[0.05]'
                       }`}
                     >
-                      {tpl.icon}
+                      {tpl.renderIcon(isSelected)}
                       <p className="text-[12.5px] font-medium text-ink">{tpl.label}</p>
                       <p className="font-sans text-[11px] text-ash mt-0.5">{tpl.sub}</p>
                     </button>
@@ -516,7 +513,11 @@ export function Dashboard({
               >
                 Cancel
               </button>
-              <button type="submit" disabled={creating} className="btn-primary text-[13px]">
+              <button
+                type="submit"
+                disabled={creating || !newProjectName.trim()}
+                className="btn-primary text-[13px]"
+              >
                 {creating ? 'Creating...' : 'Create Project'}
               </button>
             </div>
@@ -526,13 +527,16 @@ export function Dashboard({
 
       <Modal
         isOpen={showJoinModal}
-        onClose={() => setShowJoinModal(false)}
+        onClose={() => {
+          setShowJoinModal(false);
+          setJoinError(null);
+        }}
         maxWidth="max-w-md"
         title="Join Workspace"
       >
         <div className="p-6">
           <p className="text-[13px] text-driftwood mb-5 leading-relaxed">
-            Paste your invitation token or share link to join a team&apos;s code workspace.
+            Paste an invite token or link to join a project.
           </p>
 
           {joinError ? (
@@ -567,14 +571,17 @@ export function Dashboard({
             <div className="flex items-center justify-end gap-2.5 pt-3.5 border-t border-(--border-subtle)">
               <button
                 type="button"
-                onClick={() => setShowJoinModal(false)}
+                onClick={() => {
+                  setShowJoinModal(false);
+                  setJoinError(null);
+                }}
                 className="btn-ghost px-3 py-1.5 text-[13px]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={joining}
+                disabled={joining || !inviteToken.trim()}
                 className="btn-primary text-[13px] disabled:opacity-50"
               >
                 {joining ? 'Joining...' : 'Join Workspace'}
